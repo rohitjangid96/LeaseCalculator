@@ -1,0 +1,1124 @@
+Rem Attribute VBA_ModuleType=VBAModule
+Option VBASupport 1
+Option Compare Text
+Dim enddate As Date
+Dim starto As Date
+Dim endrow As Integer
+Dim ai As Long
+Dim mai As Long
+Dim oai As Long
+Dim app_rent As Double
+Dim app_rent_date As Date
+Dim baldate
+Dim opendate
+Dim NewFile As String
+
+Sub datessrent(Optional ByVal istart As Date)
+
+Application.ScreenUpdating = False
+Application.Calculation = xlCalculationManual
+Application.EnableEvents = False
+
+app_rent = 0
+app_rent_date = 0
+
+Sheets("compute").Range("Playground").ClearContents
+
+'GAAP Identification on Schedule
+Sheets("compute").Range("B5").Value = Sheets("Results").Range("GAAP").Value
+
+If istart <> 0 Then firstpaymentDate = istart Else firstpaymentDate = Range("First_payment_date").Offset(mai, 0).Value
+If istart <> 0 Then starto = istart Else starto = Range("Lease_start_date").Offset(mai, 0).Value
+dateo = starto
+
+'put first date
+Sheets("compute").Range("C9").Formula = starto
+
+
+'first payment date = start date
+If starto = firstpaymentDate Then
+
+'finding the right rental to apply
+    If Range("Auto_rentals").Offset(mai, 0) = "Yes" Then
+    For xx = 1 To 50
+        If app_rent_date >= dateo Then
+        Sheets("compute").Range("C9").Offset(k, 1).Formula = app_rent
+        lastmonthpay = Month(dateo) + Year(dateo)
+        Exit For
+        
+        Else
+        rent_no = rent_no + 1
+        findrent (rent_no)
+        
+        End If
+    Next xx
+    Else
+        For r = 1 To 20
+        If Range("Rental_date_1").Offset(mai, (r - 1)).Value >= dateo Then
+        Sheets("compute").Range("C9").Offset(k, 1).Formula = Range("Rental_1").Offset(mai, (r - 1)).Value
+        lastmonthpay = Month(dateo) + Year(dateo)
+        Exit For
+        End If
+        Next r
+    End If
+
+'finding the right ARO to apply
+    If Sheets("A").Range("A6").Value = 0 Then
+    For aro = 1 To 8
+    If Range("ARO_date_1").Offset(mai, aro - 1).Value > dateo Or Range("ARO_date_1").Offset(mai, aro - 1).Value = 0 Then
+    Sheets("compute").Range("C9").Offset(k, 10).Formula = Range("ARO").Offset(mai, aro - 1).Value
+    Exit For
+    End If
+    Next aro
+    End If
+End If
+
+k = 1
+monthof = Range("Frequency_months").Offset(mai, 0).Value
+dayofm = Range("Day_of_Month").Offset(mai, 0).Value
+dayofma = dayofm
+enddate = Range("End_date").Offset(mai, 0).Value
+
+'ploting dates
+For i = 1 To 50000
+x = 0
+dateo = starto + i
+
+'finding last day of the month 31st or 30th etc?
+If dayofm = "Last" Then dayofma = Day(WorksheetFunction.EoMonth(dateo, 0))
+
+'plotting rent on first payment date, not applicable if start date was = first payment date
+If dateo = firstpaymentDate Then
+Sheets("compute").Range("C9").Offset(k, 0).Formula = dateo
+
+'finding the right rental to apply
+    If Range("Auto_rentals").Offset(mai, 0) = "Yes" Then
+    For xx = 1 To 50
+        If app_rent_date >= dateo Then
+        Sheets("compute").Range("C9").Offset(k, 1).Formula = app_rent
+        lastmonthpay = Month(dateo) + Year(dateo)
+        Exit For
+        
+        Else
+        rent_no = rent_no + 1
+        findrent (rent_no)
+        
+        End If
+    Next xx
+    Else
+        For r = 1 To 20
+        If Range("Rental_date_1").Offset(mai, (r - 1)).Value >= dateo Then
+        Sheets("compute").Range("C9").Offset(k, 1).Formula = Range("Rental_1").Offset(mai, (r - 1)).Value
+        lastmonthpay = Month(dateo) + Year(dateo)
+        Exit For
+        End If
+        Next r
+    End If
+
+'finding the right ARO to apply
+    If Sheets("A").Range("A6").Value = 0 Then
+    For aro = 1 To 8
+    If Range("ARO_date_1").Offset(mai, aro - 1).Value > dateo Or Range("ARO_date_1").Offset(mai, aro - 1).Value = 0 Then
+    Sheets("compute").Range("C9").Offset(k, 10).Formula = Range("ARO").Offset(mai, aro - 1).Value
+    Exit For
+    End If
+    Next aro
+    End If
+    
+'k is the count of dates plotted
+k = k + 1
+'x = 1 means date is plotted
+x = 1
+End If
+
+If dateo < firstpaymentDate Then GoTo skipo
+
+
+    If ((Year(dateo) * 12 + Month(dateo)) - (Year(firstpaymentDate) * 12 + Month(firstpaymentDate))) Mod monthof = 0 Then GoTo exec
+     
+GoTo skipo
+exec:
+1
+        If x = 1 Then GoTo skipo
+            If Month(dateo) = 2 And dayofma > 28 Then
+            dayofma1 = dayofma
+            dayofma = 28
+            End If
+            If Day(dateo) = dayofma Then
+            Sheets("compute").Range("C9").Offset(k, 0).Formula = dateo
+                'finding the right rental to apply
+                    If Range("Auto_rentals").Offset(mai, 0) = "Yes" Then
+                    For xx = 1 To 50
+                        If app_rent_date >= dateo Then
+                        If lastmonthpay <> (Month(dateo) + Year(dateo)) Then Sheets("compute").Range("C9").Offset(k, 1).Formula = app_rent
+                        lastmonthpay = 0
+                        Exit For
+                        
+                        Else
+                        rent_no = rent_no + 1
+                        findrent (rent_no)
+                        
+                        End If
+                    Next xx
+                    Else
+                        For r = 1 To 20
+                        If Range("Rental_date_1").Offset(mai, (r - 1)).Value >= dateo Then
+                        If lastmonthpay <> (Month(dateo) + Year(dateo)) Then Sheets("compute").Range("C9").Offset(k, 1).Formula = Range("Rental_1").Offset(mai, (r - 1)).Value
+                        lastmonthpay = 0
+                        Exit For
+                        End If
+                        Next r
+                    End If
+                    
+                'finding the right ARO to apply
+                    If Sheets("A").Range("A6").Value = 0 Then
+                    For aro = 1 To 8
+                    If Range("ARO_date_1").Offset(mai, aro - 1).Value > dateo Or Range("ARO_date_1").Offset(mai, aro - 1).Value = 0 Then
+                    Sheets("compute").Range("C9").Offset(k, 10).Formula = Range("ARO").Offset(mai, aro - 1).Value
+                    Exit For
+                    End If
+                    Next aro
+                    End If
+            k = k + 1
+            x = 1
+            End If
+            If Month(dateo) = 2 And dayofma1 > 28 Then dayofma = dayofma1
+                        
+skipo:
+If x = 0 Then
+    'If Month(dateo) = 3 Or Month(dateo) = 6 Or Month(dateo) = 9 Or Month(dateo) = 12 Then
+        If Month(dateo) <> Month(dateo + 1) Then
+        Sheets("compute").Range("C9").Offset(k, 0).Formula = dateo
+        
+                'finding the right ARO to apply
+                    If Sheets("A").Range("A6").Value = 0 Then
+                    For aro = 1 To 8
+                    If Range("ARO_date_1").Offset(mai, aro - 1).Value > dateo Or Range("ARO_date_1").Offset(mai, aro - 1).Value = 0 Then
+                    Sheets("compute").Range("C9").Offset(k, 10).Formula = Range("ARO").Offset(mai, aro - 1).Value
+                    Exit For
+                    End If
+                    Next aro
+                    End If
+        k = k + 1
+        x = 1
+        End If
+    'End If
+End If
+
+
+If dateo = enddate Then
+    If x = 0 Then
+    Sheets("compute").Range("C9").Offset(k, 0).Formula = dateo
+    Sheets("compute").Range("C9").Offset(k, 1).Formula = Range("DataTable[[#Headers],[Purchase_option_price]]").Offset(mai, 0)
+                    'finding the right ARO to apply
+                    If Sheets("A").Range("A6").Value = 0 Then
+                    For aro = 1 To 8
+                    If Range("ARO_date_1").Offset(mai, aro - 1).Value > dateo Or Range("ARO_date_1").Offset(mai, aro - 1).Value = 0 Then
+                    Sheets("compute").Range("C9").Offset(k, 10).Formula = Range("ARO").Offset(mai, aro - 1).Value
+                    Exit For
+                    End If
+                    Next aro
+                    End If
+      
+    Else
+    Sheets("compute").Range("C9").Offset(k - 1, 1).Formula = Sheets("compute").Range("C9").Offset(k - 1, 1).Value + Range("DataTable[[#Headers],[Purchase_option_price]]").Offset(mai, 0)
+    End If
+
+GoTo calc
+End If
+
+
+
+
+
+
+
+Next i
+
+calc:
+
+Call basic_calc
+
+Application.ScreenUpdating = True
+Application.Calculation = xlCalculationAutomatic
+Application.EnableEvents = True
+
+
+
+
+End Sub
+
+Sub compu()
+
+If Sheets("Internals").Range("S2").Value <> "" Then GoTo str1
+
+If IsNumeric(Environ("username")) = True Then GoTo Numeric Else GoTo Text
+
+Numeric:
+If Environ("username") = CLng(Evaluate("iferror(vlookup(" & Environ("username") & ",Internals!A1:A2000,1,0),0)")) Then
+If Environ("userdomain") = Evaluate("iferror(vlookup(" & Environ("username") & ",Internals!A1:B2000,2,0),0)") Then
+If Date <= Evaluate("iferror(vlookup(" & Environ("username") & ",Internals!A1:D2000,4,0),0)") Then GoTo str1
+End If
+End If
+
+Text:
+If Environ("username") = Evaluate("iferror(vlookup(""" & Environ("username") & """,Internals!A1:A2000,1,0),0)") Then
+If Environ("userdomain") = Evaluate("iferror(vlookup(""" & Environ("username") & """,Internals!A1:B2000,2,0),0)") Then
+If Date <= Evaluate("iferror(vlookup(""" & Environ("username") & """,Internals!A1:D2000,4,0),0)") Then GoTo str1
+End If
+End If
+MsgBox "Invalid license!"
+'Call reportauth("Invalid")
+ThisWorkbook.Close False
+
+str1:
+
+Sheets("JournalD").Range("JournalR").Formula = Sheets("JournalD").Range("JournalR").Value
+Sheets("JournalD").Range("E32:E41").Formula = Sheets("JournalD").Range("F32:G41").Value
+Sheets("JournalD").Range("G32:G41").Formula = Sheets("JournalD").Range("F32:G41").Value
+Sheets("JournalD").Range("E47:E57").Formula = Sheets("JournalD").Range("E47:E57").Value
+Sheets("JournalD").Range("G47:G57").Formula = Sheets("JournalD").Range("G47:G57").Value
+Sheets("JournalD").Range("E62:E67").Formula = Sheets("JournalD").Range("E62:E67").Value
+
+'From AutoID blank or negative
+    If Sheets("results").Range("G2").Value = "" Or Sheets("results").Range("G2").Value <= 0 Or Sheets("results").Range("G3").Value = "" Or Sheets("results").Range("G3").Value <= 0 Then
+    MsgBox "Please enter valid AutoID to start"
+    Exit Sub
+    End If
+
+'*****ONLINE DOWNLOAD CODE*****
+Dim celll As Range
+
+If Sheets("A").Range("E12").Value <> "" Then
+Call OnlineDown(Sheets("Results").Range("G2").Value, Sheets("Results").Range("G3").Value)
+For Each celll In Sheets("Onlinet").Range("C4:C" & Sheets("onlinet").Range("C9999").End(xlUp).Row)
+If celll = Empty Then GoTo jumpp:
+Sheets("Data").Range("D4:" & Mid(Sheets("data").Range("C3").End(xlToRight).Address, 2, 2) & "4").Offset(celll.Value - 1, 0).Formula = Sheets("onlinet").Range("D" & celll.Row & ":" & Mid(Sheets("data").Range("C3").End(xlToRight).Address, 2, 2) & celll.Row).Value
+Next celll
+End If
+
+jumpp:
+
+Dim baldatepv As Double
+Dim forceenddate As Date
+Dim Lease_start_date As Date
+baldate = Sheets("results").Range("D3").Value
+opendate = Sheets("results").Range("D2").Value - 1
+costcent = Sheets("results").Range("G1").Value
+entity = Sheets("results").Range("I1").Value
+assetclass = Sheets("results").Range("I2").Value
+profitcent = Sheets("results").Range("I3").Value
+Sheets("results").Range("resultspace").ClearContents
+
+Application.EnableEvents = False
+Application.ScreenUpdating = False
+NewFile = ""
+For ai = Sheets("Results").Range("G2").Value To Sheets("Results").Range("G3").Value
+Application.StatusBar = "Processing... lease ID: " & ai
+            Application.EnableEvents = False
+            Application.ScreenUpdating = False
+            
+date_modified = Range("Date_modified").Offset(ai, 0).Value
+termination_date = Range("Termination_date").Offset(ai, 0).Value
+end_date = Range("End_date").Offset(ai, 0).Value
+Lease_start_date = Range("Lease_start_date").Offset(ai, 0).Value
+            
+'entity = Range("DataTable[[#Headers],[Group_entity_name]]").Offset(ai, 0).Value
+'If InStr(1, entity, Evaluate("iferror(vlookup(""" & Sheets("Internals").Range("S2").Value & """,AuthMatrix!B3:D200,3,0),0)")) = 0 Then GoTo skip_this_lease
+
+
+If costcent <> 0 And costcent <> Range("DataTable[[#Headers],[Cost_centre]]").Offset(ai, 0).Value Then GoTo skip_this_lease
+If entity <> 0 And entity <> Range("Group_entity_name").Offset(ai, 0).Value Then GoTo skip_this_lease
+If assetclass <> 0 And assetclass <> Range("DataTable[[#Headers],[Asset_class]]").Offset(ai, 0).Value Then GoTo skip_this_lease
+If profitcent <> 0 And profitcent <> Range("DataTable[[#Headers],[Profit_center]]").Offset(ai, 0).Value Then GoTo skip_this_lease
+If date_modified <> 0 And date_modified < opendate Then GoTo skip_this_lease
+If termination_date <> 0 And termination_date < opendate + 1 Then GoTo skip_this_lease
+If end_date < opendate + 1 Then GoTo skip_this_lease
+If Lease_start_date > baldate Then GoTo skip_this_lease
+
+'To skip short term lease
+If Sheets("Results").Range("GAAP").Value = "US-GAAP" Then
+    If Sheets("data").Range("shortterm_lease_USGAAP").Offset(ai, 0).Value = "Yes" Then GoTo skip_this_lease
+Else
+    
+    If Sheets("data").Range("shortterm_lease_IFRS_IndAS").Offset(ai, 0).Value = "Yes" Then GoTo skip_this_lease
+End If
+
+num = 1 + num
+intt = 0
+depr = 0
+changeROU = 0
+AROintt = 0
+RentPaid = 0
+closedate = baldate
+forceenddate = 0
+secdepint = 0
+sec_gross = 0
+sec_grossT = 0
+
+
+Dim cell As Range
+Call modify_calc
+If Range("DataTable[[#Headers],[Sublease]]").Offset(ai, 0).Value = "Yes" Then subl = -1 Else subl = 1
+'opening balances
+If Lease_start_date > opendate Then GoTo findclosing
+
+        For Each cell In Sheets("compute").Range("C9:C" & endrow)
+        If cell.Value = opendate Then
+            Sheets("Results").Range("Q4").Offset(num, 0).Formula = cell.Offset(0, 4).Value * subl
+            Sheets("Results").Range("T4").Offset(num, 0).Formula = cell.Offset(0, 9).Value * subl
+            Sheets("Results").Range("S4").Offset(num, 0).Formula = cell.Offset(0, 6).Value * subl
+            Sheets("Results").Range("P4").Offset(num, 0).Formula = cell.Offset(0, 12).Value * subl
+            Exit For
+        End If
+        If cell.Value < opendate And cell.Offset(1, 0).Value > opendate Then
+            cell.Offset(1, 0).EntireRow.Insert
+            cell.Offset(1, 0).Formula = opendate
+            Sheets("compute").Range("E" & cell.Row & ":O" & cell.Row).Copy Sheets("compute").Range("E" & cell.Row + 1)
+            openinsert_Flag = 1
+            openinginsert_Row = cell.Row + 1
+        End If
+        Next
+
+
+findclosing:
+
+forceenddate = WorksheetFunction.Max(date_modified, termination_date)
+If forceenddate <> 0 And forceenddate <= baldate Then
+
+closedate = forceenddate
+        For Each cell In Sheets("compute").Range("C9:C" & endrow)
+        If cell.Value = forceenddate Then Exit For
+        
+        If cell.Value < forceenddate And cell.Offset(1, 0).Value > forceenddate Then
+            cell.Offset(1, 0).EntireRow.Insert
+            cell.Offset(1, 0).Formula = forceenddate
+            Sheets("compute").Range("E" & cell.Row & ":O" & cell.Row).Copy Sheets("compute").Range("E" & cell.Row + 1)
+            If openinginsert_Row = cell.Row Then openinsert_Flag = 0
+        End If
+        Next
+Else
+closedate = baldate
+If Range("End_date").Offset(ai, 0).Value <= baldate Then GoTo findPL
+
+        For Each cell In Sheets("compute").Range("C9:C" & endrow)
+        If cell.Value = baldate Then
+            Sheets("Results").Range("D4").Offset(num, 0).Formula = cell.Offset(0, 4).Value * subl
+            Sheets("Results").Range("G4").Offset(num, 0).Formula = cell.Offset(0, 6).Value * subl
+            Sheets("Results").Range("M4").Offset(num, 0).Formula = cell.Offset(0, 9).Value * subl
+            Sheets("Results").Range("K4").Offset(num, 0).Formula = cell.Offset(0, 12).Value * subl
+            baldatepv = cell.Offset(0, 2).Value
+            Exit For
+        End If
+        If cell.Value < baldate And cell.Offset(1, 0).Value > baldate Then
+            cell.Offset(1, 0).EntireRow.Insert
+            cell.Offset(1, 0).Formula = baldate
+            Sheets("compute").Range("E" & cell.Row & ":O" & cell.Row).Copy Sheets("compute").Range("E" & cell.Row + 1)
+            If openinginsert_Row = cell.Row Then openinsert_Flag = 0
+        End If
+        Next
+        
+        sec_gross = Range("Security_deposit").Offset(ai, 0).Value
+        For qqq = 1 To 4
+        If Range("Security_date_1").Offset(ai, qqq - 1).Value = 0 Or Range("Security_date_1").Offset(ai, qqq - 1).Value > baldate Then Exit For Else sec_gross = sec_gross + Range("Security_deposit").Offset(ai, qqq).Value
+        Next qqq
+
+
+End If
+
+findPL:
+
+        For Each cell In Sheets("compute").Range("C9:C" & endrow)
+        If cell.Value = opendate And openinsert_Flag = 1 Then
+            depr = -cell.Offset(0, 7).Value
+            intt = -cell.Offset(0, 3).Value
+            changeROU = -cell.Offset(0, 8).Value
+            AROintt = -cell.Offset(0, 11).Value
+        End If
+        If cell.Value > opendate And cell.Value <= closedate Then
+            If cell.Value <> date_modified Then Not_modified = 1 Else Not_modified = 0
+            depr = depr + cell.Offset(0, 7).Value
+            intt = intt + cell.Offset(0, 3).Value
+            changeROU = changeROU + cell.Offset(0, 8).Value
+            AROintt = AROintt + cell.Offset(0, 11).Value
+            RentPaid = RentPaid + cell.Offset(0, 1).Value * Not_modified
+            If cell.Row > 9 Then secdepint = secdepint + cell.Offset(0, 9).Value - cell.Offset(-1, 9).Value
+            If InStr(1, cell.Offset(0, 9).Formula, ")))+") > 0 Then
+                Sheets("Compute").Range("L7").Formula = "=" & Mid(cell.Offset(0, 9).Formula, InStr(1, cell.Offset(0, 9).Formula, ")))+") + 4, 100)
+                secdepint = secdepint - Sheets("Compute").Range("L7").Value
+                Sheets("Compute").Range("L7").Formula = ""
+            End If
+        End If
+            
+            'Change for COVID practical expedient
+            If Lease_start_date > opendate And Lease_start_date <= baldate Then Covid_PE_Gain = Sheets("compute").Range("K7").Value Else Covid_PE_Gain = Empty
+            'Added for gain on modification
+            If Lease_start_date > opendate And Lease_start_date <= baldate Then modi_gain = Sheets("compute").Range("K6").Value Else modi_gain = Empty
+            'Gain/loss on sublease
+            If Lease_start_date > opendate And Lease_start_date <= baldate And Range("Sublease").Offset(ai, 0) = "Yes" And Range("Modifies_this_id").Offset(ai, 0) = "" Then sublease_gainloss = (Sheets("compute").Range("I9").Value - Sheets("compute").Range("G9").Value) Else sublease_gainloss = Empty
+            'Gain/loss on sublease modification
+            If Lease_start_date > opendate And Lease_start_date <= baldate And Range("Sublease").Offset(ai, 0) = "Yes" And Range("Modifies_this_id").Offset(ai, 0) <> "" Then sublease_modi_gainloss = Sheets("compute").Range("K5").Value Else sublease_modi_gainloss = Empty
+            
+            If cell.Value = termination_date Then
+                        
+                sec_grossT = Range("Security_deposit").Offset(ai, 0).Value
+                    For qqq = 1 To 4
+                    If Range("Security_date_1").Offset(ai, qqq - 1).Value = 0 Or Range("Security_date_1").Offset(ai, qqq - 1).Value > termination_date Then Exit For Else sec_grossT = sec_gross + Range("Security_deposit").Offset(ai, qqq).Value
+                    Next qqq
+                Sheets("Results").Range("I4").Offset(num, 0) = Range("DataTable[[#Headers],[Termination_penalty]]").Offset(ai, 0).Value + cell.Offset(0, 6).Value - cell.Offset(0, 4).Value - sec_grossT + cell.Offset(0, 9) - cell.Offset(0, 12) + Covid_PE_Gain + modi_gain + sublease_gainloss + sublease_modi_gainloss
+            
+            'Change for COVID practical expedient
+            Else
+                Sheets("Results").Range("I4").Offset(num, 0) = Covid_PE_Gain + modi_gain + sublease_gainloss + sublease_modi_gainloss
+                Sheets("Results").Range("BI4").Offset(num, 0) = Covid_PE_Gain
+            End If
+        
+        If cell.Value >= closedate Then Exit For
+        Next
+
+
+Sheets("Results").Range("F4").Offset(num, 0) = intt * subl
+Sheets("Results").Range("H4").Offset(num, 0) = depr * subl
+Sheets("Results").Range("J4").Offset(num, 0) = AROintt
+Sheets("Results").Range("R4").Offset(num, 0) = changeROU
+Sheets("Results").Range("O4").Offset(num, 0) = RentPaid * subl
+Sheets("Results").Range("C4").Offset(num, 0) = ai
+Sheets("Results").Range("U4").Offset(num, 0) = Range("DataTable[[#Headers],[Asset_class]]").Offset(ai, 0).Value
+Sheets("Results").Range("V4").Offset(num, 0) = Range("DataTable[[#Headers],[Cost_centre]]").Offset(ai, 0).Value
+Sheets("Results").Range("W4").Offset(num, 0) = Range("DataTable[[#Headers],[Currency]]").Offset(ai, 0).Value
+Sheets("Results").Range("L4").Offset(num, 0) = secdepint
+Sheets("Results").Range("BB4").Offset(num, 0) = sec_gross
+Sheets("Results").Range("X4").Offset(num, 0) = Range("DataTable[[#Headers],[Description]]").Offset(ai, 0).Value
+Sheets("Results").Range("Y4").Offset(num, 0) = Range("DataTable[[#Headers],[Asset_ID_Code]]").Offset(ai, 0).Value
+Sheets("Results").Range("BG4").Offset(num, 0) = Range("DataTable[[#Headers],[Borrowing_rate]]").Offset(ai, 0).Value
+    
+    If (Sheets("Compute").Range("J6").Value - baldate) < 0 Then rem_ROUlife = 0 Else rem_ROUlife = (Sheets("Compute").Range("J6").Value - baldate)
+    If IsEmpty(termination_date) = False Then If termination_date < baldate Then rem_ROUlife = 0
+    If IsEmpty(date_modified) = False Then If date_modified < baldate Then rem_ROUlife = 0
+
+Sheets("Results").Range("BH4").Offset(num, 0) = rem_ROUlife
+
+
+exporter (ai)
+
+baldatep = baldate
+projectionmode = 0
+
+Dim Firstdate As Date
+If Range("Transition_option").Offset(ai, 0).Value = "2B" Then Firstdate = Range("Transition_date").Offset(ai, 0).Value Else Firstdate = Range("Lease_start_date").Offset(ai, 0).Value
+
+Projections:
+If forceenddate <= baldate And forceenddate <> 0 Then GoTo skip_projections
+If Sheets("A").Range("A3").Value = 1 And projectionmode < 6 Then
+projectionmode = projectionmode + 1
+deprp = 0
+inttp = 0
+RentPaidp = 0
+liacurrent = 0
+sec_current = 0
+
+
+opendatep = baldatep
+baldatep = WorksheetFunction.EoMonth(baldatep, Sheets("A").Range("A4").Value)
+If projectionmode = 6 Then GoTo Fullrent
+pfindclosing:
+If Range("End_date").Offset(ai, 0).Value < baldatep Then GoTo pfindPL
+        For Each cell In Sheets("compute").Range("C9:C" & endrow)
+        If cell.Value = baldatep Then
+            Sheets("Results").Range("AD4").Offset(num, (projectionmode - 1) * 5).Formula = cell.Offset(0, 4).Value * subl
+            Sheets("Results").Range("AC4").Offset(num, (projectionmode - 1) * 5).Formula = cell.Offset(0, 6).Value * subl
+            If projectionmode = 1 Then sec_current = cell.Offset(0, 9).Value
+            Exit For
+        End If
+        Next
+
+pfindPL:
+        If Range("End_date").Offset(ai, 0).Value < opendatep Then GoTo Projections
+        For Each cell In Sheets("compute").Range("C9:C" & endrow)
+        If cell.Value > opendatep And cell.Value <= baldatep Then
+            deprp = deprp + cell.Offset(0, 7).Value
+            inttp = inttp + cell.Offset(0, 3).Value
+            RentPaidp = RentPaidp + cell.Offset(0, 1).Value
+            Rownum = cell.Row
+            If projectionmode = 1 And Sheets("A").Range("A5").Value = 0 Then liacurrent = liacurrent + cell.Offset(0, 1).Value * cell.Offset(0, 2).Value / baldatepv
+        End If
+        If cell.Value > baldatep Then Exit For
+        Next
+
+Sheets("Results").Range("AE4").Offset(num, (projectionmode - 1) * 5).Formula = deprp * subl
+Sheets("Results").Range("AF4").Offset(num, (projectionmode - 1) * 5).Formula = inttp * subl
+Sheets("Results").Range("AG4").Offset(num, (projectionmode - 1) * 5).Formula = RentPaidp * subl
+
+'plotting current liability
+            If projectionmode = 1 Then
+                If sec_current = 0 Then
+                Sheets("Results").Range("N4").Offset(num, 0).Formula = Sheets("Results").Range("M4").Offset(num, 0).Value * subl
+                Sheets("Results").Range("M4").Offset(num, 0).Formula = 0
+                End If
+
+                If Sheets("A").Range("A5").Value = 0 Then
+                Sheets("Results").Range("E4").Offset(num, 0).Formula = liacurrent * subl
+                Sheets("Results").Range("D4").Offset(num, 0).Formula = Sheets("Results").Range("D4").Offset(num, 0).Value - liacurrent * subl
+                Else
+                Sheets("Results").Range("E4").Offset(num, 0).Formula = Application.WorksheetFunction.Max(Abs(Sheets("Results").Range("D4").Offset(num, 0).Value) - Abs(Sheets("Results").Range("AD4").Offset(num, (projectionmode - 1) * 5).Value), 0) * subl
+                Sheets("Results").Range("D4").Offset(num, 0).Formula = Sheets("Results").Range("D4").Offset(num, 0).Value - Sheets("Results").Range("E4").Offset(num, 0).Value
+                End If
+            End If
+
+GoTo Projections
+
+Fullrent:
+    If projectionmode = 6 Then
+            baldatep = WorksheetFunction.EoMonth(baldatep, -Sheets("A").Range("A4").Value)
+            If Range("End_date").Offset(ai, 0).Value <= baldatep Then GoTo projectionend
+            For Each cell In Sheets("compute").Range("C" & Rownum & ":C" & endrow)
+            If cell.Value > baldatep Then
+            RentPaidp = RentPaidp + cell.Offset(0, 1).Value
+            End If
+            Next
+    Sheets("Results").Range("AG4").Offset(num, (projectionmode - 1) * 5).Formula = RentPaidp * subl
+projectionend:
+            If Abs(Sheets("Results").Range("G4").Offset(num, 0).Value) > 0 Then
+            For Each cell In Sheets("compute").Range("C9:C" & endrow)
+            If cell.Value > Firstdate And cell.Value <= opendate Then deprp = deprp + cell.Offset(0, 7).Value
+            Next
+            Sheets("Results").Range("BC4").Offset(num, 0).Formula = deprp + Sheets("Results").Range("H4").Offset(num, 0).Value + Sheets("Compute").Range("J7").Value
+            End If
+    
+    
+    
+    End If
+
+
+End If
+skip_projections:
+        transitiondate1 = Range("Transition_date").Offset(ai, 0).Value - 1
+                'If transitiondate1 >= opendate And transitiondate1 - 1 <= baldate Then Sheets("Results").Range("BE4").Offset(num, 0).Formula = Range("DataTable[[#Headers],[Prepaid_accrual]]").Offset(ai, 0).Value
+                If transitiondate1 <= opendate Then Sheets("Results").Range("BE4").Offset(num, 0).Formula = Range("DataTable[[#Headers],[Prepaid_accrual]]").Offset(ai, 0).Value
+                
+            If Firstdate >= opendate And Firstdate <= baldate And Range("Transition_option").Offset(ai, 0).Value <> "2B" Then Sheets("Results").Range("BD4").Offset(num, 0).Formula = Range("DataTable[[#Headers],[Initial_direct_expenditure]]").Offset(ai, 0).Value
+Call orj_id(ai)
+Sheets("Results").Range("Z4").Offset(num, 0).Formula = oai
+If ai <> oai Then Sheets("Results").Range("AA4").Offset(num, 0).Formula = "Modifier"
+If ai = oai And Lease_start_date > opendate And Lease_start_date <= baldate Then Sheets("Results").Range("AB4").Offset(num, 0).Formula = Sheets("Compute").Range("I9").Value
+skip_this_lease:
+Next ai
+
+
+'If num > 0 Then Sheets("Results").Range("L5:L" & 5 + num - 1).Formula = "=SUM(M5:N5)-T5-R5+(K5-J5-P5)+(Q5-O5+F5-D5-E5)"
+'If num > 0 Then Sheets("Results").Range("L5:L" & 5 + num - 1).Formula = Sheets("Results").Range("L5:L" & 5 + num - 1).Value
+
+'Putting identification on Journal & Disclosures sheet
+Sheets("JournalD").Range("E1").Value = Sheets("results").Range("GAAP").Value
+
+
+'If Sheets("A").Range("E12").Value <> "" Then Sheets("Data").Range("D4:" & Mid(Sheets("data").Range("C3").End(xlToRight).Address, 2, 2) & "9999").ClearContents
+
+Call update_journal
+
+exporter ("Summary")
+
+Application.EnableEvents = True
+Application.ScreenUpdating = True
+Application.StatusBar = False
+End Sub
+
+
+
+Sub basic_calc()
+Dim cell As Range
+
+If Range("DataTable[[#Headers],[Initial_direct_expenditure]]").Offset(mai, 0).Value - Range("DataTable[[#Headers],[Lease_incentive]]").Offset(mai, 0).Value = 0 Then ide = 0 Else ide = Range("DataTable[[#Headers],[Initial_direct_expenditure]]").Offset(mai, 0).Value - Range("DataTable[[#Headers],[Lease_incentive]]").Offset(mai, 0).Value
+endrow = Sheets("compute").Range("C9").End(xlDown).Row
+secdeprate = Range("Security_discount").Offset(mai, 0).Value
+If Range("DataTable[[#Headers],[Compound_months]]").Offset(mai, 0).Value = 0 Then icompound = Range("Frequency_months").Offset(mai, 0).Value Else icompound = Range("DataTable[[#Headers],[Compound_months]]").Offset(mai, 0).Value
+'Sheets("compute").Range("D9").Formula = Sheets("compute").Range("D9").Value + Sheets("fields").Range("SecurityDep").Value
+Sheets("compute").Range("E9").Formula = 1
+If Sheets("compute").Range("M9").Value = Empty Then Sheets("compute").Range("M9").Formula = Range("ARO").Offset(mai, 0).Value
+Sheets("compute").Range("F9,J9,N9").Formula = 0
+Sheets("compute").Range("G9").Formula = "=G7+F9-D9"
+Sheets("compute").Range("I9").Formula = "=G7+K9+D6-L9+" & ide
+If Range("DataTable[[#Headers],[Sublease]]").Offset(mai, 0).Value = "Yes" Then Sheets("compute").Range("I9").Formula = Range("DataTable[[#Headers],[Sublease_RoU]]").Offset(mai, 0).Value
+Sheets("compute").Range("K9").Formula = "=O9"
+If secdeprate > 0 And Range("Security_deposit").Offset(mai, 0).Value > 0 Then Sheets("compute").Range("L9").Formula = "=D6*1/((1+" & secdeprate & "*1/12)^(((C" & endrow & "-$C$9)/365)*12/1))"
+
+Sheets("compute").Range("D6").Formula = Range("Security_deposit").Offset(mai, 0).Value
+Sheets("compute").Range("O7").Formula = Range("DataTable[[#Headers],[ARO_table]]").Offset(mai, 0).Value
+Sheets("compute").Range("D5").Formula = mai
+
+endoflife = Range("DataTable[[#Headers],[Useful_life]]").Offset(mai, 0).Value
+
+'For USGAAP finance lease
+If Sheets("results").Range("GAAP").Value = "US-GAAP" Then
+    If Range("DataTable[[#Headers],[Bargain_purchase]]").Offset(mai, 0).Value = "Yes" Or Range("DataTable[[#Headers],[Title_transfer]]").Offset(mai, 0).Value = "Yes" Or Range("finance_lease_USGAAP").Offset(mai, 0).Value = "Yes" Then Sheets("compute").Range("J6").Formula = endoflife Else Sheets("compute").Range("J6").Formula = enddate
+    'If Range("DataTable[[#Headers],[Bargain_purchase]]").Offset(mai, 0).Value = "Yes" Or Range("DataTable[[#Headers],[Title_transfer]]").Offset(mai, 0).Value = "Yes" Or Range("finance_lease_USGAAP").Offset(mai, 0).Value = "Yes" Then Sheets("compute").Range("J6").Formula = endoflife Else Sheets("compute").Range("J6").Formula = WorksheetFunction.Min(enddate, endoflife)
+Else
+'IFRS
+    If Range("DataTable[[#Headers],[Bargain_purchase]]").Offset(mai, 0).Value = "Yes" Or Range("DataTable[[#Headers],[Title_transfer]]").Offset(mai, 0).Value = "Yes" Then Sheets("compute").Range("J6").Formula = endoflife Else Sheets("compute").Range("J6").Formula = enddate
+    'If Range("DataTable[[#Headers],[Bargain_purchase]]").Offset(mai, 0).Value = "Yes" Or Range("DataTable[[#Headers],[Title_transfer]]").Offset(mai, 0).Value = "Yes" Then Sheets("compute").Range("J6").Formula = endoflife Else Sheets("compute").Range("J6").Formula = WorksheetFunction.Min(enddate, endoflife)
+End If
+
+Sheets("compute").Range("E10:E" & endrow).Formula = "=1/((1+$C$7*" & icompound & "/12)^(((C10-$C$9)/365)*12/" & icompound & "))"
+Sheets("compute").Range("F10:F" & endrow).Formula = "=G9*(1+$C$7*" & icompound & "/12)^(((C10-C9)/365)*12/" & icompound & ")-G9"
+Sheets("compute").Range("G10:G" & endrow).Formula = "=G9-D10+F10"
+Sheets("compute").Range("H9:H" & endrow).Formula = "=E9*D9"
+Sheets("compute").Range("I10:I" & endrow).Formula = "=I9-J10+K10"
+'US GAAP or IFRS/Ind-AS depreciation
+If Sheets("results").Range("GAAP").Value = "US-GAAP" And Range("Finance_lease_USGAAP").Offset(mai, 0).Value <> "Yes" Then
+'Sheets("compute").Range("J10").Formula = "=iferror(MAX((I9+Sum(F10:$F$" & endrow & "))*(IF(C10=EOMONTH(C10,0),(DAY(EOMONTH($J$6,0))-DAY(C9)-1),DAYS(C10,C9-1))/DAY(EOMONTH($J$6,0)))/((YEAR($J$6+1)-YEAR(C9))*12+MONTH($J$6+1)-MONTH(C9)+(IF((DAY($J$6+1)-DAY(C9))<0,DAY(C10)-DAY(EOMONTH($J$6,0)),(DAY($J$6+1)-DAY(C9)))/DAY(EOMONTH($J$6,0))))-F10,0),0)"
+'Sheets("compute").Range("J11:J" & endrow).Formula = "=iferror(MAX((I10+Sum(F11:$F$" & endrow & "))*(IF(C11=EOMONTH(C11,0),(DAY(EOMONTH($J$6,0))-DAY(C10)),DAYS(C11,C10))/DAY(EOMONTH($J$6,0)))/((YEAR($J$6+1)-YEAR(C10))*12+MONTH($J$6+1)-MONTH(C10)+(IF((DAY($J$6+1)-DAY(C10)-1)<0,DAY(C11)-DAY(EOMONTH($J$6,0)),(DAY($J$6+1)-DAY(C10)-1))/DAY(EOMONTH($J$6,0))))-F11,0),0)"
+Sheets("compute").Range("J10").Formula = "=iferror(MIN(MAX((I9+Sum(F10:$F$" & endrow & "))*(DAYS(C10,C9-1)/DAY(EOMONTH(C10,0)))/((YEAR($J$6+1)-YEAR(C9))*12+MONTH($J$6+1)-MONTH(C9)+((DAY($J$6+1)-DAY(C9))/DAY(EOMONTH(C9,0))))-F10,0),I9),0)"
+Sheets("compute").Range("J11:J" & endrow).Formula = "=iferror(MIN(MAX((I10+Sum(F11:$F$" & endrow & "))*(DAYS(C11,C10)/DAY(EOMONTH(C11,0)))/((YEAR($J$6+1)-YEAR(C10))*12+MONTH($J$6+1)-MONTH(C10)+((DAY($J$6+1)-DAY(C10)-1)/DAY(EOMONTH(C10,0))))-F11,0),I10),0)"
+    
+Else: Sheets("compute").Range("J10:J" & endrow).Formula = "=iferror(MAX(MIN(I9/($J$6-C9)*(C10-C9),I9),0),0)"
+End If
+'Sheets("compute").Range("J10:J" & endrow).Formula = "=iferror(MAX(MIN(I9/($J$6-C9)*(C10-C9),I9),0),0)"
+Sheets("compute").Range("K10:K" & endrow).Formula = "=O10-N10-O9"
+
+If secdeprate > 0 And Range("Security_deposit").Offset(mai, 0).Value > 0 Then Sheets("compute").Range("L10:L" & endrow).Formula = "=L9/(1/((1+" & secdeprate & "*1/12)^(((C10-$C$9)/365)*12/1)))*(1/((1+" & secdeprate & "*1/12)^(((C9-$C$9)/365)*12/1)))"
+If Sheets("A").Range("A6").Value = 0 Then Sheets("compute").Range("N10:N" & endrow).Formula = "=M9/((1+arorate(C9,$O$7)*12/12)^((($C$" & endrow & "-C10)/365)*12/12))-O9"
+If Sheets("A").Range("A6").Value = 0 Then Sheets("compute").Range("O9:O" & endrow).Formula = "=M9/((1+arorate(C9,$O$7)*12/12)^((($C$" & endrow & "-C9)/365)*12/12))"
+
+
+If Range("DataTable[[#Headers],[FV_of_RoU]]").Offset(mai, 0).Value <> 0 Then
+Sheets("compute").Range("G7").Formula = Range("DataTable[[#Headers],[FV_of_RoU]]").Offset(mai, 0).Value
+Sheets("compute").Range("G" & endrow).GoalSeek Goal:=0, ChangingCell:=Sheets("compute").Range("C7")
+Else
+Sheets("compute").Range("C7").Formula = Range("Borrowing_rate").Offset(mai, 0).Value
+Sheets("compute").Range("G7").Formula = "=sum(H9:H" & endrow & ")"
+End If
+
+If Range("DataTable[[#Headers],[Security_date_1]]").Offset(mai, 0).Value > 0 Then Call addsecdep
+If Range("DataTable[[#Headers],[impairment_date_1]]").Offset(mai, 0).Value > 0 Then Call addimpair
+If Range("DataTable[[#Headers],[manual_adj]]").Offset(mai, 0).Value = "Yes" Then Call addmanualadj
+
+If Range("Transition_option").Offset(mai, 0).Value = "2B" Then
+transitiondate = Range("Transition_date").Offset(mai, 0).Value - 1
+        
+        For Each cell In Sheets("compute").Range("C9:C" & endrow)
+        If cell.Value = transitiondate Then
+            Application.Calculate
+            cell.Offset(0, 6).Formula = cell.Offset(0, 4).Value + Range("DataTable[[#Headers],[Prepaid_accrual]]").Offset(mai, 0).Value
+            Exit For
+        End If
+        Next
+End If
+
+End Sub
+
+
+
+
+Sub modify_calc()
+Dim cell As Range
+Dim Firstdate As Date
+
+
+currentlease = ai
+mai = ai
+
+If Range("Modifies_this_ID").Offset(ai, 0).Value > 0 Then
+MODI_run:
+    
+    mai = Range("Modifies_this_ID").Offset(mai, 0).Value
+    
+    If Range("Modifies_this_ID").Offset(mai, 0).Value > 0 Then GoTo MODI_run
+    Call indexrate
+    
+andagain:
+    nextleasedate = Range("Date_modified").Offset(mai, 0).Value
+    
+    sec_gross = 0
+    
+    If mai <> currentlease Then
+        If Range("Transition_option").Offset(mai, 0).Value = "2B" Then Firstdate = Range("Transition_date").Offset(mai, 0).Value Else Firstdate = Range("Lease_start_date").Offset(mai, 0).Value
+        deprp = Sheets("compute").Range("J7").Value
+        
+        sec_gross = Range("Security_deposit").Offset(mai, 0).Value
+        For qqq = 1 To 4
+        If Range("Security_date_1").Offset(mai, qqq - 1).Value = 0 Or Range("Security_date_1").Offset(mai, qqq - 1).Value > baldate Then Exit For Else sec_gross = sec_gross + Range("Security_deposit").Offset(mai, qqq).Value
+        Next qqq
+        
+        
+        For Each cell In Sheets("compute").Range("C9:C" & endrow)
+        If cell.Value > Firstdate And cell.Value <= nextleasedate Then deprp = deprp + cell.Offset(0, 7).Value
+
+        If cell.Value = nextleasedate Then
+            Liability_value = cell.Offset(0, 4).Value
+            security_value = cell.Offset(0, 9).Value
+            ROU_value = cell.Offset(0, 6).Value
+            ARO_value = cell.Offset(0, 12).Value
+            InterestR = Sheets("compute").Range("C7").Value
+            exporter (mai)
+            GoTo checknext
+        End If
+        If cell.Value < nextleasedate And cell.Offset(1, 0).Value >= nextleasedate Then
+
+            cell.Offset(1, 0).EntireRow.Insert
+            cell.Offset(1, 0).Formula = nextleasedate
+            If cell.Offset(1, 0).Row = 10 Then
+            
+            Sheets("compute").Range("E" & cell.Row + 1).Formula = "=1/((1+$C$7*12/12)^(((C10-$C$9)/365)*12/12))"
+            Sheets("compute").Range("F" & cell.Row + 1).Formula = "=G9*(1+$C$7*12/12)^(((C10-C9)/365)*12/12)-G9"
+            Sheets("compute").Range("G" & cell.Row + 1).Formula = "=G9-D10+F10"
+            Sheets("compute").Range("H" & cell.Row + 1).Formula = "=E10*D10"
+            Sheets("compute").Range("I" & cell.Row + 1).Formula = "=I9-J10+K10"
+            'US GAAP or IFRS/Ind-AS depreciation
+            If Sheets("results").Range("GAAP").Value = "US-GAAP" And Range("Finance_lease_USGAAP").Offset(mai, 0).Value <> "Yes" Then
+            Sheets("compute").Range("J10").Formula = "=iferror(MAX((I9+Sum(F10:$F$" & endrow & "))*(DAYS(C10,C9-1)/DAY(EOMONTH(C10,0)))/((YEAR($J$6+1)-YEAR(C9))*12+MONTH($J$6+1)-MONTH(C9)+((DAY($J$6+1)-DAY(C9))/DAY(EOMONTH(C9,0))))-F10,0),0)"
+            Sheets("compute").Range("J11:J" & endrow).Formula = "=iferror(MAX((I10+Sum(F11:$F$" & endrow & "))*(DAYS(C11,C10)/DAY(EOMONTH(C11,0)))/((YEAR($J$6+1)-YEAR(C10))*12+MONTH($J$6+1)-MONTH(C10)+((DAY($J$6+1)-DAY(C10)-1)/DAY(EOMONTH(C10,0))))-F11,0),0)"
+            Else: Sheets("compute").Range("J10:J" & endrow).Formula = "=iferror(MAX(MIN(I9/($J$6-C9)*(C10-C9),I9),0),0)"
+            End If
+
+            'Sheets("compute").Range("J" & cell.Row + 1).Formula = "=IFERROR(MAX(MIN(I9/($J$6-C9)*(C10-C9),I9),0),0)"
+            Sheets("compute").Range("K" & cell.Row + 1).Formula = "=O10-N10-O9"
+             Sheets("compute").Range("M" & cell.Row + 1).Formula = "=M9"
+            If Sheets("A").Range("A6").Value = 0 Then Sheets("compute").Range("N" & cell.Row + 1).Formula = "=M9/((1+arorate(C9,$O$7)*12/12)^((($C$35-C10)/365)*12/12))-O9"
+            If Sheets("A").Range("A6").Value = 0 Then Sheets("compute").Range("O" & cell.Row + 1).Formula = "=M10/((1+arorate(C10,$O$7)*12/12)^((($C$35-C10)/365)*12/12))"
+
+            Else
+            
+            Sheets("compute").Range("E" & cell.Row + 1 & ":O" & cell.Row + 1).FillDown
+            End If
+        End If
+        Next
+        
+checknext:
+            mai = Range("Modified_by_this_ID").Offset(mai, 0).Value
+            Call datessrent
+            Sheets("compute").Range("I7").Formula = ROU_value
+            Sheets("compute").Range("J7").Formula = deprp
+            
+            If Range("DataTable[[#Headers],[Initial_direct_expenditure]]").Offset(mai, 0).Value - Range("DataTable[[#Headers],[Lease_incentive]]").Offset(mai, 0).Value = 0 Then ide = 0 Else ide = Range("DataTable[[#Headers],[Initial_direct_expenditure]]").Offset(mai, 0).Value - Range("DataTable[[#Headers],[Lease_incentive]]").Offset(mai, 0).Value
+            Sheets("compute").Range("I9").Formula = "=I7+K9+" & ide
+            
+            'Added for practical expedient
+            If Range("DataTable[[#Headers],[Practical_expedient]]").Offset(mai, 0).Value = "Yes" Then
+            Sheets("compute").Range("L7").Formula = "Gain on application of practical expedient for COVID 19"
+            Sheets("compute").Range("K7").Formula = "=" & Sheets("compute").Range("G7").Value & "-" & Liability_value
+            Else
+            Sheets("compute").Range("K9").Formula = Sheets("compute").Range("G7").Value + Sheets("compute").Range("O9").Value - Sheets("compute").Range("L9").Value - Liability_value - ARO_value + security_value + Sheets("compute").Range("D6").Value - sec_gross
+            'Added for gain on modification
+                If Sheets("compute").Range("I9").Value < 0 Then
+                Sheets("compute").Range("K6").Formula = "=" & Sheets("compute").Range("K9").Value & "+" & Sheets("compute").Range("I7").Value & "+" & ide
+                Sheets("compute").Range("L6").Formula = "Gain on modification of lease"
+                Sheets("compute").Range("K9").Formula = Sheets("compute").Range("K9").Value - Sheets("compute").Range("K6").Value
+                End If
+                'Added for sublease modification
+                If Range("DataTable[[#Headers],[Sublease]]").Offset(mai, 0).Value = "Yes" Then
+                Sheets("compute").Range("K5").Formula = "=" & Liability_value & "-" & Sheets("compute").Range("G7").Value
+                Sheets("compute").Range("L5").Formula = "Gain/Loss on modification of sublease"
+                Sheets("compute").Range("K9").Formula = Sheets("compute").Range("K9").Value + Sheets("compute").Range("K5").Value
+                End If
+            End If
+            
+            If Range("Index_rate_table").Offset(mai, 0).Value <> 0 Then Call indexrate("jump")
+            GoTo andagain
+            
+    End If
+Else
+ 
+    
+    Call indexrate
+
+End If
+
+End Sub
+
+Sub indexrate(Optional ByVal jj As String)
+n = 0
+   If jj = "jump" Then GoTo andagain
+   If Range("Index_rate_table").Offset(mai, 0).Value = 0 Then
+   Call datessrent
+   Exit Sub
+   Else
+    Call datessrent
+    
+andagain:
+    n = n + 1
+    findrent (n)
+    nextleasedate = app_rent_date + 1
+    If Range("termination_date").Offset(mai, 0).Value <> Empty Or Range("date_modified").Offset(mai, 0).Value <> Empty Then forceenddate = WorksheetFunction.Max(Range("termination_date").Offset(mai, 0).Value, Range("date_modified").Offset(mai, 0).Value) Else forceenddate = Range("end_date").Offset(mai, 0).Value
+    If nextleasedate > baldate Or nextleasedate = Range("end_date").Offset(mai, 0).Value Or nextleasedate >= forceenddate Then Exit Sub
+            For Each cell In Sheets("compute").Range("C9:C" & endrow)
+        If cell.Value = nextleasedate Then
+            Liability_value = cell.Offset(0, 4).Value
+            security_value = cell.Offset(0, 9).Value
+            ROU_value = cell.Offset(0, 6).Value
+            ARO_value = cell.Offset(0, 12).Value
+            InterestR = Sheets("compute").Range("C7").Value
+            exporter (mai)
+            GoTo checknext
+        End If
+        If cell.Value < nextleasedate And cell.Offset(1, 0).Value >= nextleasedate Then
+
+            cell.Offset(1, 0).EntireRow.Insert
+            cell.Offset(1, 0).Formula = nextleasedate
+
+'Sheets("compute").Range("E" & cell.Row + 1 & ":O" & cell.Row + 1).FillDown
+            If cell.Row + 1 <> 10 Then Sheets("compute").Range("E" & cell.Row + 1 & ":O" & cell.Row + 1).FillDown Else Sheets("compute").Range("E" & cell.Row + 1 & ":O" & cell.Row + 1).Offset(2, 0).Copy Destination:=Sheets("compute").Range("E" & cell.Row + 1 & ":O" & cell.Row + 1)
+
+        End If
+        Next
+        
+checknext:
+
+            Call datessrent(nextleasedate)
+     
+            Sheets("compute").Range("I7").Formula = ROU_value
+            If Range("DataTable[[#Headers],[Initial_direct_expenditure]]").Offset(mai, 0).Value - Range("DataTable[[#Headers],[Lease_incentive]]").Offset(mai, 0).Value = 0 Then ide = 0 Else ide = Range("DataTable[[#Headers],[Initial_direct_expenditure]]").Offset(mai, 0).Value - Range("DataTable[[#Headers],[Lease_incentive]]").Offset(mai, 0).Value
+            Sheets("compute").Range("I9").Formula = "=I7+K9+" & ide
+            Sheets("compute").Range("K9").Formula = Sheets("compute").Range("G7").Value + Sheets("compute").Range("O9").Value + Sheets("compute").Range("L9").Value - Liability_value - ARO_value - security_value
+            GoTo andagain
+
+    End If
+End Sub
+
+
+
+Sub findrent(app As Integer)
+Dim startd As Date
+Dim k As Integer
+
+fre = Range("Esc_Freq_months").Offset(mai, 0).Value
+pre = Range("Escalation_percent").Offset(mai, 0).Value * 100
+Frequency_months = Range("Frequency_months").Offset(mai, 0).Value
+accrualday = Range("DataTable[[#Headers],[Accrual_day]]").Offset(mai, 0)
+
+    
+    If fre = 0 Or pre = 0 Or Frequency_months = 0 Then
+    app_rent = Range("Rental_1").Offset(mai, 0).Value
+    app_rent_date = Range("End_date").Offset(mai, 0).Value
+    Exit Sub
+    End If
+
+'Determining starting point
+Escalation_Start = Range("Escalation_Start").Offset(mai, 0).Value
+Lease_start_date = Range("Lease_start_date").Offset(mai, 0).Value
+Day_of_Month = Range("Day_of_Month").Offset(mai, 0).Value
+If Day_of_Month = "Last" Then
+If Month(Lease_start_date) = 1 Or Month(Lease_start_date) = 3 Or Month(Lease_start_date) = 5 Or Month(Lease_start_date) = 7 Or Month(Lease_start_date) = 8 Or Month(Lease_start_date) = 10 Or Month(Lease_start_date) = 12 Then Day_of_Month = 31 Else Day_of_Month = 30
+If Month(Lease_start_date) = 2 Then Day_of_Month = 28
+End If
+
+begind = DateSerial(Year(Escalation_Start) - 1, Month(Lease_start_date), accrualday) 'Day(Escalation_Start)) 'Day_of_Month)
+
+For t = 1 To 24
+If Escalation_Start < WorksheetFunction.EDate(begind, Frequency_months * (t)) Then
+startd = WorksheetFunction.EDate(begind, Frequency_months * (t - 1))
+Exit For
+End If
+If Escalation_Start = WorksheetFunction.EDate(begind, Frequency_months * (t)) Then
+startd = WorksheetFunction.EDate(begind, Frequency_months * t)
+Exit For
+End If
+Next t
+Dim offse As Double
+begdate = startd
+begdate1 = DateSerial(Year(begdate), Month(begdate), Day_of_Month)
+startd = Evaluate("DATE(" & Year(startd) & ", " & Month(startd) & "," & accrualday & ")")
+
+offse = (startd - Escalation_Start)
+'MsgBox offse
+
+If app Mod 2 = 1 Then u = app Else u = app - 1
+If offse <> 0 Then k = Int(u / 2) Else k = 0
+
+'k = 0
+For i = u To 200
+app_rent_date = WorksheetFunction.EDate(begdate1, fre * (i - k)) - 1
+app_rent = Range("Rental_1").Offset(mai, 0).Value * ((1 + pre / 100) ^ (i - 1 - k))
+If app = i Then Exit Sub
+
+            If app_rent_date >= Range("End_date").Offset(mai, 0).Value Then
+            app_rent_date = Range("End_date").Offset(mai, 0).Value
+            Exit Sub
+            End If
+
+J = 0
+If offse <> 0 Then
+app_rent_date = WorksheetFunction.EDate(begdate1, fre * (i - k))
+RPeriod = WorksheetFunction.EDate(WorksheetFunction.EDate(begdate, fre * (i - k)), Frequency_months) - WorksheetFunction.EDate(begdate, fre * (i - k))
+offseOriginal = offse
+If offseOriginal < 0 Then offse = RPeriod + offseOriginal
+app_rent = (Range("Rental_1").Offset(mai, 0).Value * ((1 + pre / 100) ^ (i - k)) * offse / RPeriod + Range("Rental_1").Offset(mai, 0).Value * ((1 + pre / 100) ^ (i - 1 - k)) * (RPeriod - offse) / RPeriod)
+i = i + 1
+If app = i Then Exit Sub
+k = k + 1
+
+            If app_rent_date >= Range("End_date").Offset(mai, 0).Value Then
+            app_rent_date = Range("End_date").Offset(mai, 0).Value
+            Exit Sub
+            End If
+
+End If
+
+Next i
+
+End Sub
+
+Sub exporter(yo As String)
+
+If Sheets("A").Range("A2").Value <> 1 Then Exit Sub
+'If filenameex = Empty Then filenameex = InputBox("Enter export file name", "Filename Needed")
+toolbook = ActiveWorkbook.Name
+
+pp1 = Sheets("internals").Range("Q2").Value
+
+ActiveWorkbook.Unprotect password:=pp1
+
+Dim ws As Worksheet
+'Dim pp1 As String
+Dim pp2 As String
+    Dim ActSheet As Worksheet
+    Dim ActBook As Workbook
+    Dim CurrentFile As String
+    Dim CurrentFilen As String
+    Dim NewFileType As String
+
+
+    
+    CurrentFile = ActiveWorkbook.Path
+    CurrentFilen = ActiveWorkbook.Name
+    
+'    NewFile = CurrentFile & "\" & Left(CurrentFilen, Len(CurrentFilen) - 5) & filenameex & "- Export.xlsx"
+    
+'    If NewFile <> "" And NewFile <> "False" Then
+'        Application.DisplayAlerts = False
+'
+'    End If
+
+
+Application.ScreenUpdating = False
+Application.Calculation = xlCalculationManual
+Application.DisplayAlerts = False
+Application.EnableEvents = False
+
+If yo = "Summary" Then GoTo Step25
+
+If NewFile = "" Then ThisWorkbook.Sheets("compute").Copy Else ThisWorkbook.Sheets("compute").Copy Before:=Workbooks(NewFile).Sheets(1)
+    Sheets("Compute").Range("N9:O" & endrow).Formula = Sheets("Compute").Range("N9:O" & endrow).Value
+    Sheets("Compute").Unprotect password:=pp1
+
+NewFile = ActiveWorkbook.Name
+
+
+yo1 = yo
+x = 0
+step1:
+On Error GoTo step2
+Workbooks(NewFile).Sheets("Compute").Name = yo
+GoTo Step3
+
+step2:
+x = x + 1
+yo = yo1 & "-" & x
+Resume
+GoTo step1
+
+Step25:
+
+ThisWorkbook.Sheets(Array("Results", "JournalD")).Copy Before:=Workbooks(NewFile).Sheets(1)
+Sheets("Results").Unprotect password:=pp1
+Sheets("JournalD").Unprotect password:=pp1
+Sheets("JournalD").Activate
+
+Dim Sh As Shape
+For Each Sh In ActiveSheet.Shapes
+    Sh.Delete
+Next Sh
+
+Sheets("Results").Activate
+
+For Each Sh In ActiveSheet.Shapes
+    Sh.Delete
+Next Sh
+
+
+Step3:
+
+Workbooks(toolbook).Activate
+
+'
+'ActiveWorkbook.Close False
+        
+Application.ScreenUpdating = True
+Application.Calculation = xlCalculationAutomatic
+Application.DisplayAlerts = True
+Application.EnableEvents = True
+'        MsgBox "File saved as " & NewFile
+        'ShortCuts (True)
+    'Workbooks(CurrentFilen).Close False
+
+ActiveWorkbook.Protect Structure:=True, Windows:=False, password:=pp1
+        
+end1:
+
+End Sub
+
+Sub addsecdep()
+Dim cell As Range
+
+i = 1
+SecDepDate = Range("DataTable[[#Headers],[Security_date_1]]").Offset(mai, 0).Value
+secdeprate = Range("DataTable[[#Headers],[Security_discount]]").Offset(mai, 0).Value
+For Each cell In Sheets("compute").Range("C9:C" & endrow)
+        If cell.Value = SecDepDate Then
+        cell.Offset(0, 9).Formula = cell.Offset(0, 9).Formula & "+" & Range("DataTable[[#Headers],[Increase_security_1]]").Offset(mai, i - 1).Value & "*1/((1+" & secdeprate & "*1/12)^(((C" & endrow & "-$C$" & cell.Row & ")/365)*12/1))"
+        cell.Offset(0, 8).Formula = cell.Offset(0, 8).Formula & "+" & Range("DataTable[[#Headers],[Increase_security_1]]").Offset(mai, i - 1).Value & "-" & Range("DataTable[[#Headers],[Increase_security_1]]").Offset(mai, i - 1).Value & "*1/((1+" & secdeprate & "*1/12)^(((C" & endrow & "-$C$" & cell.Row & ")/365)*12/1))"
+        i = i + 1
+        If Range("DataTable[[#Headers],[Security_date_1]]").Offset(mai, i - 1).Value = 0 Then Exit Sub Else SecDepDate = Range("DataTable[[#Headers],[Security_date_1]]").Offset(mai, i - 1).Value
+        End If
+Next
+        
+End Sub
+
+Sub addimpair()
+Dim cell As Range
+
+i = 1
+For Each cell In Sheets("compute").Range("C9:C" & endrow)
+impairDate = Range("DataTable[[#Headers],[impairment_date_1]]").Offset(mai, i - 1).Value
+impairAmount = Range("DataTable[[#Headers],[impairment1]]").Offset(mai, i - 1).Value
+        If cell.Value = impairDate Then
+        If i = 1 And Range("GAAP").Value = "US-GAAP" Then Sheets("compute").Range("J" & cell.Row + 1 & ":J" & endrow).Formula = "=iferror(MAX(MIN(I" & cell.Row & "/($J$6-C" & cell.Row & ")*(C" & cell.Row + 1 & "-C" & cell.Row & "),I" & cell.Row & "),0),0)"
+                cell.Offset(0, 7).Formula = cell.Offset(0, 7).Formula & "+" & impairAmount
+        i = i + 1
+        If i = 5 Then Exit Sub
+        If Range("DataTable[[#Headers],[impairment_date_1]]").Offset(mai, i - 1).Value = 0 Then Exit Sub
+        End If
+Next
+        
+        
+End Sub
+
+
+Sub addmanualadj()
+Dim cell As Range
+
+'If Range("DataTable[[#Headers],[Manual_Adj]]").Offset(mai, 0).Value <> "Yes" Then Exit Sub
+
+i = 1
+For Each cell In Sheets("compute").Range("C9:C" & endrow)
+rentaldate = Range("DataTable[[#Headers],[rental_date_2]]").Offset(mai, i - 1).Value
+rentalamount = Range("DataTable[[#Headers],[rental_2]]").Offset(mai, i - 1).Value
+        If cell.Value = rentaldate Then
+        cell.Offset(0, 1).Formula = rentalamount
+        i = i + 1
+        If i = 20 Then Exit Sub
+        If Range("DataTable[[#Headers],[rental_date_2]]").Offset(mai, i - 1).Value = 0 Then Exit Sub
+        End If
+Next
+        
+        
+End Sub
+
+Sub orj_id(kai As Long)
+oai = kai
+For i = 1 To 100
+If Range("Modifies_this_ID").Offset(oai, 0).Value > 0 Then oai = Range("Modifies_this_ID").Offset(ai, 0).Value Else Exit For
+Next i
+
+
+End Sub
+

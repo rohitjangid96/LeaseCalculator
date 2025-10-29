@@ -1,0 +1,78 @@
+Rem Attribute VBA_ModuleType=VBAModule
+Option VBASupport 1
+Option Explicit
+
+
+
+Public Function arorate(date1 As Double, table As Integer) As Double
+Dim cell As Range
+'Application.Volatile
+If table = 0 Then
+arorate = 0
+Exit Function
+End If
+For Each cell In Sheets("RFR").Range("A4:A500").Offset(0, (table - 1) * 2)
+
+If cell.Value = 0 Then
+arorate = cell.Offset(-1, 1).Value
+Exit For
+End If
+
+If cell.Value >= date1 Then
+arorate = cell.Offset(0, 1).Value
+Exit For
+End If
+
+Next
+
+End Function
+
+Sub copy_opening()
+
+Dim cell As Range
+
+
+For Each cell In Sheets("JournalD").Range("E5:E23")
+If cell.Offset(0, -4).Value = "PL" Then cell.Formula = 0 Else cell.Formula = cell.Offset(0, -1).Value
+
+Next
+
+Sheets("JournalD").Range("D32:D42").Formula = Sheets("JournalD").Range("G32:G42").Value
+
+Sheets("JournalD").Range("D47:D57").Formula = Sheets("JournalD").Range("G47:G57").Value
+
+End Sub
+
+Sub copy_IFRS()
+If Sheets("JournalD").Range("E1").Value = "IFRS/Ind-AS" Then
+Sheets("JournalD").Range("G5:G23").Formula = Sheets("JournalD").Range("F5:F23").Value
+Else
+MsgBox ("Please compute IFRS/Ind-AS adjustment first.")
+End If
+
+
+End Sub
+
+Sub update_journal()
+Dim cell As Range
+Application.Calculation = xlCalculationManual
+
+For Each cell In Range("JournalR")
+cell.Formula = cell.Offset(0, 5).Formula
+Next
+
+For Each cell In Sheets("JournalD").Range("E32:E41,G32:G41,E47:E57,G47:G57,E62:E67,E72:E77")
+cell.Formula = cell.Offset(0, 4).Formula
+Next
+
+Application.Calculation = xlCalculationAutomatic
+
+End Sub
+
+
+Sub clear_results()
+
+Range("Resultspace").ClearContents
+
+End Sub
+

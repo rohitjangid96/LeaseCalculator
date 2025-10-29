@@ -1,0 +1,84 @@
+/**
+ * Dashboard Page Styles
+ */
+
+.leases-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.lease-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s;
+}
+
+.lease-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+.lease-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 15px;
+}
+
+.lease-name {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.lease-badge {
+    background: #667eea;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+.lease-info {
+    color: #666;
+    margin: 10px 0;
+    line-height: 1.8;
+}
+
+.lease-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.lease-actions button {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #667eea;
+    background: white;
+    color: #667eea;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.lease-actions button:hover {
+    background: #667eea;
+    color: white;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+}
+
+.empty-state h2 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+

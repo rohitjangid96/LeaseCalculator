@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculate Lease</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 { font-size: 1.5rem; }
+        .header-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .form-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        select, input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .results {
+            display: none;
+            margin-top: 30px;
+        }
+        .summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .summary h2 {
+            margin-bottom: 15px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .summary-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .summary-item strong {
+            display: block;
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        .summary-item span {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        thead {
+            background: #667eea;
+            color: white;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        .scrollable {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .error {
+            color: #e74c3c;
+            background: #ffe5e5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Calculate Lease</h1>
+        <div class="header-right">
+            <span>Welcome, <strong id="username">Guest</strong></span>
+            <button class="btn" onclick="window.location.href='dashboard.html'">Home</button>
+            <button class="btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-section">
+            <h2>Select Lease and Date Range</h2>
+            <div class="form-group">
+                <select id="leaseSelect" onchange="onLeaseSelected()">
+                    <option value="">Loading leases...</option>
+                </select>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="form-group">
+                    <label>From Date</label>
+                    <input type="date" id="fromDate">
+                </div>
+                <div class="form-group">
+                    <label>To Date</label>
+                    <input type="date" id="toDate">
+                </div>
+            </div>
+            <button class="btn" onclick="calculateLease()">Calculate</button>
+        </div>
+
+        <div id="results" class="results">
+            <div class="summary">
+                <h2>📈 Summary</h2>
+                <div class="summary-grid" id="summaryGrid"></div>
+                <button class="btn" onclick="exportToExcel()" style="margin-top: 20px; background: rgba(255,255,255,0.2);">📥 Export to Excel</button>
+            </div>
+
+            <h2>📅 Amortization Schedule</h2>
+            <div class="scrollable">
+                <table id="scheduleTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Rent</th>
+                            <th>PV Factor</th>
+                            <th>Interest</th>
+                            <th>Liability</th>
+                            <th>PV Rent</th>
+                            <th>ROU Asset</th>
+                            <th>Depreciation</th>
+                            <th>Change ROU</th>
+                            <th>Security PV</th>
+                            <th>ARO Gross</th>
+                            <th>ARO Interest</th>
+                            <th>ARO Provision</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleBody"></tbody>
+                </table>
+            </div>
+
+            <h2>📝 Journal Entries</h2>
+            <div class="scrollable">
+                <table id="journalTable">
+                    <thead>
+                        <tr>
+                            <th>Account Code</th>
+                            <th>Account Name</th>
+                            <th>BS/PL</th>
+                            <th>Result Period</th>
+                            <th>Previous Period</th>
+                            <th>Incremental</th>
+                            <th>US-GAAP</th>
+                            <th>IFRS Adjustment</th>
+                        </tr>
+                    </thead>
+                    <tbody id="journalBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div id="loading" class="loading" style="display: none;">⏳ Calculating...</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        let currentLeaseId = null;
+        let leasesData = {}; // Store lease data for quick lookup
+
+        // Handle lease selection change
+        function onLeaseSelected() {
+            const leaseId = document.getElementById('leaseSelect').value;
+            if (leaseId && leasesData[leaseId]) {
+                const lease = leasesData[leaseId];
+                // Optionally auto-fill dates from lease
+                if (lease.lease_start_date && !document.getElementById('fromDate').value) {
+                    document.getElementById('fromDate').value = lease.lease_start_date;
+                }
+                if (lease.end_date && !document.getElementById('toDate').value) {
+                    document.getElementById('toDate').value = lease.end_date;
+                }
+                currentLeaseId = leaseId;
+            }
+        }
+
+        // Check for lease_id in URL
+        window.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const leaseId = urlParams.get('lease_id');
+            
+            // Load user info
+            try {
+                const userResponse = await fetch('http://localhost:5001/api/user', {
+                    credentials: 'include'
+                });
+                
+                // Parse response
+                let userData = {};
+                try {
+                    userData = await userResponse.json();
+                } catch (parseError) {
+                    console.error('Failed to parse user response:', parseError);
+                }
+                
+                const usernameEl = document.getElementById('username');
+                if (!usernameEl) {
+                    console.error('Username element not found');
+                } else if (userResponse.ok && userData.success && userData.user) {
+                    // API returns {success: true, user: {username: ...}}
+                    usernameEl.textContent = userData.user.username || 'Guest';
+                    console.log('✅ User loaded:', userData.user.username);
+                } else if (userResponse.status === 401) {
+                    console.log('⚠️ Not authenticated (401) - showing Guest');
+                    usernameEl.textContent = 'Guest';
+                } else if (userData.username) {
+                    // Fallback for different response format
+                    usernameEl.textContent = userData.username || 'Guest';
+                    console.log('✅ User loaded (fallback):', userData.username);
+                } else {
+                    console.warn('⚠️ Could not extract username from response:', userData);
+                    usernameEl.textContent = 'Guest';
+                }
+            } catch (e) {
+                console.error('Error loading user info:', e);
+                const usernameEl = document.getElementById('username');
+                if (usernameEl) {
+                    usernameEl.textContent = 'Guest';
+                }
+            }
+
+            // Load leases - wait for it to complete before pre-selecting
+            await loadLeases();
+
+            // If lease_id in URL, pre-select it and optionally load lease data
+            if (leaseId) {
+                currentLeaseId = leaseId;
+                // Wait a bit for dropdown to be populated, then set value
+                setTimeout(() => {
+                    const select = document.getElementById('leaseSelect');
+                    if (select) {
+                        select.value = leaseId;
+                        // Trigger change event to optionally load lease details
+                        select.dispatchEvent(new Event('change'));
+                    }
+                }, 100);
+            }
+        });
+
+        async function loadLeases() {
+            try {
+                const response = await fetch('http://localhost:5001/api/leases', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Authentication required. Please login.');
+                    }
+                    throw new Error(`Failed to load leases: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const select = document.getElementById('leaseSelect');
+                
+                // Handle different response formats
+                let leases = [];
+                if (Array.isArray(data)) {
+                    leases = data;
+                } else if (data.leases && Array.isArray(data.leases)) {
+                    leases = data.leases;
+                } else if (data.success && Array.isArray(data.data)) {
+                    leases = data.data;
+                } else {
+                    console.error('Unexpected leases response format:', data);
+                    throw new Error('Invalid response format from server');
+                }
+                
+                select.innerHTML = '<option value="">Select a lease...</option>';
+                
+                if (leases.length === 0) {
+                    select.innerHTML = '<option value="">No leases found</option>';
+                } else {
+                    leases.forEach(lease => {
+                        const option = document.createElement('option');
+                        option.value = lease.lease_id;
+                        option.textContent = `${lease.lease_name || 'Lease_' + lease.lease_id} - ${lease.asset_id_code || 'N/A'}`;
+                        select.appendChild(option);
+                        // Store lease data for quick lookup
+                        leasesData[lease.lease_id] = lease;
+                    });
+                    
+                    // If lease_id was in URL, make sure it's selected after dropdown is populated
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const urlLeaseId = urlParams.get('lease_id');
+                    if (urlLeaseId) {
+                        // Check if the lease exists in the dropdown
+                        if (select.querySelector(`option[value="${urlLeaseId}"]`)) {
+                            select.value = urlLeaseId;
+                            currentLeaseId = urlLeaseId;
+                            // Trigger selection handler to auto-fill dates
+                            onLeaseSelected();
+                            console.log('✅ Pre-selected lease from URL:', urlLeaseId);
+                        } else {
+                            console.warn(`⚠️ Lease ID ${urlLeaseId} from URL not found in user's leases`);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading leases:', error);
+                const select = document.getElementById('leaseSelect');
+                if (select) {
+                    select.innerHTML = `<option value="">Error loading leases: ${error.message}</option>`;
+                }
+                // Show error message if authentication failed
+                if (error.message.includes('401') || error.message.includes('Authentication')) {
+                    showError('Please login to view your leases. Redirecting to login...');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                }
+            }
+        }
+
+        function mapLeaseToCalculation(lease) {
+            // Helper to ensure date is valid
+            function ensureDate(dateValue, fallback = null) {
+                if (!dateValue || dateValue === 'null' || dateValue === 'N/A') {
+                    return fallback || new Date().toISOString().split('T')[0];
+                }
+                if (typeof dateValue === 'string' && dateValue.includes('T')) {
+                    return dateValue.split('T')[0];
+                }
+                return dateValue;
+            }
+
+            return {
+                auto_id: lease.lease_id || lease.auto_id,
+                description: lease.description || '',
+                asset_class: lease.asset_class || '',
+                asset_id_code: lease.asset_id_code || '',
+                lease_start_date: ensureDate(lease.lease_start_date),
+                first_payment_date: ensureDate(lease.first_payment_date, lease.lease_start_date),
+                end_date: ensureDate(lease.end_date),
+                agreement_date: ensureDate(lease.agreement_date),
+                termination_date: ensureDate(lease.termination_date),
+                date_modified: ensureDate(lease.date_modified),
+                tenure: lease.tenure || 0,
+                frequency_months: lease.frequency_months || 1,
+                day_of_month: lease.day_of_month || '1',
+                accrual_day: lease.accrual_day || 1,
+                auto_rentals: lease.auto_rentals || 'Yes',
+                manual_adj: lease.manual_adj || 'No',
+                // CRITICAL: Handle null/undefined but preserve 0 if explicitly set
+                rental_1: (lease.rental_1 !== null && lease.rental_1 !== undefined) ? (lease.rental_1 || 0) : 0,
+                rental_2: (lease.rental_2 !== null && lease.rental_2 !== undefined) ? (lease.rental_2 || 0) : 0,
+                escalation_start_date: ensureDate(lease.escalation_start_date),
+                escalation_percent: lease.escalation_percent || 0,
+                esc_freq_months: lease.esc_freq_months || lease.esc_freq_months || 12,
+                index_rate_table: lease.index_rate_table || '',
+                borrowing_rate: lease.borrowing_rate || 8,
+                compound_months: lease.compound_months || 12,
+                fv_of_rou: lease.fv_of_rou || 0,
+                currency: lease.currency || 'USD',
+                cost_centre: lease.cost_centre || '',
+                counterparty: lease.counterparty || '',
+                security_deposit: lease.security_deposit || 0,
+                security_discount: lease.security_discount || 0,
+                aro: lease.aro || 0,
+                aro_table: lease.aro_table || 0,
+                initial_direct_expenditure: lease.initial_direct_expenditure || 0,
+                lease_incentive: lease.lease_incentive || 0,
+                sublease: lease.sublease || 'No',
+                sublease_rou: lease.sublease_rou || 0,
+                finance_lease: lease.finance_lease_usgaap || 'No',
+                short_term_ifrs: lease.shortterm_lease_ifrs_indas || 'No',
+                bargain_purchase: lease.bargain_purchase || 'No',
+                purchase_option_price: lease.purchase_option_price || 0,
+                title_transfer: lease.title_transfer || 'No',
+                practical_expedient: lease.practical_expedient || 'No',
+                transition_option: lease.transition_option || '',
+                transition_date: ensureDate(lease.transition_date),
+                termination_penalty: lease.termination_penalty || 0,
+                // Add all new fields
+                useful_life_end_date: ensureDate(lease.useful_life_end_date),
+            };
+        }
+
+        async function calculateLease() {
+            const leaseId = document.getElementById('leaseSelect').value || currentLeaseId;
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+
+            if (!leaseId) {
+                showError('Please select a lease from the dropdown');
+                return;
+            }
+
+            if (!fromDate || !toDate) {
+                showError('Please enter both From Date and To Date');
+                return;
+            }
+            
+            // Validate dates
+            if (new Date(fromDate) > new Date(toDate)) {
+                showError('From Date must be before To Date');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+
+            try {
+                // Fetch lease data
+                const leaseResponse = await fetch(`http://localhost:5001/api/leases/${leaseId}`, {
+                    credentials: 'include'
+                });
+
+                if (!leaseResponse.ok) {
+                    throw new Error('Failed to load lease data');
+                }
+
+                const leaseResponseData = await leaseResponse.json();
+                console.log('📋 Lease data from API:', leaseResponseData);
+                
+                // Extract lease object (API returns {success: true, lease: {...}})
+                const lease = leaseResponseData.lease || leaseResponseData;
+                console.log('📋 Extracted lease object:', lease);
+                console.log('📋 rental_1 value:', lease.rental_1, 'type:', typeof lease.rental_1);
+                
+                // CRITICAL FIX: Ensure rental_1 is a number
+                if (lease.rental_1 !== null && lease.rental_1 !== undefined) {
+                    lease.rental_1 = parseFloat(lease.rental_1) || 0;
+                } else {
+                    lease.rental_1 = 0;
+                }
+                console.log('📋 rental_1 after parseFloat:', lease.rental_1);
+                
+                // Map lease to calculation format
+                const calculationData = mapLeaseToCalculation(lease);
+                console.log('📋 Mapped calculation data:', calculationData);
+                console.log('📋 rental_1 after mapping:', calculationData.rental_1);
+                calculationData.from_date = fromDate;
+                calculationData.to_date = toDate;
+
+                // Calculate
+                const response = await fetch('http://localhost:5001/api/calculate_lease', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(calculationData),
+                    credentials: 'include'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayResults(result);
+                } else {
+                    showError(result.error || 'Calculation failed');
+                }
+            } catch (error) {
+                console.error('Calculation error:', error);
+                showError(`Error: ${error.message}`);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function displayResults(result) {
+            // Display summary
+            const summaryGrid = document.getElementById('summaryGrid');
+            summaryGrid.innerHTML = `
+                <div class="summary-item">
+                    <strong>Opening Liability</strong>
+                    <span>$${formatCurrency(result.lease_result.opening_lease_liability || 0)}</span>
+                </div>
+                <div class="summary-item">
+                    <strong>Closing Liability</strong>
+                    <span>$${formatCurrency((result.lease_result.closing_lease_liability_non_current || 0) + (result.lease_result.closing_lease_liability_current || 0))}</span>
+                </div>
+                <div class="summary-item">
+                    <strong>Total Interest</strong>
+                    <span>$${formatCurrency(result.summary.total_interest || 0)}</span>
+                </div>
+                <div class="summary-item">
+                    <strong>Total Depreciation</strong>
+                    <span>$${formatCurrency(result.summary.total_depreciation || 0)}</span>
+                </div>
+                <div class="summary-item">
+                    <strong>Total Rent Paid</strong>
+                    <span>$${formatCurrency(result.summary.total_rent_paid || 0)}</span>
+                </div>
+                <div class="summary-item">
+                    <strong>Payments</strong>
+                    <span>${result.summary.total_payments || 0}</span>
+                </div>
+            `;
+
+            // Display schedule
+            const scheduleBody = document.getElementById('scheduleBody');
+            scheduleBody.innerHTML = result.schedule.map((row, idx) => {
+                const bgColor = idx % 2 === 0 ? '#f8f9fa' : '#ffffff';
+                return `
+                <tr style="background-color: ${bgColor};">
+                    <td style="padding: 8px; border: 1px solid #ddd;">${formatDate(row.date)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.rental_amount || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${(row.pv_factor || 0).toFixed(4)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.interest || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.lease_liability || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.pv_of_rent || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.rou_asset || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.depreciation || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.change_in_rou || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.security_deposit_pv || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${row.aro_gross ? '$' + formatCurrency(row.aro_gross) : '-'}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${row.aro_interest ? '$' + formatCurrency(row.aro_interest) : '-'}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${row.aro_provision ? '$' + formatCurrency(row.aro_provision) : '-'}</td>
+                </tr>
+            `;
+            }).join('');
+
+            // Display journal entries
+            const journalBody = document.getElementById('journalBody');
+            journalBody.innerHTML = result.journal_entries.map((entry, idx) => {
+                const bgColor = idx % 2 === 0 ? '#f8f9fa' : '#ffffff';
+                return `
+                <tr style="background-color: ${bgColor};">
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 500;">${entry.account_code || '-'}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: left;">${entry.account_name || ''}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 500;">${entry.bs_pl || ''}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(entry.result_period || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(entry.previous_period || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: 500;">$${formatCurrency(entry.incremental_adjustment || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(entry.usgaap_entry || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(entry.ifrs_adjustment || 0)}</td>
+                </tr>
+            `;
+            }).join('');
+
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function formatCurrency(value) {
+            return Math.abs(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function exportToExcel() {
+            // Get data from displayed tables
+            const scheduleData = Array.from(document.querySelectorAll('#scheduleBody tr')).map(row => {
+                const cells = row.querySelectorAll('td');
+                return {
+                    'Date': cells[0].textContent,
+                    'Rent': cells[1].textContent,
+                    'PV Factor': cells[2].textContent,
+                    'Interest': cells[3].textContent,
+                    'Liability': cells[4].textContent,
+                    'PV Rent': cells[5].textContent,
+                    'ROU Asset': cells[6].textContent,
+                    'Depreciation': cells[7].textContent,
+                    'Change ROU': cells[8].textContent,
+                    'Security PV': cells[9].textContent,
+                    'ARO Gross': cells[10].textContent,
+                    'ARO Interest': cells[11].textContent,
+                    'ARO Provision': cells[12].textContent
+                };
+            });
+
+            const journalData = Array.from(document.querySelectorAll('#journalBody tr')).map(row => {
+                const cells = row.querySelectorAll('td');
+                return {
+                    'Account Code': cells[0].textContent,
+                    'Account Name': cells[1].textContent,
+                    'BS/PL': cells[2].textContent,
+                    'Result Period': cells[3].textContent,
+                    'Previous Period': cells[4].textContent,
+                    'Incremental': cells[5].textContent,
+                    'US-GAAP': cells[6].textContent,
+                    'IFRS Adjustment': cells[7].textContent
+                };
+            });
+
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            
+            // Add schedule sheet
+            const wsSchedule = XLSX.utils.json_to_sheet(scheduleData);
+            XLSX.utils.book_append_sheet(wb, wsSchedule, 'Schedule');
+            
+            // Add journal sheet
+            const wsJournal = XLSX.utils.json_to_sheet(journalData);
+            XLSX.utils.book_append_sheet(wb, wsJournal, 'Journal Entries');
+
+            // Download
+            const leaseId = document.getElementById('leaseSelect').value;
+            XLSX.writeFile(wb, `Lease_${leaseId}_Calculation.xlsx`);
+        }
+
+        async function logout() {
+            try {
+                await fetch('http://localhost:5001/api/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                window.location.href = 'login.html';
+            } catch (error) {
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>
+

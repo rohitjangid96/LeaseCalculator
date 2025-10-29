@@ -1,0 +1,139 @@
+Rem Attribute VBA_ModuleType=VBAModule
+Option VBASupport 1
+Option Compare Text
+
+
+Public Sub appu()
+
+Dim ws As Worksheet
+Dim teerr
+Dim pp1 As String
+
+
+downl = 0
+If Sheets("A").Range("E10").Value = "NO" Then
+Loginform.Show
+If Sheets("Internals").Range("S2").Value <> "" Then
+GoTo str1
+Else
+GoTo invalid
+End If
+End If
+
+agai:
+
+If IsNumeric(Environ("username")) = True Then GoTo Numeric Else GoTo Text
+
+Numeric:
+If Environ("username") = CLng(Evaluate("iferror(vlookup(" & Environ("username") & ",Internals!A1:A2000,1,0),0)")) Then
+If Environ("userdomain") = Evaluate("iferror(vlookup(" & Environ("username") & ",Internals!A1:B2000,2,0),0)") Then
+If Date <= Evaluate("iferror(vlookup(" & Environ("username") & ",Internals!A1:D2000,4,0),0)") Then GoTo str
+End If
+End If
+
+Text:
+If Environ("username") = Evaluate("iferror(vlookup(""" & Environ("username") & """,Internals!A1:A2000,1,0),0)") Then
+If Environ("userdomain") = Evaluate("iferror(vlookup(""" & Environ("username") & """,Internals!A1:B2000,2,0),0)") Then
+If Date <= Evaluate("iferror(vlookup(""" & Environ("username") & """,Internals!A1:D2000,4,0),0)") Then GoTo str
+End If
+End If
+
+'Call downloadauth
+'downl = 1 + downl
+'If downl < 2 Then GoTo agai:
+
+Dim x As String
+x = InputBox("Input one time password to validate your system")
+If x = Evaluate("TODAY()*4*(TODAY()-44800)") Then
+Sheets("Internals").Range("A212").EntireRow.Insert
+Sheets("Internals").Range("A212").Value = Environ("username")
+Sheets("Internals").Range("B212").Value = Environ("userdomain")
+Sheets("Internals").Range("D212").Value = WorksheetFunction.EDate(Date, 1)
+GoTo agai:
+Else
+GoTo invalid
+End If
+
+
+invalid:
+MsgBox "Invalid license!"
+'Call reportauth("Invalid")
+'Application.EnableEvents = False
+ThisWorkbook.Close False
+ThisWorkbook.Close True
+Exit Sub
+
+str:
+Sheets("Internals").Range("S2").Formula = Environ("username")
+
+str1:
+'Call reportauth("Valid")
+
+
+End Sub
+
+
+Sub downloadauth()
+On Error Resume Next
+    Dim URL As String
+    Dim Qt As QueryTable
+    Dim ws As Worksheet
+    Dim Cn As WorkbookConnection
+    Sheet9.Range("A1:E2000").ClearContents
+    
+    
+    'Set ws = Worksheets.Add
+    
+   ' URL = "https://dhfirhfihnifjg.in/lic/gtlAaserhdfbnk1.php?q=qwerty&o=" & Sheets("A").Range("E9").Value
+    
+    Set Qt = Sheet9.QueryTables.Add(Connection:="URL;" & URL, Destination:=Sheet9.Range("A1"))
+    
+    With Qt
+        .RefreshOnFileOpen = False
+        .Name = "Lic"
+        .FieldNames = True
+        .WebSelectionType = xlAllTables
+        .Refresh BackgroundQuery:=False
+    End With
+    Dim eqt As QueryTable
+    
+    For Each eqt In Sheet9.QueryTables
+    Sheet9.QueryTables(eqt.Name).Delete
+    Next eqt
+    
+
+    For Each Cn In ThisWorkbook.Connections
+        Cn.Delete
+    Next Cn
+
+    
+    
+End Sub
+
+
+Sub reportauth(strr As String)
+On Error Resume Next
+    Dim URL As String
+    Dim Qt As QueryTable
+    Dim ws As Worksheet
+    Sheet9.Range("F1").ClearContents
+    
+    If Sheets("A").Range("E10").Value = "NO" Then
+    userr = Sheets("Internals").Range("S2").Value
+    domainn = Sheets("A").Range("E9").Value & "\" & Environ("userdomain") & "\" & Environ("username")
+    GoTo str
+    End If
+    'Set ws = Worksheets.Add
+    
+    userr = Environ("username")
+    domainn = Environ("userdomain")
+    
+str:
+Set objhttp = CreateObject("WinHttp.WinHttpRequest.5.1")
+'URL = "https://dhfirhfihnifjg.in/lic/inseLsdafjklasUo.php?o=" & userr & "&d=" & domainn & "&k=" & strr
+objhttp.Open "GET", URL, False
+objhttp.setRequestHeader "User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)"
+objhttp.setRequestHeader "Content-type", "application/x-www-form-urlencoded"
+objhttp.Send ("o=" & userr & "&d=" & domainn & "&k=" & strr)
+End Sub
+

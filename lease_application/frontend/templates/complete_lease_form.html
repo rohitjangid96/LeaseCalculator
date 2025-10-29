@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Lease Accounting Form</title>
+    <!-- Excel Export Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 1.5rem; margin: 0; }
+        .user-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        header h1 { font-size: 2rem; margin-bottom: 10px; }
+        .content { padding: 30px; }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            background: #f8f9fa;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            color: #6c757d;
+        }
+        .tab.active {
+            background: white;
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .mandatory { color: #dc3545; }
+        .switch-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            cursor: pointer;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #dee2e6;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            content: "";
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background: #28a745; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .conditional-field {
+            display: none;
+            margin-top: 10px;
+            padding-left: 20px;
+            border-left: 3px solid #667eea;
+        }
+        .conditional-field.show {
+            display: block;
+        }
+        .rental-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+        .results.show { display: block; }
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏢 Lease Management System</h1>
+        <div class="user-info">
+            <span>Welcome, <strong id="username">User</strong></span>
+            <button class="btn" onclick="window.location.href='dashboard.html'" style="background: rgba(255,255,255,0.2); padding: 8px 16px; border: none; border-radius: 5px; color: white; cursor: pointer; font-weight: 600;">🏠 Home</button>
+            <button class="btn" onclick="logout()" style="background: rgba(255,255,255,0.2); padding: 8px 16px; border: none; border-radius: 5px; color: white; cursor: pointer; font-weight: 600;">Logout</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <header>
+            <h1>🏢 Complete Lease Accounting Form</h1>
+            <p style="opacity: 0.9;">All fields with conditional formatting</p>
+        </header>
+
+        <div class="content">
+            <div class="tabs">
+                <button class="tab active" onclick="showTab(0)">General</button>
+                <button class="tab" onclick="showTab(1)">Dates & Terms</button>
+                <button class="tab" onclick="showTab(2)">Rentals</button>
+                <button class="tab" onclick="showTab(3)">Financial</button>
+                <button class="tab" onclick="showTab(4)">Additional</button>
+            </div>
+
+            <form id="leaseForm">
+                <!-- Tab 1: General Information -->
+                <div class="tab-content active" id="tab0">
+                    <div class="form-group">
+                        <label for="asset_name">Asset Name <span class="mandatory">*</span></label>
+                        <input type="text" id="asset_name" name="Asset_Name" value="Office Lease - Downtown Building" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="Description" rows="3">Corporate office space lease</textarea>
+                    </div>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="asset_class">Asset Class <span class="mandatory">*</span></label>
+                            <select id="asset_class" name="Asset_class" required>
+                                <option value="">Select...</option>
+                                <option value="Land">Land</option>
+                                <option value="Building" selected>Building</option>
+                                <option value="Vehicle">Vehicle</option>
+                                <option value="Equipment">Equipment</option>
+                                <option value="Plant and Machinery">Plant and Machinery</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="asset_id">Asset ID/Code</label>
+                            <input type="text" id="asset_id" name="Asset_ID_Code" value="ASSET-001">
+                        </div>
+                    </div>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="counterparty">Counterparty</label>
+                            <input type="text" id="counterparty" name="Counterparty" value="Landlord Corp">
+                        </div>
+                        <div class="form-group">
+                            <label for="entity_name">Group Entity Name</label>
+                            <input type="text" id="entity_name" name="Group_entity_name" value="Main Office">
+                        </div>
+                    </div>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="region">Region</label>
+                            <input type="text" id="region" name="Region" value="North America">
+                        </div>
+                        <div class="form-group">
+                            <label for="segment">Segment</label>
+                            <input type="text" id="segment" name="Segment" value="Operations">
+                        </div>
+                    </div>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="cost_element">Cost Element</label>
+                            <input type="text" id="cost_element" name="Cost_element" value="Lease Rent">
+                        </div>
+                        <div class="form-group">
+                            <label for="vendor_code">Vendor Code</label>
+                            <input type="text" id="vendor_code" name="Vendor_code" value="VND-001">
+                        </div>
+                    </div>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="agreement_type">Agreement Type</label>
+                            <input type="text" id="agreement_type" name="Agreement_type" value="Standard Lease">
+                        </div>
+                    </div>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="resp_ops">Responsible Person - Operations</label>
+                            <input type="text" id="resp_ops" name="Responsible_person_Operations" value="John Doe">
+                        </div>
+                        <div class="form-group">
+                            <label for="resp_accounts">Responsible Person - Accounts</label>
+                            <input type="text" id="resp_accounts" name="Responsible_person_Accounts" value="Jane Smith">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Dates & Terms -->
+                <div class="tab-content" id="tab1">
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="lease_start">Lease Start Date <span class="mandatory">*</span></label>
+                            <input type="date" id="lease_start" name="Lease_start_date" value="2024-01-01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="first_payment">First Payment Date <span class="mandatory">*</span></label>
+                            <input type="date" id="first_payment" name="First_payment_date" value="2024-01-16" required>
+                        </div>
+                    </div>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="end_date">Lease End Date <span class="mandatory">*</span></label>
+                            <input type="date" id="end_date" name="End_date" value="2028-12-31" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="agreement_date">Agreement Date</label>
+                            <input type="date" id="agreement_date" name="Agreement_date" value="2023-12-01">
+                        </div>
+                    </div>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="termination_date">Termination Date</label>
+                            <input type="date" id="termination_date" name="Termination_date" value="">
+                        </div>
+                        <div class="form-group">
+                            <label for="termination_penalty">Termination Penalty</label>
+                            <input type="number" id="termination_penalty" name="Termination_penalty" step="0.01" value="0">
+                        </div>
+                    </div>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="tenure">Tenure (Months)</label>
+                            <input type="number" id="tenure" name="Tenure" step="0.1" value="60">
+                        </div>
+                        <div class="form-group">
+                            <label for="accrual_day">Rent Accrual Day <span class="mandatory">*</span></label>
+                            <input type="number" id="accrual_day" name="Accrual_day" min="1" max="31" value="1" required>
+                        </div>
+                    </div>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="frequency">Rental Frequency (Months) <span class="mandatory">*</span></label>
+                            <select id="frequency" name="Frequency_months" required>
+                                <option value="">Select...</option>
+                                <option value="1" selected>Monthly</option>
+                                <option value="3">Quarterly</option>
+                                <option value="6">Semi-annually</option>
+                                <option value="12">Annually</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="day_of_month">Day of Month <span class="mandatory">*</span></label>
+                            <select id="day_of_month" name="Day_of_Month" required>
+                                <option value="">Select...</option>
+                                <option value="Last" selected>Last Day</option>
+                                <!-- Days 1-31 will be added dynamically -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Rentals with Conditional Logic -->
+                <div class="tab-content" id="tab2">
+                    <!-- Auto Rentals Toggle -->
+                    <div class="switch-toggle">
+                        <label for="auto_rentals">Auto Rentals</label>
+                        <label class="switch">
+                            <input type="checkbox" id="auto_rentals" name="Auto_rentals" checked onchange="toggleAutoRentals()">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="auto_label" style="font-weight: bold; margin-left: 10px; color: #28a745;">Yes</span>
+                    </div>
+
+                    <!-- Auto Rental Field -->
+                    <div id="auto_rental_field" class="form-group">
+                        <label for="rental_amount">Rental Amount <span class="mandatory">*</span></label>
+                        <input type="number" id="rental_amount" name="Rental_1" step="0.01" min="0" value="150000" required>
+                    </div>
+
+                    <!-- Escalation Toggle -->
+                    <div class="switch-toggle" id="escalation_toggle" style="display: flex;">
+                        <label for="escalation">Static Escalation</label>
+                        <label class="switch">
+                            <input type="checkbox" id="escalation" checked onchange="toggleEscalation()">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="escalation_label" style="font-weight: bold; margin-left: 10px; color: #28a745;">Yes</span>
+                    </div>
+
+                    <!-- Escalation Fields -->
+                    <div id="escalation_fields" class="conditional-field show">
+                        <div class="two-column">
+                            <div class="form-group">
+                                <label for="escalation_start">Escalation Start Date</label>
+                                <input type="date" id="escalation_start" name="Escalation_Start" value="2025-01-01">
+                                <!-- Hidden field for mapping -->
+                                <input type="hidden" id="escalation_start_date" name="escalation_start_date" value="2025-01-01">
+                            </div>
+                            <div class="form-group">
+                                <label for="escalation_percent">Escalation Percentage (%)</label>
+                                <input type="number" id="escalation_percent" name="Escalation_percent" step="0.01" value="5">
+                            </div>
+                        </div>
+                        <div class="two-column">
+                            <div class="form-group">
+                                <label for="esc_freq">Escalation Frequency (Months)</label>
+                                <input type="number" id="esc_freq" name="Esc_Freq_months" min="1" value="12">
+                                <!-- Also add mapping for backend -->
+                                <input type="hidden" id="esc_freq_months" name="esc_freq_months" value="12">
+                            </div>
+                            <div class="form-group">
+                                <label for="index_rate_table">Index/Rate Table</label>
+                                <input type="number" id="index_rate_table" name="Index_rate_table" step="0.01" value="0">
+                                <span class="help-text">For variable rate leases</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Adjustment Toggle -->
+                    <div class="switch-toggle" id="manual_toggle" style="display: flex;">
+                        <label for="manual_adj">Manual Adjustments</label>
+                        <label class="switch">
+                            <input type="checkbox" id="manual_adj" name="Manual_Adj" onchange="toggleManualAdj()">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="manual_label" style="font-weight: bold; margin-left: 10px; color: #6c757d;">No</span>
+                    </div>
+
+                    <!-- Manual Rental Entries -->
+                    <div id="manual_entries" class="conditional-field" style="display: none;">
+                        <h4 style="margin-bottom: 15px;">Manual Rental Schedule</h4>
+                        <div id="rental_list">
+                            <!-- Dynamically generated rental rows -->
+                        </div>
+                        <button type="button" onclick="addRentalRow()" style="margin-top: 10px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer;">+ Add Rental</button>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Financial Details -->
+                <div class="tab-content" id="tab3">
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="borrowing_rate">Borrowing Rate (%) <span class="mandatory">*</span></label>
+                            <input type="number" id="borrowing_rate" name="Borrowing_rate" step="0.01" min="0" value="5.5" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="currency">Currency</label>
+                            <select id="currency" name="Currency">
+                                <option value="USD" selected>USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="INR">INR</option>
+                                <option value="GBP">GBP</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="fv_of_rou">Fair Value of ROU Asset</label>
+                            <input type="number" id="fv_of_rou" name="FV_of_RoU" step="0.01" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="compound_months">Compound Months</label>
+                            <input type="number" id="compound_months" name="Compound_months" min="1" value="12">
+                        </div>
+                    </div>
+
+                    <!-- ARO Section -->
+                    <div class="switch-toggle">
+                        <label for="has_aro">Asset Retirement Obligation (ARO)</label>
+                        <label class="switch">
+                            <input type="checkbox" id="has_aro" checked onchange="toggleARO()">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="aro_label" style="font-weight: bold; margin-left: 10px; color: #28a745;">Yes</span>
+                    </div>
+
+                    <div id="aro_fields" class="conditional-field show">
+                        <h4 style="margin-bottom: 10px;">ARO (Asset Retirement Obligation) Details</h4>
+                        <div class="two-column">
+                            <div class="form-group">
+                                <label for="aro_amount">ARO Initial Amount</label>
+                                <input type="number" id="aro_amount" name="ARO" step="0.01" value="50000">
+                            </div>
+                            <div class="form-group">
+                                <label for="aro_table">ARO Interest Table</label>
+                                <input type="number" id="aro_table" name="ARO_table" step="0.01" value="0">
+                            </div>
+                        </div>
+                        <h5 style="margin-top: 15px; margin-bottom: 10px;">ARO Revisions (up to 8)</h5>
+                        <div id="aro_revisions">
+                            <!-- ARO revision fields will be added dynamically -->
+                        </div>
+                        <button type="button" onclick="addARORow()" style="margin-top: 10px; padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;">+ Add ARO Revision</button>
+                    </div>
+
+                    <!-- Security Deposits -->
+                    <div class="switch-toggle">
+                        <label for="has_security">Security Deposits</label>
+                        <label class="switch">
+                            <input type="checkbox" id="has_security" checked onchange="toggleSecurity()">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="security_label" style="font-weight: bold; margin-left: 10px; color: #28a745;">Yes</span>
+                    </div>
+
+                    <div id="security_fields" class="conditional-field show">
+                        <h4 style="margin-bottom: 10px;">Security Deposit Details</h4>
+                        <div class="two-column">
+                            <div class="form-group">
+                                <label for="security_deposit">Security Deposit Amount (Gross)</label>
+                                <input type="number" id="security_deposit" name="Security_deposit" step="0.01" value="100000">
+                            </div>
+                            <div class="form-group">
+                                <label for="security_discount">Security Discount Rate (%)</label>
+                                <input type="number" id="security_discount" name="Security_discount" step="0.01" value="3">
+                            </div>
+                        </div>
+                        <h5 style="margin-top: 15px; margin-bottom: 10px;">Security Increases (up to 4)</h5>
+                        <div id="security_increases">
+                            <!-- Security increases will be added dynamically -->
+                        </div>
+                        <button type="button" onclick="addSecurityRow()" style="margin-top: 10px; padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;">+ Add Security Increase</button>
+                    </div>
+                </div>
+
+                <!-- Tab 5: Additional Details -->
+                <div class="tab-content" id="tab4">
+                        <div class="two-column">
+                            <div class="form-group">
+                                <label for="cost_center">Cost Center</label>
+                                <input type="text" id="cost_center" name="Cost_centre" value="CC-001">
+                            </div>
+                            <div class="form-group">
+                                <label for="profit_center">Profit Center</label>
+                                <input type="text" id="profit_center" name="Profit_center" value="PC-001">
+                            </div>
+                        </div>
+
+                    <!-- Lease Classifications -->
+                    <div class="switch-toggle">
+                        <label>Is Finance Lease (US GAAP)</label>
+                        <select name="Finance_lease_USGAAP">
+                            <option value="">Select...</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+
+                    <div class="switch-toggle">
+                        <label>Short Term Lease (IFRS/Ind AS)</label>
+                        <select name="Shortterm_lease_IFRS_IndAS">
+                            <option value="">Select...</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+
+                    <!-- Transition Accounting -->
+                    <div class="switch-toggle">
+                        <label for="has_transition">Transition Accounting</label>
+                        <label class="switch">
+                            <input type="checkbox" id="has_transition" checked onchange="toggleTransition()">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="transition_label" style="font-weight: bold; margin-left: 10px; color: #28a745;">Yes</span>
+                    </div>
+
+                    <div id="transition_fields" class="conditional-field show">
+                        <div class="two-column">
+                            <div class="form-group">
+                                <label for="transition_date">Transition Date</label>
+                                <input type="date" id="transition_date" name="Transition_date" value="2024-01-01">
+                            </div>
+                            <div class="form-group">
+                                <label for="transition_option">Transition Option</label>
+                                <select id="transition_option" name="Transition_option">
+                                    <option value="">Select...</option>
+                                    <option value="2A" selected>Modified Retrospective</option>
+                                    <option value="2B">Modified Retrospective (Simplified)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="initial_direct">Initial Direct Costs</label>
+                            <input type="number" id="initial_direct" name="Initial_direct_expenditure" step="0.01" value="25000">
+                        </div>
+                        <div class="form-group">
+                            <label for="lease_incentive">Lease Incentive</label>
+                            <input type="number" id="lease_incentive" name="Lease_incentive" step="0.01" value="5000">
+                        </div>
+                    </div>
+
+                    <!-- Impairments -->
+                    <div class="switch-toggle">
+                        <label for="has_impairment">Asset Impairments</label>
+                        <label class="switch">
+                            <input type="checkbox" id="has_impairment" onchange="toggleImpairments()">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="impairment_label" style="font-weight: bold; margin-left: 10px; color: #6c757d;">No</span>
+                    </div>
+
+                    <div id="impairment_fields" class="conditional-field" style="display: none;">
+                        <h4 style="margin-bottom: 10px;">Impairment Details (up to 5)</h4>
+                        <div id="impairment_list">
+                            <div class="two-column" style="margin-bottom: 10px;">
+                                <div class="form-group">
+                                    <label for="impairment1">Impairment 1</label>
+                                    <input type="number" id="impairment1" name="Impairment1" step="0.01" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="impairment_date1">Date</label>
+                                    <input type="date" id="impairment_date1" name="Impairment_date_1" value="">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="addImpairmentRow()" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;">+ Add Impairment</button>
+                    </div>
+
+                    <!-- Lease Classifications -->
+                    <div class="two-column" style="margin-top: 20px;">
+                        <div class="switch-toggle">
+                            <label for="intragroup">Is Lease InterCompany (IntraGroup)?</label>
+                            <select id="intragroup" name="IntraGroup_lease" style="width: auto; margin-left: 10px;">
+                                <option value="">Select...</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                        <div class="switch-toggle">
+                            <label for="sublease">Is Sublease?</label>
+                            <select id="sublease" name="Sublease" style="width: auto; margin-left: 10px;">
+                                <option value="">Select...</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" id="sublease_rou" style="display: none;">
+                        <label for="sublease_rou_value">Starting RoU Value for Sublease</label>
+                        <input type="number" id="sublease_rou_value" name="Sublease_RoU" step="0.01">
+                    </div>
+
+                    <!-- Modification Tracking -->
+                    <h4 style="margin-top: 20px; margin-bottom: 10px;">Lease Modification Tracking</h4>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="modifies_this_id">Modifies This Lease AutoID</label>
+                            <input type="number" id="modifies_this_id" name="Modifies_this_ID" value="">
+                        </div>
+                        <div class="form-group">
+                            <label for="modified_by_id">Modified By This Lease AutoID</label>
+                            <input type="number" id="modified_by_id" name="Modified_by_this_ID" value="">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="date_modified">Date Modified</label>
+                        <input type="date" id="date_modified" name="Date_modified" value="">
+                    </div>
+                    <div class="form-group">
+                        <label for="head_lease_id">Head Lease ID</label>
+                        <input type="number" id="head_lease_id" name="Head_Lease_ID" value="">
+                    </div>
+
+                    <!-- Additional Adjustments -->
+                    <h4 style="margin-top: 20px; margin-bottom: 10px;">Additional Adjustments</h4>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="scope_reduction">Lease Scope Reduction (%)</label>
+                            <input type="number" id="scope_reduction" name="Scope_reduction" step="0.01" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="scope_date">Scope Reduction Date</label>
+                            <input type="date" id="scope_date" name="Scope_date" value="">
+                        </div>
+                    </div>
+
+                    <!-- COVID Practical Expedient -->
+                    <div class="switch-toggle" style="margin-top: 15px;">
+                        <label for="practical_expedient">COVID 19 Practical Expedient</label>
+                        <select id="practical_expedient" name="Practical_expedient" style="width: auto; margin-left: 10px;">
+                            <option value="">Select...</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+
+                    <!-- Audit Trail -->
+                    <h4 style="margin-top: 20px; margin-bottom: 10px;">Audit Trail</h4>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label for="entered_by">Entered By</label>
+                            <input type="text" id="entered_by" name="Entered_by" value="Current User">
+                        </div>
+                        <div class="form-group">
+                            <label for="last_modified_by">Last Modified By</label>
+                            <input type="text" id="last_modified_by" name="Last_modified_by" value="Current User">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="last_reviewed_by">Last Reviewed By</label>
+                        <input type="text" id="last_reviewed_by" name="Last_reviewed_by" value="">
+                    </div>
+                    <div class="form-group" id="sublease_rou" style="display: none;">
+                        <label for="sublease_rou_value">Starting RoU Value for Sublease</label>
+                        <input type="number" id="sublease_rou_value" name="Sublease_RoU" step="0.01" value="0">
+                    </div>
+                </div>
+
+                <button type="button" class="btn-primary" onclick="saveLease()">💾 Save Lease</button>
+            </form>
+
+            <div class="results" id="results">
+                <!-- Results will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // NO AUTH CHECK - PAGE LOADS IMMEDIATELY
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('Page loaded - NO auth check');
+            // Try to get user info silently
+            try {
+                const response = await fetch('http://localhost:5001/api/user', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (data.success && data.user) {
+                    console.log('✓ Got user:', data.user.username);
+                    const usernameEl = document.getElementById('username');
+                    if (usernameEl) usernameEl.textContent = data.user.username;
+                } else {
+                    console.log('ℹ No session');
+                    const usernameEl = document.getElementById('username');
+                    if (usernameEl) usernameEl.textContent = 'Guest';
+                }
+            } catch (e) {
+                console.log('⚠ Could not get user info');
+                const usernameEl = document.getElementById('username');
+                if (usernameEl) usernameEl.textContent = 'Guest';
+            }
+            
+            // Check if editing (have lease_id in URL)
+            const urlParams = new URLSearchParams(window.location.search);
+            const leaseId = urlParams.get('id') || urlParams.get('lease_id');
+            if (leaseId) {
+                console.log(`📝 Loading lease ${leaseId} for editing...`);
+                await loadLeaseForEdit(leaseId);
+            }
+        });
+        
+        async function loadLeaseForEdit(leaseId) {
+            try {
+                const response = await fetch(`http://localhost:5001/api/leases/${leaseId}`, {
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                
+                if (result.success && result.lease) {
+                    const lease = result.lease;
+                    console.log('📋 Lease loaded:', lease);
+                    
+                    // Map backend field names to form field IDs
+                    const fieldMap = {
+                        'asset_class': 'asset_class',
+                        'asset_id_code': 'asset_id_code',
+                        'description': 'description',
+                        'counterparty': 'counterparty',
+                        'lease_start_date': 'lease_start',
+                        'first_payment_date': 'first_payment',
+                        'end_date': 'end_date',
+                        'agreement_date': 'agreement_date',
+                        'termination_date': 'termination_date',
+                        'tenure': 'tenure',
+                        'frequency_months': 'frequency',
+                        'day_of_month': 'day_of_month',
+                        'auto_rentals': 'auto_rentals',
+                        'rental_1': 'Rental_1',
+                        'rental_2': 'Rental_2',
+                        'escalation_percent': 'Escalation_percent',
+                        'esc_freq_months': 'Esc_Freq_months',
+                        'escalation_start_date': 'escalation_start',
+                        'borrowing_rate': 'Borrowing_rate',
+                        'compound_months': 'compound_months',
+                        'currency': 'currency',
+                        'fv_of_rou': 'fv_of_rou',
+                        'initial_direct_expenditure': 'initial_direct_costs',
+                        'lease_incentive': 'Lease_incentive',
+                        'aro': 'ARO',
+                        'aro_table': 'aro_table',
+                        'security_deposit': 'Security_deposit',
+                        'security_discount': 'security_discount',
+                        'cost_centre': 'cost_centre'
+                    };
+                    
+                    // Populate all form fields
+                    for (const [dbKey, formId] of Object.entries(fieldMap)) {
+                        const value = lease[dbKey];
+                        if (value !== null && value !== undefined && value !== '') {
+                            const element = document.getElementById(formId) || document.querySelector(`[name="${formId}"]`);
+                            if (element) {
+                                if (element.type === 'checkbox') {
+                                    element.checked = value === 'Yes' || value === true || value === 1;
+                                } else {
+                                    element.value = value;
+                                }
+                                
+                                // Also update hidden fields
+                                if (dbKey === 'escalation_start_date') {
+                                    const hiddenField = document.getElementById('escalation_start_date');
+                                    if (hiddenField) hiddenField.value = value;
+                                }
+                                if (dbKey === 'esc_freq_months') {
+                                    const hiddenField = document.getElementById('esc_freq_months');
+                                    if (hiddenField) hiddenField.value = value;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Handle escalation toggle if escalation_start_date exists
+                    if (lease.escalation_start_date) {
+                        const escalationCheckbox = document.getElementById('escalation');
+                        if (escalationCheckbox) {
+                            escalationCheckbox.checked = true;
+                            toggleEscalation();
+                        }
+                    }
+                    
+                    console.log('✅ Lease data populated in form');
+                } else {
+                    console.error('❌ Failed to load lease:', result);
+                }
+            } catch (error) {
+                console.error('❌ Error loading lease:', error);
+            }
+        }
+        
+        async function logout() {
+            try {
+                await fetch('http://localhost:5001/api/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                window.location.href = 'login.html';
+            } catch (error) {
+                window.location.href = 'login.html';
+            }
+        }
+
+        let currentTab = 0;
+        let rentalCount = 1;
+        let aroRevCount = 0;
+        let securityCount = 0;
+
+        // Populate day of month dropdown
+        for (let i = 1; i <= 31; i++) {
+            let option = document.createElement('option');
+            option.value = i;
+            option.text = i;
+            document.getElementById('day_of_month').appendChild(option);
+        }
+
+        // Auto-calculate lease end date from tenure
+        document.getElementById('tenure').addEventListener('input', function() {
+            const tenure = parseFloat(this.value) || 0;
+            const leaseStartDate = document.getElementById('lease_start').value;
+            
+            if (tenure > 0 && leaseStartDate) {
+                const startDate = new Date(leaseStartDate);
+                const endDate = new Date(startDate);
+                endDate.setMonth(endDate.getMonth() + tenure);
+                
+                // Format as YYYY-MM-DD
+                const endDateStr = endDate.toISOString().split('T')[0];
+                document.getElementById('end_date').value = endDateStr;
+            }
+        });
+
+        // Auto-calculate tenure from lease end date
+        document.getElementById('end_date').addEventListener('change', function() {
+            const leaseStartDate = document.getElementById('lease_start').value;
+            const endDate = new Date(this.value);
+            
+            if (leaseStartDate && endDate > new Date(leaseStartDate)) {
+                const startDate = new Date(leaseStartDate);
+                const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+                                 (endDate.getMonth() - startDate.getMonth());
+                document.getElementById('tenure').value = monthsDiff;
+            }
+        });
+
+        // Auto-calculate lease end date when start date changes
+        document.getElementById('lease_start').addEventListener('change', function() {
+            const tenure = parseFloat(document.getElementById('tenure').value) || 0;
+            if (tenure > 0) {
+                const startDate = new Date(this.value);
+                const endDate = new Date(startDate);
+                endDate.setMonth(endDate.getMonth() + tenure);
+                document.getElementById('end_date').value = endDate.toISOString().split('T')[0];
+            }
+        });
+
+        function showTab(index) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.querySelectorAll('.tab')[index].classList.add('active');
+            document.getElementById(`tab${index}`).classList.add('active');
+            currentTab = index;
+        }
+
+        function toggleAutoRentals() {
+            const checked = document.getElementById('auto_rentals').checked;
+            document.getElementById('auto_label').textContent = checked ? 'Yes' : 'No';
+            document.getElementById('auto_label').style.color = checked ? '#28a745' : '#6c757d';
+            document.getElementById('auto_rental_field').style.display = checked ? 'block' : 'none';
+        }
+
+        function toggleEscalation() {
+            const checked = document.getElementById('escalation').checked;
+            document.getElementById('escalation_label').textContent = checked ? 'Yes' : 'No';
+            document.getElementById('escalation_label').style.color = checked ? '#28a745' : '#6c757d';
+            document.getElementById('escalation_fields').classList.toggle('show', checked);
+        }
+
+        function toggleManualAdj() {
+            const checked = document.getElementById('manual_adj').checked;
+            document.getElementById('manual_label').textContent = checked ? 'Yes' : 'No';
+            document.getElementById('manual_label').style.color = checked ? '#28a745' : '#6c757d';
+            document.getElementById('manual_entries').classList.toggle('show', checked);
+        }
+
+        function toggleARO() {
+            const checked = document.getElementById('has_aro').checked;
+            document.getElementById('aro_label').textContent = checked ? 'Yes' : 'No';
+            document.getElementById('aro_label').style.color = checked ? '#28a745' : '#6c757d';
+            document.getElementById('aro_fields').classList.toggle('show', checked);
+        }
+
+        function toggleSecurity() {
+            const checked = document.getElementById('has_security').checked;
+            document.getElementById('security_label').textContent = checked ? 'Yes' : 'No';
+            document.getElementById('security_label').style.color = checked ? '#28a745' : '#6c757d';
+            document.getElementById('security_fields').classList.toggle('show', checked);
+        }
+
+        function toggleTransition() {
+            const checked = document.getElementById('has_transition').checked;
+            document.getElementById('transition_label').textContent = checked ? 'Yes' : 'No';
+            document.getElementById('transition_label').style.color = checked ? '#28a745' : '#6c757d';
+            document.getElementById('transition_fields').classList.toggle('show', checked);
+        }
+
+        function toggleImpairments() {
+            const checked = document.getElementById('has_impairment').checked;
+            document.getElementById('impairment_label').textContent = checked ? 'Yes' : 'No';
+            document.getElementById('impairment_label').style.color = checked ? '#28a745' : '#6c757d';
+            document.getElementById('impairment_fields').classList.toggle('show', checked);
+        }
+
+        let impairmentCount = 1;
+
+        function addRentalRow() {
+            const list = document.getElementById('rental_list');
+            const div = document.createElement('div');
+            div.className = 'rental-row';
+            div.innerHTML = `
+                <input type="number" name="Rental_${rentalCount + 1}" placeholder="Rental Amount" step="0.01">
+                <input type="date" name="Rental_date_${rentalCount + 1}">
+                <button type="button" onclick="this.parentElement.remove()">Remove</button>
+            `;
+            list.appendChild(div);
+            rentalCount++;
+        }
+
+        function addARORow() {
+            if (aroRevCount >= 8) {
+                alert('Maximum 8 ARO revisions allowed');
+                return;
+            }
+            aroRevCount++;
+            const list = document.getElementById('aro_revisions');
+            const div = document.createElement('div');
+            div.className = 'two-column';
+            div.innerHTML = `
+                <div class="form-group">
+                    <label>ARO Revision ${aroRevCount} Amount</label>
+                    <input type="number" name="ARO_Revision_${aroRevCount}" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>ARO Revision ${aroRevCount} Date</label>
+                    <input type="date" name="ARO_date_${aroRevCount}">
+                </div>
+                <button type="button" onclick="this.parentElement.remove(); aroRevCount--;" style="margin-top: 10px; padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+            `;
+            list.appendChild(div);
+        }
+
+        function addSecurityRow() {
+            if (securityCount >= 4) {
+                alert('Maximum 4 security increases allowed');
+                return;
+            }
+            securityCount++;
+            const list = document.getElementById('security_increases');
+            const div = document.createElement('div');
+            div.className = 'two-column';
+            div.innerHTML = `
+                <div class="form-group">
+                    <label>Security Increase ${securityCount} Amount</label>
+                    <input type="number" name="Increase_security_${securityCount}" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Security Increase ${securityCount} Date</label>
+                    <input type="date" name="Security_date_${securityCount}">
+                </div>
+                <button type="button" onclick="this.parentElement.remove(); securityCount--;" style="margin-top: 10px; padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+            `;
+            list.appendChild(div);
+        }
+
+        function addImpairmentRow() {
+            if (impairmentCount >= 5) {
+                alert('Maximum 5 impairments allowed');
+                return;
+            }
+            impairmentCount++;
+            const list = document.getElementById('impairment_list');
+            const div = document.createElement('div');
+            div.className = 'two-column';
+            div.innerHTML = `
+                <div class="form-group">
+                    <label>Impairment ${impairmentCount} Amount</label>
+                    <input type="number" name="Impairment${impairmentCount}" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Impairment ${impairmentCount} Date</label>
+                    <input type="date" name="Impairment_date_${impairmentCount}">
+                </div>
+                <button type="button" onclick="this.parentElement.remove(); impairmentCount--;" style="margin-top: 10px; padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+            `;
+            list.appendChild(div);
+        }
+
+        document.getElementById('leaseForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            calculateLease();
+        });
+
+        async function saveLease() {
+            const formData = new FormData(document.getElementById('leaseForm'));
+            const data = Object.fromEntries(formData);
+            
+            // Remove results display
+            const resultsDiv = document.getElementById('results');
+            if (resultsDiv) {
+                resultsDiv.innerHTML = '<div style="text-align: center; padding: 40px;"><h3>Calculating...</h3></div>';
+                resultsDiv.classList.add('show');
+            } else {
+                console.error('Results div not found');
+                alert('Error: Results container not found');
+                return;
+            }
+            
+            try {
+                // Try to call Python backend first
+                // Map form field names to backend expected names
+                const mappedData = {};
+                
+                // Field name mappings: form field name -> backend field name
+                const fieldMappings = {
+                    'Escalation_Start': 'escalation_start_date',
+                    'escalation_start_date': 'escalation_start_date',
+                    'Esc_Freq_months': 'esc_freq_months',
+                    'esc_freq_months': 'esc_freq_months',
+                    'Asset_Name': 'asset_class',  // If used
+                    'Rental_1': 'rental_1',
+                    'Rental_2': 'rental_2',
+                    'lease_start': 'lease_start_date',
+                    'first_payment': 'first_payment_date',
+                    'end_date': 'end_date',
+                    'day_of_month': 'day_of_month',
+                    'frequency': 'frequency_months',
+                    'Escalation_percent': 'escalation_percent',
+                    'Borrowing_rate': 'borrowing_rate',
+                    'initial_direct_costs': 'initial_direct_expenditure',
+                    'initial_direct_expenditure': 'initial_direct_expenditure',
+                    'Security_deposit': 'security_deposit',
+                    'ARO': 'aro',
+                    'aro_initial': 'aro',
+                    'Lease_incentive': 'lease_incentive',
+                    'Finance_lease': 'finance_lease_usgaap',
+                    'Short_term_ifrs': 'shortterm_lease_ifrs_indas',
+                    'Is_sublease': 'sublease'
+                };
+                
+                // Process all form fields
+                for (const [key, value] of Object.entries(data)) {
+                    let backendKey = fieldMappings[key] || key.replace(/-/g, '_').toLowerCase();
+                    
+                    // Always set the value, even if it's empty (for updates to clear fields)
+                    // But skip if it's a duplicate mapping
+                    if (fieldMappings[key] && mappedData[backendKey] === undefined) {
+                        mappedData[backendKey] = value || '';
+                    } else if (!fieldMappings[key] && !mappedData[backendKey]) {
+                        mappedData[backendKey] = value || '';
+                    }
+                }
+                
+                // Ensure escalation fields are always set (even if empty)
+                if (mappedData['escalation_start_date'] === undefined) {
+                    mappedData['escalation_start_date'] = data['Escalation_Start'] || data['escalation_start_date'] || '';
+                }
+                if (mappedData['esc_freq_months'] === undefined) {
+                    mappedData['esc_freq_months'] = data['Esc_Freq_months'] || data['esc_freq_months'] || '';
+                }
+                
+                console.log('Sending data:', data);
+                
+                // Save to database
+                console.log('Saving lease data:', data);
+                
+                // Check if we're editing (have lease_id in URL)
+                const urlParams = new URLSearchParams(window.location.search);
+                const leaseId = urlParams.get('id') || urlParams.get('lease_id');
+                const isEdit = !!leaseId;
+                
+                const url = isEdit 
+                    ? `http://localhost:5001/api/leases/${leaseId}`
+                    : 'http://localhost:5001/api/leases';
+                
+                const method = isEdit ? 'PUT' : 'POST';
+                
+                console.log('📤 Sending to backend:', mappedData);
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(mappedData),
+                    credentials: 'include'
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Lease saved:', result);
+                    
+                    if (result.success) {
+                        alert('✅ Lease saved successfully! (ID: ' + result.lease_id + ')\n\nRedirecting to dashboard...');
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        alert('Error saving lease: ' + result.error);
+                    }
+                    return;
+                } else {
+                    const errorText = await response.text();
+                    console.error('Backend returned error:', errorText);
+                    throw new Error(`Backend returned ${response.status}: ${errorText}`);
+                }
+            } catch (error) {
+                console.error('Error calling backend:', error);
+                const resultsDiv = document.getElementById('results');
+                if (!resultsDiv) {
+                    console.error('Results div not found!');
+                    alert('Error: Results div not found in HTML');
+                    return;
+                }
+                resultsDiv.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <h3 style="color: #dc3545;">❌ Backend Error</h3>
+                        <p>Error: ${error.message}</p>
+                        <p>Please check browser console (F12) for details</p>
+                        <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+Backend should be running at: http://localhost:5001
+Check terminal or restart with: ./start_app.sh
+                        </pre>
+                    </div>
+                `;
+            document.getElementById('results').classList.add('show');
+                return;
+            }
+            
+            // This should never execute - Python backend must be running
+            console.error('Python backend failed but no error thrown');
+        }
+        
+        // Kept for reference but not called anymore
+        function getOldResults() {
+            const results = {
+                asset_name: data['Asset_Name'] || 'N/A',
+                asset_class: data['Asset_class'] || 'N/A',
+                description: data['Description'] || '',
+                lease_start: leaseStart,
+                lease_end: leaseEnd,
+                total_payments: totalPayments,
+                rental_amount: rental,
+                frequency: frequency === 1 ? 'Monthly' : frequency === 3 ? 'Quarterly' : frequency === 12 ? 'Annual' : 'Custom',
+                monthly_payment: rental,
+                total_rental_payments: totalRentalPayments.toFixed(2),
+                borrowing_rate: borrowingRate.toFixed(2),
+                lease_liability: leaseLiability.toFixed(2),
+                rou_asset: rouAsset.toFixed(2),
+                depreciation_expense: depreciation.toFixed(2),
+                interest_expense: totalInterest.toFixed(2),
+                aro_amount: aroAmount.toFixed(2),
+                aro_interest: aroInterest.toFixed(2),
+                security_deposit: securityDeposit.toFixed(2),
+                security_interest: securityInterest.toFixed(2),
+                initial_direct_costs: initialDirect.toFixed(2),
+                lease_incentive: leaseIncentive.toFixed(2),
+                net_rou_asset: (rouAsset - (depreciation * tenure)).toFixed(2),
+                total_cost: (rouAsset + totalInterest + aroInterest).toFixed(2)
+            };
+            
+            // Display detailed results matching Excel format
+            const resultsDiv2 = document.getElementById('results');
+            if (!resultsDiv2) {
+                console.error('Results div not found at line 924');
+                return;
+            }
+            resultsDiv2.innerHTML = `
+                <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                    <h2 style="color: #667eea; margin-bottom: 20px; text-align: center;">📊 Lease Calculation Results</h2>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="color: #333; margin-bottom: 15px;">Asset Information</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div><strong>Asset Name:</strong> ${results.asset_name}</div>
+                            <div><strong>Asset Class:</strong> ${results.asset_class}</div>
+                            <div><strong>Description:</strong> ${results.description || 'N/A'}</div>
+                            <div><strong>Lease Term:</strong> ${tenure} months (${(tenure/12).toFixed(1)} years)</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="color: #333; margin-bottom: 15px;">Payment Details</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div><strong>Payment Amount:</strong> $${results.monthly_payment.toFixed(2)}</div>
+                            <div><strong>Payment Frequency:</strong> ${results.frequency}</div>
+                            <div><strong>Total Payments:</strong> ${results.total_payments}</div>
+                            <div><strong>Total Rental Payments:</strong> $${results.total_rental_payments}</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="color: #2e7d32; margin-bottom: 15px;">📈 Balance Sheet Items</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div><strong>Lease Liability (Initial):</strong> $${results.lease_liability}</div>
+                            <div><strong>ROU Asset (Initial):</strong> $${results.rou_asset}</div>
+                            <div><strong>Net ROU Asset:</strong> $${results.net_rou_asset}</div>
+                            <div><strong>Security Deposit:</strong> $${results.security_deposit}</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="color: #ef6c00; margin-bottom: 15px;">💰 P&L Items</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div><strong>Depreciation Expense:</strong> $${results.depreciation_expense}/month</div>
+                            <div><strong>Interest Expense:</strong> $${results.interest_expense} (total)</div>
+                            <div><strong>Total Lease Cost:</strong> $${results.total_cost}</div>
+                            <div><strong>Borrowing Rate:</strong> ${results.borrowing_rate}%</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="color: #7b1fa2; margin-bottom: 15px;">🔄 ARO (Asset Retirement Obligation)</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div><strong>ARO Amount:</strong> $${results.aro_amount}</div>
+                            <div><strong>ARO Interest:</strong> $${results.aro_interest}</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #e1f5fe; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="color: #01579b; margin-bottom: 15px;">🏦 Additional Items</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div><strong>Initial Direct Costs:</strong> $${results.initial_direct_costs}</div>
+                            <div><strong>Lease Incentive:</strong> $${results.lease_incentive}</div>
+                            <div><strong>Security Interest:</strong> $${results.security_interest}</div>
+                            <div><strong>Date Range:</strong> ${leaseStart} to ${leaseEnd}</div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 20px;">
+                        <p style="color: #28a745; font-weight: bold;">✅ All fields captured and calculated successfully!</p>
+                        <p style="color: #6c757d; font-size: 0.9rem;">Ready for journal entries and financial reporting</p>
+                    </div>
+
+                    <!-- Lease Amortization Schedule - All 13 Columns from Excel -->
+                    <div style="margin-top: 30px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="color: #667eea; margin: 0;">📊 Complete Lease Amortization Schedule (All 13 Excel Columns)</h3>
+                            <button onclick="exportScheduleToExcel()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                                📥 Export to Excel
+                            </button>
+                        </div>
+                        <div style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem;">
+                                <thead style="position: sticky; top: 0; background: #667eea; color: white;">
+                                    <tr>
+                                        <th style="padding: 8px; border: 1px solid #ddd; min-width: 80px;">Date</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd; min-width: 80px;">Rent</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd; min-width: 70px;">PV Factor</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd; min-width: 80px;">Interest</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd; min-width: 90px;">Liability</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd; min-width: 80px;">PV of Rent</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd; min-width: 90px;">ROU Asset</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd; min-width: 85px;">Depreciation</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd; min-width: 85px;">Change ROU</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd; min-width: 85px;">Sec Dep PV</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd; min-width: 80px;">ARO Gross</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd; min-width: 80px;">ARO Interest</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd; min-width: 85px;">ARO Provision</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="schedule_body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Journal Entries - Excel-style Structure -->
+                    <div style="margin-top: 30px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="color: #667eea; margin: 0;">📔 Journal Entries (Excel JournalD Structure)</h3>
+                            <button onclick="exportJournalsToExcel()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                                📥 Export to Excel
+                            </button>
+                        </div>
+                        <div style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem;">
+                                <thead style="position: sticky; top: 0; background: #667eea; color: white;">
+                                    <tr>
+                                        <th style="padding: 8px; border: 1px solid #ddd;">BS/PL</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd;">Account Name</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd;">Result Period</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd;">Previous Period</th>
+                                        <th style="padding: 8px; border: 1px solid #ddd;">Incremental Adjustment</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="journal_body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Disclosures -->
+                    <div style="margin-top: 30px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h3 style="color: #667eea; margin-bottom: 15px; text-align: center;">📋 Lease Disclosures</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div style="background: #e8f5e9; padding: 15px; border-radius: 8px;">
+                                <h4 style="color: #2e7d32; margin-bottom: 10px;">Balance Sheet Impact</h4>
+                                <div style="font-size: 0.9rem;">
+                                    <p><strong>Right-of-Use Asset (Opening):</strong> $${results.rou_asset}</p>
+                                    <p><strong>Lease Liability (Opening):</strong> $${results.lease_liability}</p>
+                                    <p><strong>Remaining Useful Life:</strong> ${tenure} months</p>
+                                    <p><strong>Accumulated Depreciation:</strong> $${(parseFloat(results.depreciation_expense) * tenure).toFixed(2)}</p>
+                                </div>
+                            </div>
+                            <div style="background: #fff3e0; padding: 15px; border-radius: 8px;">
+                                <h4 style="color: #ef6c00; margin-bottom: 10px;">Income Statement Impact</h4>
+                                <div style="font-size: 0.9rem;">
+                                    <p><strong>Annual Interest Expense:</strong> $${totalInterest.toFixed(2)}</p>
+                                    <p><strong>Annual Depreciation Expense:</strong> $${(parseFloat(results.depreciation_expense) * 12).toFixed(2)}</p>
+                                    <p><strong>Total Lease Cost:</strong> $${results.total_cost}</p>
+                                    <p><strong>Lease Term:</strong> ${tenure} months</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Generate amortization schedule
+            generateAmortizationSchedule(results, rental, tenure, frequency, borrowingRate, totalInterest, totalRentalPayments, leaseIncentive);
+            
+            // Generate journal entries
+            generateCompleteJournalEntries(results, rental, totalInterest, tenure);
+            
+            document.getElementById('results').classList.add('show');
+        }
+        
+        function generateCompleteJournalEntries_OLD_DO_NOT_USE(results, rental, totalInterest, tenure) {
+            const tbody = document.getElementById('journal_body');
+            tbody.innerHTML = '';
+            
+            const monthlyInterest = totalInterest / tenure;
+            const monthlyPayment = rental;
+            const monthlyPrincipal = monthlyPayment - monthlyInterest;
+            const depreciation = parseFloat(results.depreciation_expense) || 0;
+            
+            // Journal entries matching Excel structure
+            const journalEntries = [
+                { bs_pl: 'BS', account: 'Lease Liability Non-current', amount: -(results.lease_liability || 0) * 0.7 },
+                { bs_pl: 'BS', account: 'Lease Liability Current', amount: -(results.lease_liability || 0) * 0.3 },
+                { bs_pl: 'PL', account: 'Interest Cost', amount: monthlyInterest * 12 },
+                { bs_pl: 'BS', account: 'RoU Asset (net)', amount: results.rou_asset || 0 },
+                { bs_pl: 'PL', account: 'Depreciation', amount: depreciation * 12 },
+                { bs_pl: 'PL', account: '(Gain)/Loss in P&L', amount: 0 },
+                { bs_pl: 'PL', account: 'ARO Interest', amount: (results.aro_amount || 0) * (results.borrowing_rate || 0) / 100 },
+                { bs_pl: 'BS', account: 'ARO Provision Closing', amount: results.aro_amount || 0 },
+                { bs_pl: 'PL', account: 'Interest on Security Dep', amount: 0 },
+                { bs_pl: 'BS', account: 'Security Deposit Non-current', amount: -(results.security_deposit || 0) * 0.7 },
+                { bs_pl: 'BS', account: 'Security Deposit Current', amount: -(results.security_deposit || 0) * 0.3 },
+                { bs_pl: 'PL', account: 'Rent Paid', amount: -monthlyPayment * 12 },
+                { bs_pl: 'PL', account: 'Initial direct expenditure', amount: 0 },
+                { bs_pl: 'BS', account: 'Prepaid', amount: 0 },
+                { bs_pl: 'BS', account: 'Retained Earnings', amount: 0 }
+            ];
+            
+            journalEntries.forEach(entry => {
+                const row = document.createElement('tr');
+                const amount = entry.amount || 0;
+                const incremental = amount || 0; // Simplified - would compare with previous
+                
+                row.innerHTML = `
+                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${entry.bs_pl}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${entry.account}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${Math.abs(amount).toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$0.00</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${Math.abs(incremental).toFixed(2)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function generateAmortizationSchedule_OLD_DO_NOT_USE(results, rental, tenure, frequency, borrowingRate, totalInterest, totalRentalPayments, leaseIncentive) {
+            const tbody = document.getElementById('schedule_body');
+            tbody.innerHTML = '';
+            
+            const monthlyRate = borrowingRate / 100 / 12;
+            let leaseLiability = totalRentalPayments - totalInterest + (results.initial_direct_costs - leaseIncentive);
+            let rouAsset = leaseLiability;
+            const monthlyPayment = rental;
+            const monthlyInterest = totalInterest / tenure;
+            const monthlyPrincipal = monthlyPayment - monthlyInterest;
+            const monthlyDepreciation = rouAsset / tenure;
+            let aroGross = parseFloat(results.aro_amount) || 0;
+            let aroLiability = aroGross;
+            const monthlyAROInterest = aroGross * (borrowingRate / 100 / 12);
+            
+            const currentDate = new Date();
+            
+            for (let i = 0; i < Math.min(12, tenure); i++) {
+                const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
+                const formattedDate = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                
+                // Calculate PV factor (Column E)
+                const daysFromStart = i * 30;
+                const pvFactor = 1 / ((1 + monthlyRate) ** (daysFromStart / 30));
+                
+                // Update balances
+                leaseLiability -= monthlyPrincipal;
+                rouAsset -= monthlyDepreciation;
+                
+                // Calculate change in ROU (Column K) - simplified
+                const prevAroLiability = i == 0 ? 0 : aroLiability - monthlyAROInterest;
+                const changeInROU = aroLiability - prevAroLiability;
+                
+                // Update ARO
+                aroLiability += monthlyAROInterest;
+                
+                // Security deposit PV (Column L) - simplified decreasing
+                const securityDepPV = (results.security_deposit || 0) * (1 - (i + 1) / tenure);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="padding: 8px; border: 1px solid #ddd;">${formattedDate}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">$${monthlyPayment.toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${pvFactor.toFixed(4)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">$${monthlyInterest.toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">$${Math.abs(leaseLiability).toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">$${(monthlyPayment * pvFactor).toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">$${rouAsset.toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">$${monthlyDepreciation.toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">$${changeInROU.toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">$${securityDepPV.toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">$${aroGross.toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">$${monthlyAROInterest.toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">$${aroLiability.toFixed(2)}</td>
+                `;
+                tbody.appendChild(row);
+            }
+            
+            // Add totals row
+            const totalsRow = document.createElement('tr');
+            totalsRow.style.background = '#f8f9fa';
+            totalsRow.style.fontWeight = 'bold';
+            totalsRow.innerHTML = `
+                <td style="padding: 8px; border: 1px solid #ddd;">Total</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">$${(monthlyPayment * Math.min(12, tenure)).toFixed(2)}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">-</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">$${(monthlyInterest * Math.min(12, tenure)).toFixed(2)}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">-</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">-</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">-</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">$${(monthlyDepreciation * Math.min(12, tenure)).toFixed(2)}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">-</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">-</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">-</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">$${(monthlyAROInterest * Math.min(12, tenure)).toFixed(2)}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">-</td>
+            `;
+            tbody.appendChild(totalsRow);
+        }
+        
+        function exportScheduleToExcel() {
+            const table = document.querySelector('#schedule_body').parentElement.parentElement;
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.table_to_sheet(table);
+            
+            // Add formatting
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            
+            // Set column widths
+            ws['!cols'] = [
+                { wch: 12 }, // Date
+                { wch: 12 }, // Rent
+                { wch: 10 }, // PV Factor
+                { wch: 12 }, // Interest
+                { wch: 14 }, // Liability
+                { wch: 12 }, // PV of Rent
+                { wch: 12 }, // ROU Asset
+                { wch: 12 }, // Depreciation
+                { wch: 12 }, // Change ROU
+                { wch: 12 }, // Sec Dep PV
+                { wch: 12 }, // ARO Gross
+                { wch: 12 }, // ARO Interest
+                { wch: 12 }  // ARO Provision
+            ];
+            
+            // Add currency formatting for numeric columns (2-13, skipping Date which is column 0)
+            for (let R = 1; R <= range.e.r; R++) {
+                for (let C = 1; C <= 12; C++) {
+                    const cell_ref = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (ws[cell_ref] && ws[cell_ref].t === 'n') {
+                        ws[cell_ref].z = '$#,##0.00';
+                    }
+                }
+            }
+            
+            XLSX.utils.book_append_sheet(wb, ws, "Amortization Schedule");
+            XLSX.writeFile(wb, "Lease_Amortization_Schedule.xlsx");
+        }
+        
+        function exportJournalsToExcel() {
+            const tables = document.querySelectorAll('table');
+            const wb = XLSX.utils.book_new();
+            
+            // Add schedule with formatting
+            if (tables[1]) {
+                const ws = XLSX.utils.table_to_sheet(tables[1]);
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                
+                ws['!cols'] = [
+                    { wch: 10 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }
+                ];
+                
+                for (let R = 1; R <= range.e.r; R++) {
+                    for (let C = 2; C <= 4; C++) {
+                        const cell_ref = XLSX.utils.encode_cell({ r: R, c: C });
+                        if (ws[cell_ref] && ws[cell_ref].t === 'n') {
+                            ws[cell_ref].z = '$#,##0.00';
+                        }
+                    }
+                }
+                
+                XLSX.utils.book_append_sheet(wb, ws, "Amortization Schedule");
+            }
+            
+            // Add journal entries
+            if (tables[2]) {
+                const ws = XLSX.utils.table_to_sheet(tables[2]);
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                
+                ws['!cols'] = [
+                    { wch: 8 }, { wch: 40 }, { wch: 18 }, { wch: 18 }, { wch: 18 }
+                ];
+                
+                // Format currency columns
+                for (let R = 1; R <= range.e.r; R++) {
+                    for (let C = 2; C <= 4; C++) {
+                        const cell_ref = XLSX.utils.encode_cell({ r: R, c: C });
+                        if (ws[cell_ref]) {
+                            // Try to parse as number
+                            const val = parseFloat(ws[cell_ref].v);
+                            if (!isNaN(val)) {
+                                ws[cell_ref].z = '$#,##0.00';
+                                ws[cell_ref].t = 'n';
+                                ws[cell_ref].v = val;
+                            }
+                        }
+                    }
+                }
+                
+                XLSX.utils.book_append_sheet(wb, ws, "Journal Entries");
+            }
+            
+            XLSX.writeFile(wb, "Lease_Complete_Report.xlsx");
+        }
+        
+        function displayPythonResults(result) {
+            // Display results from Python backend
+            const resultsDiv = document.getElementById('results');
+            if (!resultsDiv) {
+                console.error('Results div not found');
+                alert('Error: Results container not found');
+                return;
+            }
+            
+            console.log('Displaying results:', result);
+            
+            // Build complete results HTML with styled tables
+            let scheduleHTML = `
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="background: #667eea; color: white;">
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Date</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">Rent</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">PV Factor</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">Interest</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">Liability</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">PV Rent</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">ROU Asset</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">Depreciation</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedule_body"></tbody>
+                </table>
+            `;
+            
+            let journalHTML = `
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="background: #667eea; color: white;">
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">BS/PL</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Account</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">Result Period</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">Previous</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">Incremental</th>
+                        </tr>
+                    </thead>
+                    <tbody id="journal_body"></tbody>
+                </table>
+            `;
+            
+            resultsDiv.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 20px 0;">
+                    <h2 style="color: #667eea; margin-bottom: 25px; text-align: center; font-size: 1.8rem;">📊 Lease Calculation Results</h2>
+                    
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                        <h3 style="margin: 0 0 15px 0; font-size: 1.3rem;">Summary</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; font-size: 1rem;">
+                            <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 5px;">
+                                <strong>Total Payments:</strong> ${result.summary.total_payments}
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 5px;">
+                                <strong>Opening Liability:</strong> $${result.summary.opening_liability.toFixed(2)}
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 5px;">
+                                <strong>Total Interest:</strong> $${result.summary.total_interest.toFixed(2)}
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 5px;">
+                                <strong>Total Depreciation:</strong> $${result.summary.total_depreciation.toFixed(2)}
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 5px;">
+                                <strong>Total Rent Paid:</strong> $${result.summary.total_rent_paid.toFixed(2)}
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 5px;">
+                                <strong>Closing Liability:</strong> $${result.summary.closing_liability.toFixed(2)}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="color: #333; margin: 30px 0 15px 0; font-size: 1.3rem;">📅 Amortization Schedule</h3>
+                    <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
+                        ${scheduleHTML}
+                    </div>
+                    
+                    <h3 style="color: #333; margin: 30px 0 15px 0; font-size: 1.3rem;">📝 Journal Entries</h3>
+                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
+                        ${journalHTML}
+                    </div>
+                    
+                    <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-top: 25px; text-align: center;">
+                        <strong>✅ Python backend calculations complete!</strong>
+                    </div>
+                    
+                    <div style="margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
+                        <button onclick="exportPythonResultsToExcel()" style="background: #28a745; color: white; padding: 12px 30px; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                            📥 Download Results to Excel
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Now populate the tables
+            generatePythonSchedule(result.schedule);
+            generatePythonJournals(result.journal_entries);
+            
+            // Store result globally for export
+            window.lastLeaseResult = result;
+        }
+        
+        function exportPythonResultsToExcel() {
+            if (!window.lastLeaseResult) {
+                alert('No results to export');
+                return;
+            }
+            
+            const result = window.lastLeaseResult;
+            const wb = XLSX.utils.book_new();
+            
+            // Create Summary Sheet
+            const summaryData = [
+                ['Lease Calculation Summary'],
+                [],
+                ['Total Payments', result.summary.total_payments],
+                ['Opening Liability', result.summary.opening_liability],
+                ['Closing Liability', result.summary.closing_liability],
+                ['Total Interest', result.summary.total_interest],
+                ['Total Depreciation', result.summary.total_depreciation],
+                ['Total Rent Paid', result.summary.total_rent_paid]
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            summaryWs['!cols'] = [{ wch: 25 }, { wch: 20 }];
+            XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+            
+            // Create Amortization Schedule Sheet
+            const scheduleData = [['Date', 'Rent', 'PV Factor', 'Interest', 'Liability', 'PV Rent', 'ROU Asset', 'Depreciation']];
+            result.schedule.forEach(row => {
+                scheduleData.push([
+                    row.date,
+                    row.rental_amount,
+                    row.pv_factor,
+                    row.interest,
+                    row.lease_liability,
+                    row.pv_of_rent,
+                    row.rou_asset,
+                    row.depreciation
+                ]);
+            });
+            const scheduleWs = XLSX.utils.aoa_to_sheet(scheduleData);
+            scheduleWs['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+            // Format currency columns
+            for (let i = 1; i <= scheduleData.length; i++) {
+                ['B', 'D', 'E', 'F', 'G', 'H'].forEach(col => {
+                    const cell = scheduleWs[XLSX.utils.encode_cell({ r: i, c: col.charCodeAt(0) - 65 })];
+                    if (cell && cell.t === 'n') cell.z = '$#,##0.00';
+                });
+            }
+            XLSX.utils.book_append_sheet(wb, scheduleWs, "Amortization Schedule");
+            
+            // Create Journal Entries Sheet  
+            const journalData = [['BS/PL', 'Account', 'Result Period', 'Previous Period', 'Incremental Adjustment']];
+            result.journal_entries.forEach(entry => {
+                // Keep original signs - don't use Math.abs()
+                journalData.push([
+                    entry.bs_pl,
+                    entry.account_name,
+                    entry.result_period || 0,
+                    entry.previous_period || 0,
+                    entry.incremental_adjustment || 0
+                ]);
+            });
+            const journalWs = XLSX.utils.aoa_to_sheet(journalData);
+            journalWs['!cols'] = [{ wch: 8 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 22 }];
+            // Format currency columns
+            for (let i = 1; i <= journalData.length; i++) {
+                ['C', 'D', 'E'].forEach(col => {
+                    const cell = journalWs[XLSX.utils.encode_cell({ r: i, c: col.charCodeAt(0) - 65 })];
+                    if (cell && cell.t === 'n') cell.z = '$#,##0.00';
+                });
+            }
+            XLSX.utils.book_append_sheet(wb, journalWs, "Journal Entries");
+            
+            // Download
+            XLSX.writeFile(wb, "Lease_Complete_Report.xlsx");
+        }
+        
+        function generatePythonSchedule(schedule) {
+            const tbody = document.getElementById('schedule_body');
+            if (!tbody) {
+                console.error('schedule_body not found - table not created yet');
+                return;
+            }
+            tbody.innerHTML = '';
+            
+            schedule.forEach((row, idx) => {
+                const tr = document.createElement('tr');
+                const bgColor = idx % 2 === 0 ? '#f8f9fa' : '#ffffff';
+                tr.style.backgroundColor = bgColor;
+                tr.innerHTML = `
+                    <td style="padding: 10px; border: 1px solid #ddd;">${row.date}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${row.rental_amount.toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${row.pv_factor.toFixed(4)}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${row.interest.toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${row.lease_liability.toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${row.pv_of_rent.toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${row.rou_asset.toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${row.depreciation.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function generatePythonJournals(journals) {
+            const tbody = document.getElementById('journal_body');
+            if (!tbody) {
+                console.error('journal_body not found - table not created yet');
+                return;
+            }
+            tbody.innerHTML = '';
+            
+            journals.forEach((entry, idx) => {
+                const tr = document.createElement('tr');
+                const bgColor = idx % 2 === 0 ? '#f8f9fa' : '#ffffff';
+                tr.style.backgroundColor = bgColor;
+                tr.innerHTML = `
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: 500;">${entry.account_code || '-'}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: left;">${entry.account_name || ''}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: 500;">${entry.bs_pl || ''}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${(entry.result_period || 0).toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${(entry.previous_period || 0).toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right; font-weight: 500;">$${(entry.incremental_adjustment || 0).toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${(entry.usgaap_entry || 0).toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${(entry.ifrs_adjustment || 0).toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function generatePythonJournals_OLD(journals) {
+            const tbody = document.getElementById('journal_body');
+            if (!tbody) {
+                console.error('journal_body not found - table not created yet');
+                return;
+            }
+            tbody.innerHTML = '';
+            
+            journals.forEach((entry, idx) => {
+                const tr = document.createElement('tr');
+                const bgColor = idx % 2 === 0 ? '#f8f9fa' : '#ffffff';
+                tr.style.backgroundColor = bgColor;
+                tr.innerHTML = `
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: bold;">${entry.bs_pl}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: left;">${entry.account_name}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${entry.result_period.toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${entry.previous_period.toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${entry.incremental_adjustment.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
+

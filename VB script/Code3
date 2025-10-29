@@ -1,0 +1,732 @@
+Rem Attribute VBA_ModuleType=VBAModule
+Option VBASupport 1
+Option Compare Text
+
+Sub datanew()
+
+If Sheets("fields").Range("AutoID").Value = 0 Then
+MsgBox "Can't save, no AutoID specified!"
+GoTo skipp
+End If
+
+
+Dim cell As Range
+Application.EnableEvents = False
+Application.ScreenUpdating = False
+For Each cell In Sheets("fields").Range("inputset")
+i = i + 1
+Sheets("data").Range("C3").Offset(Sheets("fields").Range("autoID").Value, i).Formula = cell.Value
+Next
+
+skipp:
+newauto = Sheets("data").Range("D9999").End(xlUp).Row + 1
+Sheets("fields").Range("inputsetc").ClearContents
+Sheets("fields").Range("AutoID").Formula = Sheets("data").Range("C" & newauto).Value
+
+'Entered by
+Sheets("fields").Range("Field_entered_by").Value = Environ("UserName")
+
+Application.EnableEvents = True
+Application.ScreenUpdating = True
+
+End Sub
+
+Sub datarecall()
+If Sheets("fields").Range("AutoID").Value = 0 Then
+ddd = InputBox("Please input AutoID to load", "Enter AutoID")
+If IsNumeric(ddd) And ddd > 0 Then Range("AutoID").Formula = ddd Else Exit Sub
+End If
+
+If Sheets("A").Range("E12").Value <> "" Then
+    Call OnlineDown(Range("AutoID").Value, Range("AutoID").Value)
+    If Sheets("onlinet").Range("C3").Offset(1, Sheets("fields").Range("inputset").Count + 2).Value <> "" And Sheets("onlinet").Range("C3").Offset(1, Sheets("fields").Range("inputset").Count + 2).Value <> Sheets("Internals").Range("S2").Value Then x = 1
+            If x = 1 Then
+            MsgBox "You cannot proceed, this data is locked for editing by " & Sheets("onlinet").Range("C3").Offset(1, Sheets("fields").Range("inputset").Count + 2).Value, vbCritical, "Warning"
+                If Sheets("internals").Range("S3").Value = "Admin" Then
+                force = MsgBox("Do you want to force unlock?", vbYesNo, "Careful!")
+                    If force = vbYes Then GoTo doit
+                End If
+            Range("inputset").ClearContents
+            Range("Autoid").ClearContents
+            Sheets("onlinet").Range("C3:IF5").Offset(0, 0).ClearContents
+            Exit Sub
+    End If
+doit:
+If Sheets("internals").Range("v1").Value = 1 Then Call onlinelock
+
+End If
+
+Dim cell As Range
+Application.EnableEvents = False
+Application.ScreenUpdating = False
+For Each cell In Sheets("fields").Range("inputset")
+
+    If Sheets("A").Range("E12").Value <> "" Then
+    i = i + 1
+    cell.Formula = Sheets("onlinet").Range("C3").Offset(1, i).Value
+    'cell.Selectgg
+    
+    'Offline
+    Else
+    i = i + 1
+    cell.Formula = Sheets("data").Range("C3").Offset(Range("AutoID").Value, i).Value
+    End If
+
+
+Next
+Application.EnableEvents = True
+Application.ScreenUpdating = True
+
+
+End Sub
+
+Sub datarecallA(sss As Integer)
+If sss = 0 Then Exit Sub
+Dim cell As Range
+i = 0
+Sheets("fields").Range("autoid").Formula = sss
+Application.EnableEvents = False
+Application.ScreenUpdating = False
+For Each cell In Sheets("fields").Range("inputset")
+i = i + 1
+cell.Formula = Sheets("data").Range("C3").Offset(sss, i).Value
+Next
+Application.EnableEvents = True
+Application.ScreenUpdating = True
+End Sub
+
+
+
+Sub fieldreset()
+If Sheets("fields").Range("H3").Value <> 0 Then If MsgBox("Are you sure?", vbOKCancel, "Attention!") <> vbOK Then Exit Sub
+
+Sheets("fields").Range("Inputsetc").ClearContents
+
+End Sub
+
+
+
+Sub datasave2()
+
+If Range("Lease_startdate").Value = "" Then
+a = MsgBox("Can't save without lease start date", vbCritical, "Cannot save")
+Exit Sub
+End If
+
+
+'Call validatefields
+
+Dim cell As Range
+Application.EnableEvents = False
+Application.ScreenUpdating = False
+
+'Field validation
+    For Each cell In Sheets("fields").Range("inputset")
+    If cell.DisplayFormat.Interior.Color = "49407" Then
+    a = MsgBox("Input all mandatory data fields.", vbCritical, "Cannot save")
+    Exit Sub
+    End If
+    Next
+    
+If Sheets("internals").Range("v1").Value = 3 Then GoTo alt2
+If Sheets("fields").Range("AutoID").Value = 0 Then
+ne = MsgBox("Save as a new lease?", vbYesNo, "No existing AutoID")
+    If ne = vbYes Then
+    autoai = autoi
+            If autoai = "failed" Then
+            MsgBox "Cannot save, failed to obtain AutoID, check connection to server"
+            GoTo step2
+            End If
+    Else
+    GoTo step2
+    End If
+Else
+autoai = Sheets("fields").Range("AutoID").Value
+
+'Last modified by:
+Sheets("Fields").Range("Field_last_modifiedby").Value = Sheets("Internals").Range("S2").Value & " | " & Format(Date, "yyyy-mm-dd")
+
+End If
+
+If Sheets("A").Range("E12").Value <> "" Then
+    For Each cell In Sheets("fields").Range("inputset")
+    i = i + 1
+    
+    ff = Sheets("data").Range("C3").Offset(0, i).Value
+    If cell.Value = "" Then dd = "NULL" Else dd = cell.Value
+    If IsDate(dd) Then dd = Format(dd, "yyyy-mm-dd")
+    If dd <> "Null" Then dd = "'" & dd & "'"
+    dd = Replace(dd, "&", "%26", , , vbTextCompare)
+    If ff1 = "" Then ff1 = "(" & ff Else ff1 = ff1 & ", " & ff
+    If qqq = "" Then qqq = "VALUES (" & dd Else qqq = qqq & ", " & dd
+    Next
+    If qqq <> "" Then qq = ff1 & ", Auto_ID) " & qqq & ", '" & autoai & "')" Else GoTo step2
+
+    Set objhttp = CreateObject("WinHttp.WinHttpRequest.5.1")
+   ' URL = "https://dhfirhfihnifjg.in/lic/DataUpdatex" & Sheets("A").Range("E12").Value & ".php"
+    objhttp.Open "POST", URL, False
+    objhttp.setRequestHeader "User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)"
+    objhttp.setRequestHeader "Content-type", "application/x-www-form-urlencoded"
+    On Error Resume Next
+    objhttp.Send ("nu=1" & "&qq1=" & qq & "&uu=" & Sheets("Internals").Range("S2").Value)
+        If objhttp.responsetext <> "Inserted Successfully" Then
+        MsgBox "Could not save, please check connection to server"
+        GoTo step2
+        Else
+        If Range("Autoid").Value = 0 Then MsgBox "Saved as AutoID " & autoai
+        GoTo good2go
+        End If
+GoTo jump1
+alt2:
+    
+    autoai = Sheets("fields").Range("AutoID").Value
+    If autoai = 0 Then GoTo step2
+    For Each cell In Sheets("fields").Range("inputset")
+    i = i + 1
+    
+    ff = Sheets("data").Range("C3").Offset(0, i).Value
+    If cell.Value = "" Then dd = "NULL" Else dd = cell.Value
+    If IsDate(dd) Then dd = Format(dd, "yyyy-mm-dd")
+    If dd <> "Null" Then dd = "'" & dd & "'"
+    dd = Replace(dd, "&", "%26", , , vbTextCompare)
+    If qq = "" Then qq = "Auto_ID = '" & autoai & "', " & ff & " = " & dd Else qq = qq & ", " & ff & " = " & dd
+    Next
+    If qq <> "" Then qq = qq & ", Rejectedby = '' WHERE AutoNO = '" & Sheets("onlinet").Range("C3").Offset(Sheets("onlinet").Range("A1").Value, i + 5).Value & "'" Else GoTo step2
+
+    Set objhttp = CreateObject("WinHttp.WinHttpRequest.5.1")
+   ' URL = "https://dhfirhfihnifjg.in/lic/DataUpdatexx" & Sheets("A").Range("E12").Value & ".php"
+    objhttp.Open "POST", URL, False
+    objhttp.setRequestHeader "User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)"
+    objhttp.setRequestHeader "Content-type", "application/x-www-form-urlencoded"
+    On Error Resume Next
+    objhttp.Send ("nu=1" & "&qq1=" & qq & "&uu=" & Sheets("Internals").Range("S2").Value)
+        If objhttp.responsetext <> "Inserted Successfully" Then
+        MsgBox "Could not save, please check connection to server"
+        GoTo step2
+        Else
+        onlinet.Range("C4:FK4").Offset(onlinet.Range("A1").Value - 1, 0).ClearContents
+        GoTo good2go
+        End If
+        
+
+jump1:
+Call onlineunlock
+Else
+Call modifyref_offline
+    For Each cell In Sheets("fields").Range("inputset")
+        i = i + 1
+    Sheets("data").Range("C3").Offset(autoai, i).Formula = cell.Value
+    Next
+ 
+If Range("Autoid").Value = 0 Then MsgBox "Saved as AutoID " & autoai
+End If
+
+good2go:
+Range("inputset").ClearContents
+Range("Autoid").ClearContents
+
+
+step2:
+Application.EnableEvents = True
+Application.ScreenUpdating = True
+End Sub
+
+
+Sub shortterm_identification()
+On Error Resume Next
+
+If IsEmpty(Sheets("Fields").Range("ModifyID").Value) = False Then
+Sheets("Fields").Range("Shortterm_USGAAP").Value = "No"
+Sheets("Fields").Range("Shortterm_IFRS").Value = "No"
+Else
+
+    'USGAAP
+    USGAAP_term = Sheets("Fields").Range("Lease_enddate").Value - Sheets("Fields").Range("Lease_startdate").Value
+    If WorksheetFunction.Convert(USGAAP_term, "day", "yr") < 1 Then Sheets("Fields").Range("Shortterm_USGAAP").Value = "Yes" Else Sheets("Fields").Range("Shortterm_USGAAP").Value = "No"
+    
+    'IFRS
+    IFRS_term = Sheets("Fields").Range("Lease_enddate").Value - WorksheetFunction.Max(Sheets("Fields").Range("Lease_startdate").Value, Sheets("Fields").Range("Field_transition_date").Value)
+    If WorksheetFunction.Convert(IFRS_term, "day", "yr") < 1 Then Sheets("Fields").Range("Shortterm_IFRS").Value = "Yes" Else Sheets("Fields").Range("Shortterm_IFRS").Value = "No"
+
+End If
+
+End Sub
+
+Sub autoesc()
+Dim startd As Date
+Dim begdate As Date
+
+If MsgBox("The data will be saved before proceeding, continue?", vbOKCancel, "Save data?") = vbOK Then Call datasave2 Else Exit Sub
+ai = Sheets("fields").Range("autoID").Value
+
+fre = Range("Esc_Freq_months").Offset(ai, 0).Value
+pre = Range("Escalation_percent").Offset(ai, 0).Value * 100
+frerent = Range("Frequency_months").Offset(ai, 0).Value
+If fre = 0 Or pre = 0 Or frerent = 0 Then Exit Sub
+Sec = InputBox("Esclation starts from 1st, 2nd or 3rd rental (e.g. enter 1 or 2 or 3)")
+If Sec > 3 Or Sec < 1 Then
+MsgBox "Ïnvalid input"
+Exit Sub
+End If
+Application.EnableEvents = False
+'Range("Rentfields").ClearContents
+'Determining starting point
+begind = Evaluate("DATE(YEAR(E4)-1,MONTH(D4),D6)")
+lastescdate = Range("Escalation_Start").Offset(ai, 0).Value
+
+For t = 1 To 24
+If lastescdate < WorksheetFunction.EDate(begind, frerent * (t - 1)) Then
+startd = WorksheetFunction.EDate(begind, frerent * (t - 2))
+Exit For
+End If
+If lastescdate = WorksheetFunction.EDate(begind, frerent * (t - 1)) Then
+startd = WorksheetFunction.EDate(begind, frerent * (t - 1))
+Exit For
+End If
+Next t
+Dim offse As Double
+begdate = startd
+startd = Evaluate("DATE(" & Year(startd) & ", " & Month(startd) & "," & Range("DataTable[[#Headers],[Accrual_day]]").Offset(ai, 0) & ")")
+offse = (startd - lastescdate)
+MsgBox offse
+
+
+k = 0
+For i = Sec To 19
+Range("Rental1").Offset(i - 1, 1).Formula = WorksheetFunction.EDate(begdate, fre * (i + 1 - Sec - k)) - 1
+If Sheets("fields").Range("Rental1").Offset(i - 1, 1).Value >= Range("End_date").Offset(ai, 0).Value Then
+Sheets("fields").Range("Rental1").Offset(i - 1, 1).Formula = Range("End_date").Offset(ai, 0).Value
+Exit Sub
+End If
+
+J = 0
+If offse <> 0 Then
+Sheets("fields").Range("Rental1").Offset(i, 1).Formula = WorksheetFunction.EDate(begdate, fre * (i + 1 - Sec - k))
+
+RPeriod = WorksheetFunction.EDate(WorksheetFunction.EDate(begdate, fre * (i + 1 - Sec - k)), frerent) - WorksheetFunction.EDate(begdate, fre * (i + 1 - Sec - k))
+offseOriginal = offse
+If offseOriginal < 0 Then offse = RPeriod + offseOriginal
+Sheets("fields").Range("Rental1").Offset(i, 0).Formula = (Sheets("fields").Range("Rental1").Offset(i - 1, 0).Value * (1 + pre / 100) * offse / RPeriod + Sheets("fields").Range("Rental1").Offset(i - 1, 0).Value * (RPeriod - offse) / (RPeriod))
+i = i + 1
+k = k + 1
+J = 1
+If Sheets("fields").Range("Rental1").Offset(i - 1, 1).Value >= Range("End_date").Offset(ai, 0).Value Then
+Sheets("fields").Range("Rental1").Offset(i - 1, 1).Formula = Range("End_date").Offset(ai, 0).Value
+Application.EnableEvents = True
+Exit Sub
+End If
+
+End If
+
+
+
+Sheets("fields").Range("Rental1").Offset(i, 0).Formula = Sheets("fields").Range("Rental1").Offset(i - 1 - J, 0).Value * (1 + pre / 100)
+Next i
+
+MsgBox "Too many escalations"
+
+
+End Sub
+
+Sub reseto()
+If Sheets("A").Range("E12").Value <> "" Then
+    If Sheets("internals").Range("v1").Value = 1 Then
+    Call onlineunlock
+    End If
+End If
+Range("inputset").ClearContents
+Range("Autoid").ClearContents
+End Sub
+
+
+Sub approvee()
+
+'Call validatefields
+
+Dim cell As Range
+Application.EnableEvents = False
+Application.ScreenUpdating = False
+
+If Sheets("fields").Range("AutoID").Value = 0 Then
+MsgBox "Nothing to approve"
+GoTo step2
+End If
+
+
+    If Sheets("fields").Range("AutoID").Value = 0 Then GoTo step2
+
+Range("Field_lastreviewedby").Formula = Sheets("Internals").Range("S2").Value & " | " & Format(Date, "yyyy-mm-dd")
+Call modifyref_online
+
+    For Each cell In Sheets("fields").Range("inputset")
+    i = i + 1
+    
+    ff = Sheets("data").Range("C3").Offset(0, i).Value
+    If cell.Value = "" Then dd = "NULL" Else dd = cell.Value
+    If IsDate(dd) Then dd = Format(dd, "yyyy-mm-dd")
+    If dd <> "Null" Then dd = "'" & dd & "'"
+    dd = Replace(dd, "&", "%26", , , vbTextCompare)
+    If qq = "" Then qq = ff & " = " & dd Else qq = qq & ", " & ff & " = " & dd
+    Next
+    If qq <> "" Then qq = qq & " WHERE Auto_ID = '" & Range("AutoID").Value & "'" Else GoTo step2
+    
+    Set objhttp = CreateObject("WinHttp.WinHttpRequest.5.1")
+ '   URL = "https://dhfirhfihnifjg.in/lic/DataUpdate" & Sheets("A").Range("E12").Value & ".php"
+    objhttp.Open "POST", URL, False
+    objhttp.setRequestHeader "User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)"
+    objhttp.setRequestHeader "Content-type", "application/x-www-form-urlencoded"
+    On Error Resume Next
+    objhttp.Send ("nu=1" & "&qq1=" & qq & "&uu=" & Sheets("Internals").Range("S2").Value)
+        If objhttp.responsetext <> "Inserted Successfully" Then
+        MsgBox "Could not save, please check connection to server"
+        GoTo step2
+        Else
+        GoTo good2go
+        End If
+        
+Call onlineunlock
+good2go:
+    Set objhttp = CreateObject("WinHttp.WinHttpRequest.5.1")
+   ' URL = "https://dhfirhfihnifjg.in/lic/DataUpdatexx" & Sheets("A").Range("E12").Value & ".php"
+    objhttp.Open "POST", URL, False
+    objhttp.setRequestHeader "User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)"
+    objhttp.setRequestHeader "Content-type", "application/x-www-form-urlencoded"
+    On Error Resume Next
+    objhttp.Send ("nu=1" & "&qq1=approvedby = '" & Range("Field_lastreviewedby").Value & "' WHERE AutoNO = '" & Sheets("onlinet").Range("C3").Offset(Sheets("onlinet").Range("A1").Value, i + 5).Value & "'" & "&uu=" & Sheets("Internals").Range("S2").Value)
+        If objhttp.responsetext <> "Inserted Successfully" Then
+        MsgBox "Could not save, please check connection to server"
+                GoTo step2
+        End If
+
+
+Range("inputset").ClearContents
+Range("Autoid").ClearContents
+onlinet.Range("C4:FK4").Offset(onlinet.Range("A1").Value - 1, 0).ClearContents
+
+'Show next ID for approval
+Call shownext
+
+step2:
+Application.EnableEvents = True
+Application.ScreenUpdating = True
+End Sub
+
+
+Sub rejectt()
+
+'Call validatefields
+
+Dim cell As Range
+Application.EnableEvents = False
+Application.ScreenUpdating = False
+
+If Sheets("fields").Range("AutoID").Value = 0 Then
+MsgBox "Nothing to reject"
+GoTo step2
+End If
+
+
+    If Sheets("fields").Range("AutoID").Value = 0 Then GoTo step2
+    Set objhttp = CreateObject("WinHttp.WinHttpRequest.5.1")
+ '   URL = "https://dhfirhfihnifjg.in/lic/DataUpdatexx" & Sheets("A").Range("E12").Value & ".php"
+    objhttp.Open "POST", URL, False
+    objhttp.setRequestHeader "User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)"
+    objhttp.setRequestHeader "Content-type", "application/x-www-form-urlencoded"
+    On Error Resume Next
+    objhttp.Send ("nu=1" & "&qq1=rejectedby = '" & Sheets("Internals").Range("S2").Value & "' WHERE AutoNO = '" & Sheets("onlinet").Range("C3").Offset(Sheets("onlinet").Range("A1").Value, Sheets("fields").Range("inputset").Count + 5).Value & "'" & "&uu=" & Sheets("Internals").Range("S2").Value)
+        If objhttp.responsetext <> "Inserted Successfully" Then
+        MsgBox "Could not save, please check connection to server"
+        GoTo step2
+        End If
+
+
+Range("inputset").ClearContents
+Range("Autoid").ClearContents
+onlinet.Range("C4:FK4").Offset(onlinet.Range("A1").Value - 1, 0).ClearContents
+
+'Show next ID for approval
+Call shownext
+
+
+step2:
+Application.EnableEvents = True
+Application.ScreenUpdating = True
+End Sub
+
+Sub buttonshow1()
+
+'Offline mode
+If Sheets("A").Range("E12").Value <> "" Then
+
+'Online mode
+If Sheets("internals").Range("S3").Value = "View Only" Then
+Sheets("Fields").Shapes("View").Visible = True
+Sheets("Fields").Shapes("Entry").Visible = False
+Sheets("Fields").Shapes("Rejecte").Visible = False
+Sheets("Fields").Shapes("Approval").Visible = False
+Sheets("internals").Range("v1").Formula = 4
+    
+    pp1 = Sheets("internals").Range("Q2").Value
+    ActiveWorkbook.Unprotect password:=pp1
+    Sheets("Entities").Visible = xlVeryHidden
+    ActiveWorkbook.Protect Structure:=True, Windows:=False, password:=pp1
+    
+Sheets("A").Shapes("Entity_list").Visible = False
+End If
+
+If Sheets("internals").Range("S3").Value = "Editor" Then
+Sheets("Fields").Shapes("View").Visible = True
+Sheets("Fields").Shapes("Entry").Visible = True
+Sheets("Fields").Shapes("Rejecte").Visible = True
+Sheets("Fields").Shapes("Approval").Visible = False
+Sheets("internals").Range("v1").Formula = 1
+    
+    pp1 = Sheets("internals").Range("Q2").Value
+    ActiveWorkbook.Unprotect password:=pp1
+    Sheets("Entities").Visible = xlVeryHidden
+    ActiveWorkbook.Protect Structure:=True, Windows:=False, password:=pp1
+    
+Sheets("A").Shapes("Entity_list").Visible = False
+End If
+
+If Sheets("internals").Range("S3").Value = "Approver" Then
+Sheets("Fields").Shapes("View").Visible = True
+Sheets("Fields").Shapes("Entry").Visible = False
+Sheets("Fields").Shapes("Rejecte").Visible = True
+Sheets("Fields").Shapes("Approval").Visible = True
+Sheets("internals").Range("v1").Formula = 2
+    
+    pp1 = Sheets("internals").Range("Q2").Value
+    ActiveWorkbook.Unprotect password:=pp1
+    Sheets("Entities").Visible = xlVeryHidden
+    ActiveWorkbook.Protect Structure:=True, Windows:=False, password:=pp1
+    
+Sheets("A").Shapes("Entity_list").Visible = False
+End If
+
+If Sheets("internals").Range("S3").Value = "Admin" Then
+Sheets("Fields").Shapes("View").Visible = True
+Sheets("Fields").Shapes("Entry").Visible = True
+Sheets("Fields").Shapes("Rejecte").Visible = True
+Sheets("Fields").Shapes("Approval").Visible = True
+Sheets("internals").Range("v1").Formula = 1
+    
+    pp1 = Sheets("internals").Range("Q2").Value
+    ActiveWorkbook.Unprotect password:=pp1
+    Sheets("Entities").Visible = xlSheetVisible
+    ActiveWorkbook.Protect Structure:=True, Windows:=False, password:=pp1
+    
+Sheets("A").Shapes("Entity_list").Visible = False
+End If
+
+Else
+Sheets("Fields").Shapes("View").Visible = True
+Sheets("Fields").Shapes("Entry").Visible = True
+Sheets("Fields").Shapes("Rejecte").Visible = False
+Sheets("Fields").Shapes("Approval").Visible = False
+Sheets("internals").Range("v1").Formula = 1
+    
+    pp1 = Sheets("internals").Range("Q2").Value
+    ActiveWorkbook.Unprotect password:=pp1
+    Sheets("Entities").Visible = xlVeryHidden
+    ActiveWorkbook.Protect Structure:=True, Windows:=False, password:=pp1
+    
+Sheets("A").Shapes("Entity_list").Visible = False
+
+End If
+
+End Sub
+
+
+Sub buttonshow()
+
+Range("inputset").ClearContents
+Range("Autoid").ClearContents
+
+If Sheets("internals").Range("v1").Value = 4 Then
+Range("inputset").Locked = True
+Sheets("Fields").Shapes("clearform").Visible = True
+Sheets("Fields").Shapes("save").Visible = False
+Sheets("Fields").Shapes("load").Visible = True
+Sheets("Fields").Shapes("approve").Visible = False
+Sheets("Fields").Shapes("reject").Visible = False
+Sheets("Fields").Shapes("shownext").Visible = True
+Sheets("Fields").Shapes("copymodification").Visible = False
+Sheets("Fields").Shapes("copy_lease").Visible = False
+End If
+
+If Sheets("internals").Range("v1").Value = 1 Then
+Range("inputset").Locked = False
+Range("Lease_enddate").Locked = True
+Range("ModifierID").Locked = True
+Range("ModifierID").Offset(1, 0).Locked = True
+Range("Shortterm_IFRS").Locked = True
+Range("Shortterm_USGAAP").Locked = True
+Range("Field_entered_by").Locked = True
+Range("Field_last_modifiedby").Locked = True
+Range("Field_lastreviewedby").Locked = True
+Sheets("Fields").Shapes("clearform").Visible = True
+Sheets("Fields").Shapes("save").Visible = True
+Sheets("Fields").Shapes("load").Visible = True
+Sheets("Fields").Shapes("approve").Visible = False
+Sheets("Fields").Shapes("reject").Visible = False
+Sheets("Fields").Shapes("shownext").Visible = False
+Sheets("Fields").Shapes("copymodification").Visible = False
+Sheets("Fields").Shapes("copy_lease").Visible = True
+End If
+
+If Sheets("internals").Range("v1").Value = 2 Then
+Call OnlineDownx("=")
+Sheets("onlinet").Range("A1").Formula = 0
+Call shownext
+Range("inputset").Locked = True
+Sheets("Fields").Shapes("clearform").Visible = False
+Sheets("Fields").Shapes("save").Visible = False
+Sheets("Fields").Shapes("load").Visible = False
+Sheets("Fields").Shapes("approve").Visible = True
+Sheets("Fields").Shapes("reject").Visible = True
+Sheets("Fields").Shapes("shownext").Visible = True
+Sheets("Fields").Shapes("copymodification").Visible = False
+Sheets("Fields").Shapes("copy_lease").Visible = False
+End If
+
+If Sheets("internals").Range("v1").Value = 3 Then
+Call OnlineDownx("<>")
+Sheets("onlinet").Range("A1").Formula = 0
+Call shownext
+Range("inputset").Locked = False
+Range("Lease_enddate").Locked = True
+Range("ModifierID").Locked = True
+Range("ModifierID").Offset(1, 0).Locked = True
+Range("Shortterm_IFRS").Locked = True
+Range("Shortterm_USGAAP").Locked = True
+Range("Field_entered_by").Locked = True
+Range("Field_last_modifiedby").Locked = True
+Range("Field_lastreviewedby").Locked = True
+Sheets("Fields").Shapes("clearform").Visible = False
+Sheets("Fields").Shapes("save").Visible = True
+Sheets("Fields").Shapes("load").Visible = False
+Sheets("Fields").Shapes("approve").Visible = False
+Sheets("Fields").Shapes("reject").Visible = False
+Sheets("Fields").Shapes("shownext").Visible = True
+Sheets("Fields").Shapes("copymodification").Visible = False
+Sheets("Fields").Shapes("copy_lease").Visible = False
+End If
+
+End Sub
+
+
+Sub shownext()
+Sheets("onlinet").Range("A1").Formula = Sheets("onlinet").Range("A1").Value + 1
+If Sheets("onlinet").Range("C3").Offset(Sheets("onlinet").Range("A1").Value, 0).Value = 0 Then Sheets("onlinet").Range("A1").Formula = 1
+Dim cell As Range
+Application.EnableEvents = False
+Application.ScreenUpdating = False
+For Each cell In Sheets("fields").Range("inputset")
+i = i + 1
+cell.Formula = Sheets("onlinet").Range("C3").Offset(Sheets("onlinet").Range("A1").Value, i).Value
+Next
+Range("autoid").Formula = Sheets("onlinet").Range("C3").Offset(Sheets("onlinet").Range("A1").Value, 0).Value
+If IsEmpty(Range("autoid").Value) = True Then MsgBox "No more leases to Approve / Reject"
+
+Application.EnableEvents = True
+Application.ScreenUpdating = True
+End Sub
+
+
+Function autoi()
+
+If Sheets("A").Range("E12").Value <> "" Then
+ 
+    Set objhttp = CreateObject("WinHttp.WinHttpRequest.5.1")
+  '  URL = "https://dhfirhfihnifjg.in/lic/AutoI" & Sheets("A").Range("E12").Value & ".php"
+    objhttp.Open "POST", URL, False
+    objhttp.setRequestHeader "User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)"
+    objhttp.setRequestHeader "Content-type", "application/x-www-form-urlencoded"
+    On Error Resume Next
+    objhttp.Send ("nu=irrelevant")
+        If IsNumeric(objhttp.responsetext) Then
+        autoi = objhttp.responsetext + 1
+        Else
+        autoi = "failed"
+        End If
+
+Else
+autoi = Sheets("data").Range("D9999").End(xlUp).Row - 2
+End If
+
+End Function
+
+
+Sub copyLease()
+
+ddd = InputBox("Please input AutoID to copy", "Enter AutoID")
+If IsNumeric(ddd) And ddd > 0 Then Range("AutoID").Formula = ddd Else Exit Sub
+
+'answer = MsgBox("Copy for lease modification?", vbYesNo, "Copy type")
+ '   If answer = vbYes Then
+  '  s_date = InputBox("Please input lease modification date in DD-MM-YYYY format", "Enter modification date")
+   '     If IsDate(s_date) = True Then
+    '    modi_date = DateValue(s_date)
+     '   Else
+      '  Range("AutoID").Formula = Empty
+       ' Exit Sub
+        'End If
+    'End If
+
+If Sheets("A").Range("E12").Value <> "" Then
+    Call OnlineDown(Range("AutoID").Value, Range("AutoID").Value)
+    
+doit:
+If Sheets("internals").Range("v1").Value = 1 Then Call onlinelock
+
+End If
+
+
+Dim cell As Range
+Application.EnableEvents = False
+Application.ScreenUpdating = False
+For Each cell In Sheets("fields").Range("inputset")
+
+    If Sheets("A").Range("E12").Value <> "" Then
+    i = i + 1
+    cell.Formula = Sheets("onlinet").Range("C3").Offset(1, i).Value
+    'cell.Selectgg
+    
+    'Offline
+    Else
+    i = i + 1
+    cell.Formula = Sheets("data").Range("C3").Offset(Range("AutoID").Value, i).Value
+    End If
+
+Next
+
+   'If modi_date <> "" Then
+    'end_date = Sheets("fields").Range("Lease_enddate").Value
+    'tenure = (Year(end_date + 1) - Year(modi_date)) * 12 + (Month(end_date + 1) - Month(modi_date)) & "." & Format((Day(end_date + 1) - Day(modi_date)), "00")
+    'Sheets("fields").Range("Field_tenure").Formula = tenure
+    'Sheets("fields").Range("Lease_startdate").Formula = modi_date
+    'Sheets("fields").Range("Lease_startdate").Select
+    'SendKeys "{F2}", True
+    'SendKeys "{ENTER}", True
+    'End If
+    
+Range("AutoID").ClearContents
+Range("G42:G44,G7:G9").ClearContents
+Sheets("Fields").Range("Field_entered_by").Value = Sheets("Internals").Range("S2").Value & " | " & Format(Date, "yyyy-mm-dd")
+
+
+Application.EnableEvents = True
+Application.ScreenUpdating = True
+
+
+End Sub
+
+Sub entitylist()
+
+Sheets("Entities").Activate
+
+End Sub
+
+
+

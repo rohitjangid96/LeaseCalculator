@@ -1,0 +1,400 @@
+"""
+Database layer for Lease Management System
+"""
+import sqlite3
+from datetime import date, datetime
+from typing import List, Dict, Optional
+import bcrypt
+from contextlib import contextmanager
+
+DATABASE_PATH = "lease_management.db"
+
+
+@contextmanager
+def get_db_connection():
+    """Context manager for database connections"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def init_database():
+    """Initialize database tables"""
+    with get_db_connection() as conn:
+        # Users table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                email TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # Leases table - stores all lease data
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS leases (
+                lease_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                lease_name TEXT NOT NULL,
+                description TEXT,
+                asset_class TEXT,
+                asset_id_code TEXT,
+                counterparty TEXT,
+                group_entity_name TEXT,
+                region TEXT,
+                segment TEXT,
+                cost_element TEXT,
+                vendor_code TEXT,
+                agreement_type TEXT,
+                responsible_person_operations TEXT,
+                responsible_person_accounts TEXT,
+                
+                -- Dates
+                lease_start_date DATE,
+                first_payment_date DATE,
+                end_date DATE,
+                agreement_date DATE,
+                termination_date DATE,
+                
+                -- Terms
+                tenure REAL,
+                frequency_months INTEGER,
+                day_of_month TEXT,
+                accrual_day INTEGER,
+                
+                -- Rentals
+                auto_rentals TEXT,
+                rental_1 REAL,
+                rental_2 REAL,
+                
+                -- Escalation
+                escalation_percent REAL,
+                esc_freq_months INTEGER,
+                escalation_start_date DATE,
+                index_rate_table TEXT,
+                
+                -- Financial
+                borrowing_rate REAL,
+                currency TEXT,
+                compound_months INTEGER,
+                fv_of_rou REAL,
+                initial_direct_expenditure REAL,
+                lease_incentive REAL,
+                
+                -- ARO
+                aro REAL,
+                aro_table INTEGER,
+                
+                -- Security Deposit
+                security_deposit REAL,
+                security_discount REAL,
+                
+                -- Cost Centers
+                cost_centre TEXT,
+                profit_center TEXT,
+                
+                -- Flags
+                finance_lease_usgaap TEXT,
+                shortterm_lease_ifrs_indas TEXT,
+                manual_adj TEXT,
+                
+                -- Transition
+                transition_date DATE,
+                transition_option TEXT,
+                
+                -- Impairments
+                impairment1 REAL,
+                impairment_date_1 DATE,
+                
+                -- Other
+                intragroup_lease TEXT,
+                sublease TEXT,
+                sublease_rou REAL,
+                modifies_this_id INTEGER,
+                modified_by_this_id INTEGER,
+                date_modified DATE,
+                head_lease_id TEXT,
+                scope_reduction REAL,
+                scope_date DATE,
+                practical_expedient TEXT,
+                entered_by TEXT,
+                last_modified_by TEXT,
+                last_reviewed_by TEXT,
+                
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                
+                FOREIGN KEY (user_id) REFERENCES users(user_id)
+            )
+        """)
+        
+        # Leases calculations - stores calculated schedules and journal entries
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS lease_calculations (
+                calc_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                lease_id INTEGER NOT NULL,
+                from_date DATE NOT NULL,
+                to_date DATE NOT NULL,
+                calculation_data TEXT,  -- JSON stored results
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (lease_id) REFERENCES leases(lease_id)
+            )
+        """)
+        
+        print("✅ Database initialized")
+
+
+# ============ USER MANAGEMENT ============
+
+def hash_password(password: str) -> str:
+    """Hash a password using bcrypt"""
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+
+def verify_password(password: str, hashed: str) -> bool:
+    """Verify a password against hash"""
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
+
+def create_user(username: str, password: str, email: Optional[str] = None) -> int:
+    """Create a new user"""
+    password_hash = hash_password(password)
+    with get_db_connection() as conn:
+        cursor = conn.execute(
+            "INSERT INTO users (username, password_hash, email) VALUES (?, ?, ?)",
+            (username, password_hash, email)
+        )
+        return cursor.lastrowid
+
+
+def authenticate_user(username: str, password: str) -> Optional[Dict]:
+    """Authenticate user and return user data if valid"""
+    with get_db_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM users WHERE username = ?",
+            (username,)
+        ).fetchone()
+        
+        if row and verify_password(password, row['password_hash']):
+            return dict(row)
+        return None
+
+
+def get_user(user_id: int) -> Optional[Dict]:
+    """Get user by ID"""
+    with get_db_connection() as conn:
+        row = conn.execute(
+            "SELECT user_id, username, email, created_at FROM users WHERE user_id = ?",
+            (user_id,)
+        ).fetchone()
+        return dict(row) if row else None
+
+
+# ============ LEASE MANAGEMENT ============
+
+def save_lease(user_id: int, lease_data: Dict) -> int:
+    """Save or update a lease"""
+    lease_id = lease_data.get('lease_id')
+    
+    # Normalize field names from form to database schema (camelCase -> snake_case)
+    field_mapping = {
+        'asset_name': 'lease_name',  # Use asset_name as lease_name if not set
+        'asset_id_code': 'asset_id_code',
+        'asset_class': 'asset_class',
+        'lease_start_date': 'lease_start_date',
+        'first_payment_date': 'first_payment_date',
+        'end_date': 'end_date',
+        # Add more mappings as needed
+    }
+    
+    # Only keep fields that exist in database schema
+    lease_data['user_id'] = user_id
+    
+    # Convert dates to strings
+    date_fields = ['lease_start_date', 'first_payment_date', 'end_date', 'agreement_date',
+                   'termination_date', 'escalation_start_date', 'transition_date',
+                   'impairment_date_1', 'scope_date', 'date_modified']
+    
+    for field in date_fields:
+        if lease_data.get(field):
+            if isinstance(lease_data[field], date):
+                lease_data[field] = lease_data[field].isoformat()
+            elif isinstance(lease_data[field], str) and '/' in lease_data[field]:
+                # Handle MM/DD/YYYY format
+                try:
+                    d = datetime.strptime(lease_data[field], '%m/%d/%Y')
+                    lease_data[field] = d.date().isoformat()
+                except:
+                    pass
+    
+    if lease_id:
+        # Update existing lease
+        # Filter to only valid database columns
+        valid_columns = [
+            'lease_name', 'description', 'asset_class', 'asset_id_code', 'counterparty',
+            'group_entity_name', 'region', 'segment', 'cost_element', 'vendor_code',
+            'agreement_type', 'responsible_person_operations', 'responsible_person_accounts',
+            'lease_start_date', 'first_payment_date', 'end_date', 'agreement_date', 'termination_date',
+            'tenure', 'frequency_months', 'day_of_month', 'accrual_day',
+            'auto_rentals', 'rental_1', 'rental_2',
+            'escalation_percent', 'esc_freq_months', 'escalation_start_date', 'index_rate_table',
+            'borrowing_rate', 'currency', 'compound_months', 'fv_of_rou',
+            'initial_direct_expenditure', 'lease_incentive',
+            'aro', 'aro_table', 'security_deposit', 'security_discount',
+            'cost_centre', 'profit_center', 'finance_lease_usgaap', 'shortterm_lease_ifrs_indas',
+            'manual_adj', 'transition_date', 'transition_option', 'impairment1', 'impairment_date_1',
+            'intragroup_lease', 'sublease', 'sublease_rou', 'modifies_this_id', 'modified_by_this_id',
+            'date_modified', 'head_lease_id', 'scope_reduction', 'scope_date',
+            'practical_expedient', 'entered_by', 'last_modified_by', 'last_reviewed_by'
+        ]
+        
+        # Filter lease_data to only valid columns
+        # Allow None/empty values to be updated (for clearing fields)
+        filtered_data = {}
+        for k, v in lease_data.items():
+            if k in valid_columns and k not in ['lease_id', 'user_id', 'created_at']:
+                # Handle empty strings - convert to None for date fields, keep for others
+                if k in ['lease_start_date', 'first_payment_date', 'end_date', 'agreement_date', 
+                        'termination_date', 'escalation_start_date', 'transition_date', 
+                        'impairment_date_1', 'scope_date', 'date_modified']:
+                    filtered_data[k] = v if v and v != '' else None
+                else:
+                    # Keep empty strings for non-date fields (they'll be stored as empty or None)
+                    filtered_data[k] = v
+        
+        if not filtered_data:
+            return lease_id  # Nothing to update
+        
+        update_fields = list(filtered_data.keys())
+        set_clause = ', '.join([f"{f} = ?" for f in update_fields])
+        set_clause += ", updated_at = CURRENT_TIMESTAMP"
+        
+        values = [filtered_data[f] for f in update_fields]
+        values.extend([lease_id, user_id])
+        
+        with get_db_connection() as conn:
+            conn.execute(
+                f"UPDATE leases SET {set_clause} WHERE lease_id = ? AND user_id = ?",
+                values
+            )
+        return lease_id
+    else:
+        # Create new lease
+        fields = list(lease_data.keys())
+        placeholders = ', '.join(['?' for _ in fields])
+        values = list(lease_data.values())
+        
+        with get_db_connection() as conn:
+            cursor = conn.execute(
+                f"INSERT INTO leases ({', '.join(fields)}) VALUES ({placeholders})",
+                values
+            )
+            return cursor.lastrowid
+
+
+def get_lease(lease_id: int, user_id: int) -> Optional[Dict]:
+    """Get lease by ID (only if owned by user)"""
+    with get_db_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM leases WHERE lease_id = ? AND user_id = ?",
+            (lease_id, user_id)
+        ).fetchone()
+        if not row:
+            return None
+        
+        lease_dict = dict(row)
+        # Ensure None values are returned as None (not 'N/A')
+        # CRITICAL: Convert numeric fields to proper types (SQLite returns floats as float)
+        numeric_fields = ['rental_1', 'rental_2', 'borrowing_rate', 'escalation_percent', 
+                         'tenure', 'frequency_months', 'compound_months', 'esc_freq_months',
+                         'security_deposit', 'aro', 'initial_direct_expenditure', 'lease_incentive']
+        for field in numeric_fields:
+            if field in lease_dict and lease_dict[field] is not None:
+                try:
+                    lease_dict[field] = float(lease_dict[field])
+                except (ValueError, TypeError):
+                    lease_dict[field] = None
+        # The frontend will handle displaying 'N/A' if needed
+        return lease_dict
+
+
+def get_all_leases(user_id: int) -> List[Dict]:
+    """Get all leases for a user"""
+    with get_db_connection() as conn:
+        # Get column names to verify what's available
+        conn.row_factory = lambda cursor, row: {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
+        cursor = conn.execute(
+            """
+            SELECT lease_id, lease_name, 
+                   COALESCE(asset_class, 'N/A') as asset_class, 
+                   COALESCE(asset_id_code, 'N/A') as asset_id_code,
+                   lease_start_date, end_date, 
+                   created_at, updated_at
+            FROM leases WHERE user_id = ?
+            ORDER BY created_at DESC
+            """,
+            (user_id,)
+        )
+        rows = cursor.fetchall()
+        
+        leases = []
+        for row in rows:
+            lease_dict = dict(row)
+            # Format dates or show 'N/A'
+            lease_dict['asset_class'] = lease_dict.get('asset_class') or 'N/A'
+            lease_dict['asset_id_code'] = lease_dict.get('asset_id_code') or 'N/A'
+            lease_dict['lease_start_date'] = lease_dict.get('lease_start_date') or 'N/A'
+            lease_dict['end_date'] = lease_dict.get('end_date') or 'N/A'
+            leases.append(lease_dict)
+        
+        return leases
+
+
+def delete_lease(lease_id: int, user_id: int) -> bool:
+    """Delete a lease (only if owned by user)"""
+    with get_db_connection() as conn:
+        cursor = conn.execute(
+            "DELETE FROM leases WHERE lease_id = ? AND user_id = ?",
+            (lease_id, user_id)
+        )
+        return cursor.rowcount > 0
+
+
+def save_calculation(lease_id: int, from_date: date, to_date: date, calculation_data: Dict) -> int:
+    """Save a calculation result"""
+    import json
+    with get_db_connection() as conn:
+        cursor = conn.execute(
+            "INSERT INTO lease_calculations (lease_id, from_date, to_date, calculation_data) VALUES (?, ?, ?, ?)",
+            (lease_id, from_date.isoformat(), to_date.isoformat(), json.dumps(calculation_data))
+        )
+        return cursor.lastrowid
+
+
+def get_calculation(calc_id: int) -> Optional[Dict]:
+    """Get a saved calculation"""
+    import json
+    with get_db_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM lease_calculations WHERE calc_id = ?",
+            (calc_id,)
+        ).fetchone()
+        if row:
+            result = dict(row)
+            result['calculation_data'] = json.loads(result['calculation_data'])
+            return result
+    return None
+
+
+# Initialize database on import
+init_database()
+

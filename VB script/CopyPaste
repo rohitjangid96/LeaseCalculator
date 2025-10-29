@@ -1,0 +1,227 @@
+Rem Attribute VBA_ModuleType=VBAModule
+Option VBASupport 1
+Option Private Module
+Option Compare Text
+Option Explicit
+Dim pr As String
+
+
+Sub ShortCuts(Allow As Boolean)
+On Error Resume Next
+     'Activate/deactivate cut, copy, paste and pastespecial menu items
+   ' Call EnableMenuItem(21, Allow) ' cut
+    'Call EnableMenuItem(19, Allow) ' copy
+    'Call EnableMenuItem(22, Allow) ' paste
+    'Call EnableMenuItem(755, Allow) ' pastespecial
+     
+     'Activate/deactivate drag and drop ability
+      If Allow = False Then If Application.CellDragAndDrop = True Then Application.CellDragAndDrop = False
+     
+     'Activate/deactivate cut, copy, paste and pastespecial shortcut keys
+    With Application
+        Select Case Allow
+        Case Is = False
+            '.OnKey "^c", "CutCopyPasteDisabled"
+            .OnKey "^v", "pspecial"
+            .OnKey "^%v", "pspecial"
+            .OnKey "^x", "CutCopyPasteDisabled"
+            .OnKey "+~", "Homeke"
+            .OnKey "~", "Gohyper"
+            .OnKey "^d", "Gohyper"
+            .OnKey "^+r", "downloadauth"
+            '.OnKey "+{DEL}", "CutCopyPasteDisabled"
+            '.OnKey "^{INSERT}", "CutCopyPasteDisabled"
+        Case Is = True
+            '.OnKey "^c"
+            .OnKey "^v"
+            .OnKey "^%v"
+            .OnKey "^x"
+            .OnKey "+~"
+            .OnKey "~"
+            .OnKey "^d"
+            .OnKey "^+r"
+            '.OnKey "+{DEL}"
+            '.OnKey "^{INSERT}"
+        End Select
+    End With
+End Sub
+ 
+Sub EnableMenuItem(ctlId As Integer, Enabled As Boolean)
+     'Activate/Deactivate specific menu item
+    Dim cBar As CommandBar
+    Dim cBarCtrl As CommandBarControl
+    For Each cBar In Application.CommandBars
+        If cBar.Name <> "Clipboard" Then
+            Set cBarCtrl = cBar.FindControl(ID:=ctlId, recursive:=True)
+            If Not cBarCtrl Is Nothing Then cBarCtrl.Enabled = Enabled
+        End If
+    Next
+End Sub
+
+Sub CutCopyPasteDisabled()
+     'Inform user that the functions have been disabled
+    MsgBox "Sorry!  Cut has been disabled in this tool!"
+
+End Sub
+
+Sub pspecial()
+Dim cell As Range
+Dim lookrange As String
+Dim prr As Integer
+Dim prc As Integer
+Dim srange As String
+Dim ssheet As String
+Dim brkadd As Integer
+Dim opr As String
+On Error Resume Next
+
+Application.ScreenUpdating = False
+
+srange = Selection.Address
+ssheet = ActiveSheet.Name
+
+Sheets("PSheet").Range("A1").PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+Sheets("PSheet").PasteSpecial Format:="Text", Link:=False, DisplayAsIcon:=False
+
+prr = Range(pr).Rows.Count
+
+prc = Range(pr).Columns.Count
+
+opr = pr
+Sheets(ssheet).Activate
+
+Range(srange).Select
+
+If InStr(1, Selection.Address, ":") = 0 Then brkadd = Len(Selection.Address) Else brkadd = InStr(1, Selection.Address, ":") - 1
+
+lookrange = Left(Selection.Address, brkadd) & ":" & Range(Left(Selection.Address, brkadd)).Offset(prr - 1, prc - 1).Address
+
+For Each cell In Sheets(ssheet).Range(srange)
+If cell.Locked = True Then
+MsgBox "The area contains locked section(s), Paste not successful"
+GoTo ee
+End If
+Next
+
+
+For Each cell In Sheets(ssheet).Range(lookrange)
+If cell.Locked = True Then
+MsgBox "The area contains locked section(s), Paste not successful"
+GoTo ee
+End If
+Next
+
+'Sheets(ssheet).Range(lookrange).Copy
+'Sheets("PSheet").Range("AA1").PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+
+'Sheets("PSheet").Range(opr).Copy
+
+ActiveSheet.PasteSpecial Format:="Text", Link:=False, DisplayAsIcon:=False
+Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+'Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+ee:
+'Sheets("PSheet").Range(opr).ClearContents
+
+Application.ScreenUpdating = True
+End Sub
+
+Sub PSheetMacro(Target As Range)
+
+pr = Target.Address
+   
+End Sub
+
+Sub Gohyper()
+Dim aa As String
+If ActiveSheet.Name = "Menu" Then
+    If ActiveCell.Column = 2 Then
+        If ActiveCell.Row > 3 And ActiveCell.Row < 14 Then
+            On Error GoTo eee
+            If ActiveCell.Row = 13 Then Call closer
+            If ActiveCell.Row = 9 Then Call unlocker
+            'If ActiveCell.Interior.Color = 0 Then GoTo ee1
+            Sheets(Range(ActiveCell.Address).Offset(0, -1).Value).Activate
+        End If
+    End If
+End If
+eee:
+End Sub
+
+Sub Homeke()
+On Error GoTo er
+
+Sheets("Menu").Activate
+Exit Sub
+
+er:
+Call ShortCuts(True)
+
+
+End Sub
+
+Sub closer()
+Dim ws As Worksheet
+Dim pp1 As String
+Dim clea As String
+
+clea = MsgBox("Are you sure, you want to save and exit?", vbYesNo)
+If clea = vbNo Then GoTo ee:
+
+'Application.ScreenUpdating = False
+
+'pp1 = Sheets("Listing").Range("Z4").Value
+
+'ActiveWorkbook.Unprotect Password:=pp1
+'Sheets("Top sheet").Range("C3").Locked = True
+'For Each ws In Packbook.Worksheets
+
+'skipp:
+'Next ws
+
+'ActiveWorkbook.Protect Structure:=True, Windows:=False, Password:=pp1
+'Sheets("Intro").Range("B3").EntireRow.Hidden = False
+'ThisWorkbook.Save
+ShortCuts (True)
+ThisWorkbook.Close SaveChanges:=True
+
+ee:
+End Sub
+
+Sub unlocker()
+Dim xx As Integer
+start1:
+If Environ("username") = Evaluate("iferror(vlookup(""" & Environ("username") & """,Internals!A1:A2000,1,0),0)") Then
+If Environ("userdomain") = Evaluate("iferror(vlookup(""" & Environ("username") & """,Internals!A1:B2000,2,0),0)") Then
+    If Date <= Evaluate("iferror(vlookup(""" & Environ("username") & """,Internals!A1:D2000,4,0),0)") Then
+        If "Yes" = Evaluate("iferror(vlookup(""" & Environ("username") & """,Internals!A1:E2000,5,0),0)") Then
+            If xx = 1 Then
+            Call unpro
+            Else
+            MsgBox "Your license will be re-validated, please make sure you are connected to internet"
+            Call downloadauth
+            xx = 1
+            GoTo start1
+            End If
+        End If
+    End If
+End If
+End If
+
+End Sub
+
+
+
+Sub Bar1_Click()
+Gohyper
+End Sub
+
+Sub ccopy()
+
+ThisWorkbook.Sheets("internals").Range("AI2") = Selection.Address
+ThisWorkbook.Sheets("internals").Range("AI3") = ActiveSheet.Name
+ThisWorkbook.Sheets("internals").Range("AI4") = ActiveWorkbook.Name
+
+Selection.Copy
+
+
+End Sub
