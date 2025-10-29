@@ -150,6 +150,24 @@ def init_database():
             )
         """)
         
+        # Results summary - stores bulk calculation results
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS results_summary (
+                summary_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                calculation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                from_date DATE NOT NULL,
+                to_date DATE NOT NULL,
+                filters_applied TEXT,  -- JSON of filters
+                results_data TEXT,  -- JSON of all lease results
+                aggregated_totals TEXT,  -- JSON of aggregated totals
+                consolidated_journals TEXT,  -- JSON of consolidated journal entries
+                processed_count INTEGER DEFAULT 0,
+                skipped_count INTEGER DEFAULT 0,
+                FOREIGN KEY (user_id) REFERENCES users(user_id)
+            )
+        """)
+        
         print("✅ Database initialized")
 
 
@@ -334,10 +352,13 @@ def get_all_leases(user_id: int) -> List[Dict]:
         conn.row_factory = lambda cursor, row: {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
         cursor = conn.execute(
             """
-            SELECT lease_id, lease_name, 
+            SELECT lease_id, lease_name, description,
                    COALESCE(asset_class, 'N/A') as asset_class, 
                    COALESCE(asset_id_code, 'N/A') as asset_id_code,
-                   lease_start_date, end_date, 
+                   lease_start_date, end_date,
+                   rental_1, rental_2,
+                   currency, cost_centre, profit_center, group_entity_name,
+                   auto_rentals, frequency_months,
                    created_at, updated_at
             FROM leases WHERE user_id = ?
             ORDER BY created_at DESC
@@ -354,6 +375,19 @@ def get_all_leases(user_id: int) -> List[Dict]:
             lease_dict['asset_id_code'] = lease_dict.get('asset_id_code') or 'N/A'
             lease_dict['lease_start_date'] = lease_dict.get('lease_start_date') or 'N/A'
             lease_dict['end_date'] = lease_dict.get('end_date') or 'N/A'
+            lease_dict['description'] = lease_dict.get('description') or ''
+            
+            # Ensure numeric fields are properly typed
+            numeric_fields = ['rental_1', 'rental_2']
+            for field in numeric_fields:
+                if field in lease_dict and lease_dict[field] is not None:
+                    try:
+                        lease_dict[field] = float(lease_dict[field])
+                    except (ValueError, TypeError):
+                        lease_dict[field] = None
+                else:
+                    lease_dict[field] = None
+            
             leases.append(lease_dict)
         
         return leases

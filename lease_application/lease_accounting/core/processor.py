@@ -12,10 +12,14 @@ VBA Function: compu() Sub (Lines 251-624)
   - Current/Non-current split: Lines 553-566
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import List, Optional
+from dateutil.relativedelta import relativedelta
+import logging
 from lease_accounting.core.models import LeaseData, LeaseResult, ProcessingFilters, PaymentScheduleRow
 from lease_accounting.schedule.generator_vba_complete import generate_complete_schedule
+
+logger = logging.getLogger(__name__)
 
 
 class LeaseProcessor:
@@ -138,14 +142,82 @@ class LeaseProcessor:
         
         # Calculate Current vs Non-Current Liability
         # VBA Source: VB script/Code, compu() Sub (Lines 553-566)
+        # 
         # Two methods (controlled by Sheets("A").Range("A5").Value):
-        #   Method 0 (A5=0): Sum PV of payments due in next 12 months (Line 560)
-        #   Method 1 (A5<>0): Max(D4 - AD4, 0) where AD4 = projected liability 12 months ahead (Line 563)
-        # TODO: Implement full projection logic for Method 0 and Method 1
-        # Simplified: Use 70/30 split for now (full implementation needs projections)
+        #   Method 0 (A5=0): Sum PV of payments due in next 12 months (Line 543, 560-561)
+        #   Method 1 (A5<>0): Max(Total Liability - Projected Liability 12m ahead, 0) (Line 563)
+        #
+        # CURRENT IMPLEMENTATION: Method 0 (Projection-based calculation)
+        # Formula: liacurrent = liacurrent + cell.Offset(0, 1).Value * cell.Offset(0, 2).Value / baldatepv
+        # Where:
+        #   cell.Offset(0, 1) = Rental amount (column D)
+        #   cell.Offset(0, 2) = PV Factor at payment date (column E)
+        #   baldatepv = PV factor at balance date (to_date) - VBA Line 410
+        
         closing_liability_total = abs(closing_liability) if closing_liability > 0 else 0
-        closing_liability_current = closing_liability_total * 0.3
-        closing_liability_non_current = closing_liability_total * 0.7
+        
+        # Get PV factor at balance date (baldatepv) - VBA Line 410
+        baldatepv = self._get_pv_factor_at_date(
+            schedule, self.filters.end_date, lease_data
+        )
+        
+        # Calculate current liability = sum of PV of payments due in next 12 months
+        # VBA Line 543: For each payment between balance date and balance date + 12 months
+        # VBA: If projectionmode = 1 And Sheets("A").Range("A5").Value = 0 Then
+        #      liacurrent = liacurrent + cell.Offset(0, 1).Value * cell.Offset(0, 2).Value / baldatepv
+        twelve_months_later = self.filters.end_date + relativedelta(months=12)
+        
+        liacurrent = 0.0
+        for row in schedule:
+            # Get row date - PaymentScheduleRow uses 'date' attribute
+            row_date = row.date if hasattr(row, 'date') else (row.payment_date if hasattr(row, 'payment_date') else None)
+            if not row_date:
+                continue
+                
+            # Check if payment is in next 12 months after balance date
+            # VBA: cell.Value > opendatep And cell.Value <= baldatep (for projection period 1, 12 months)
+            if (row_date > self.filters.end_date and 
+                row_date <= twelve_months_later and 
+                row.rental_amount and row.rental_amount > 0):
+                # VBA Line 543: liacurrent = liacurrent + rental * pv_factor / baldatepv
+                if baldatepv > 0 and row.pv_factor:
+                    liacurrent += row.rental_amount * row.pv_factor / baldatepv
+        
+        # Apply sublease multiplier (VBA: * subl) - VBA Line 362
+        subl = -1 if lease_data.sublease == "Yes" else 1
+        liacurrent_final = liacurrent * subl
+        
+        # VBA Lines 560-561: Current = liacurrent, Non-current = Total - Current
+        # Sheets("Results").Range("E4").Offset(num, 0).Formula = liacurrent * subl
+        # Sheets("Results").Range("D4").Offset(num, 0).Formula = D4 - liacurrent * subl
+        closing_liability_current = abs(liacurrent_final)
+        closing_liability_non_current = closing_liability_total - closing_liability_current
+        
+        # Ensure non-negative (safety check)
+        if closing_liability_non_current < 0:
+            closing_liability_non_current = 0
+            closing_liability_current = closing_liability_total
+        
+        # TODO: Method 1 (A5 <> 0) - When projection disabled:
+        # VBA Line 563: Current = Max(Abs(D4) - Abs(AD4), 0) * subl
+        # Where AD4 = projected liability 12 months ahead (requires projection calculation)
+        # This would require implementing the full projection logic first
+        
+        # Calculate Projections (VBA Lines 510-568)
+        from lease_accounting.core.projection_calculator import ProjectionCalculator
+        
+        projection_calc = ProjectionCalculator(schedule, lease_data)
+        projections = projection_calc.calculate_projections(
+            balance_date=self.filters.end_date,
+            projection_periods=self.filters.projection_periods,
+            period_months=self.filters.projection_period_months,
+            enable_projections=self.filters.enable_projections
+        )
+        
+        # Log for debugging
+        logger.info(f"📊 Projections calculated: {len(projections)} periods for lease {lease_data.auto_id}")
+        if projections:
+            logger.info(f"   First projection: {projections[0].get('projection_date')}, Last: {projections[-1].get('projection_date')}")
         
         # Create result object (matching VBA Results sheet)
         result = LeaseResult(
@@ -167,10 +239,58 @@ class LeaseProcessor:
             currency=lease_data.currency,
             description=lease_data.description,
             asset_code=lease_data.asset_id_code,
-            borrowing_rate=lease_data.borrowing_rate
+            borrowing_rate=lease_data.borrowing_rate,
+            projections=projections
         )
         
         return result
+    
+    def _get_pv_factor_at_date(self, schedule: List[PaymentScheduleRow], 
+                               balance_date: date, lease_data: LeaseData) -> float:
+        """
+        Get PV factor at balance date (baldatepv)
+        VBA: Find cell.Value = baldate, get cell.Offset(0, 2).Value (PV factor)
+        """
+        # First, try to find exact date match
+        for row in schedule:
+            row_date = row.date if hasattr(row, 'date') else (row.payment_date if hasattr(row, 'payment_date') else None)
+            if row_date == balance_date:
+                return row.pv_factor if row.pv_factor else 1.0
+        
+        # If no exact match, interpolate between surrounding rows
+        # Find the row just before and just after balance_date
+        prev_row = None
+        next_row = None
+        
+        for i, row in enumerate(schedule):
+            row_date = row.date if hasattr(row, 'date') else (row.payment_date if hasattr(row, 'payment_date') else None)
+            if not row_date:
+                continue
+            if row_date < balance_date:
+                prev_row = row
+            elif row_date > balance_date:
+                next_row = row
+                break
+        
+        # If we have both, interpolate (simplified - use previous row's PV factor)
+        if prev_row:
+            return prev_row.pv_factor if prev_row.pv_factor else 1.0
+        
+        # Fallback: calculate PV factor directly
+        if schedule:
+            discount_rate = (lease_data.borrowing_rate or 8) / 100
+            icompound = lease_data.compound_months if (lease_data.compound_months and lease_data.compound_months > 0) else lease_data.frequency_months
+            first_row = schedule[0]
+            start_date = first_row.date if hasattr(first_row, 'date') else (first_row.payment_date if hasattr(first_row, 'payment_date') else None)
+            if not start_date:
+                return 1.0
+            days_from_start = (balance_date - start_date).days
+            
+            if days_from_start > 0:
+                pv_factor = 1 / ((1 + discount_rate * icompound / 12) ** ((days_from_start / 365) * 12 / icompound))
+                return pv_factor
+        
+        return 1.0
     
     def get_opening_balances(self, schedule: List[PaymentScheduleRow], 
                             balance_date: date) -> tuple:

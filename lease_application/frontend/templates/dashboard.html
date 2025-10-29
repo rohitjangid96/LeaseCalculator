@@ -92,6 +92,104 @@
             border-radius: 20px;
             font-size: 0.85rem;
         }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-active {
+            background: #27ae60;
+            color: white;
+        }
+        .status-expired {
+            background: #e74c3c;
+            color: white;
+        }
+        .status-expiring {
+            background: #f39c12;
+            color: white;
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        .summary-card h3 {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .summary-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #333;
+        }
+        .summary-card .label {
+            font-size: 0.85rem;
+            color: #999;
+            margin-top: 5px;
+        }
+        .filter-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar input, .filter-bar select {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        .filter-bar input {
+            flex: 1;
+            min-width: 200px;
+        }
+        .filter-bar select {
+            min-width: 150px;
+        }
+        .filter-bar input:focus, .filter-bar select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .filter-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+        .view-toggle button {
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .view-toggle button.active {
+            background: #667eea;
+            color: white;
+        }
         .lease-info {
             color: #666;
             margin: 10px 0;
@@ -132,6 +230,8 @@
         <h1>🏢 My Leases</h1>
         <div class="user-info">
             <span>Welcome, <strong id="username">User</strong></span>
+            <button class="btn btn-primary" onclick="window.location.href='calculate.html'">Calculate</button>
+            <button class="btn btn-primary" onclick="window.location.href='bulk_results.html'">Bulk Results</button>
             <button class="btn" onclick="logout()" style="background: rgba(255,255,255,0.2);">Logout</button>
         </div>
     </div>
@@ -140,6 +240,59 @@
         <div class="actions">
             <button class="btn btn-primary" onclick="createLease()">+ Create New Lease</button>
             <button class="btn btn-secondary" onclick="refreshLeases()">🔄 Refresh</button>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-cards" id="summaryCards">
+            <div class="summary-card">
+                <h3>Total Leases</h3>
+                <div class="value" id="totalLeases">0</div>
+                <div class="label">All leases</div>
+            </div>
+            <div class="summary-card">
+                <h3>Active Leases</h3>
+                <div class="value" id="activeLeases">0</div>
+                <div class="label">Currently active</div>
+            </div>
+            <div class="summary-card">
+                <h3>Expiring Soon</h3>
+                <div class="value" id="expiringLeases">0</div>
+                <div class="label">Next 3 months</div>
+            </div>
+            <div class="summary-card">
+                <h3>Total Monthly Rent</h3>
+                <div class="value" id="totalMonthlyRent">$0</div>
+                <div class="label">Active leases only</div>
+            </div>
+        </div>
+
+        <!-- Search and Filter Bar -->
+        <div class="filter-bar">
+            <div class="filter-label">🔍</div>
+            <input type="text" id="searchInput" placeholder="Search by description, asset code, or asset class..." oninput="filterLeases()">
+            <select id="statusFilter" onchange="filterLeases()">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="expired">Expired</option>
+                <option value="expiring">Expiring Soon</option>
+            </select>
+            <select id="assetClassFilter" onchange="filterLeases()">
+                <option value="">All Asset Classes</option>
+            </select>
+            <select id="currencyFilter" onchange="filterLeases()">
+                <option value="">All Currencies</option>
+            </select>
+            <select id="sortSelect" onchange="sortLeases()">
+                <option value="created_desc">Newest First</option>
+                <option value="created_asc">Oldest First</option>
+                <option value="start_asc">Start Date (Earliest)</option>
+                <option value="start_desc">Start Date (Latest)</option>
+                <option value="end_asc">End Date (Earliest)</option>
+                <option value="end_desc">End Date (Latest)</option>
+                <option value="rent_asc">Monthly Rent (Lowest)</option>
+                <option value="rent_desc">Monthly Rent (Highest)</option>
+                <option value="asset_class">Asset Class</option>
+            </select>
         </div>
 
         <div id="leasesContainer">
@@ -177,6 +330,9 @@
             }
         }
 
+        let allLeases = []; // Store all leases for filtering
+        let filteredLeases = []; // Store currently filtered leases
+
         async function loadLeases() {
             try {
                 const response = await fetch('http://localhost:5001/api/leases', {
@@ -185,11 +341,151 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    displayLeases(data.leases);
+                    allLeases = data.leases || [];
+                    console.log(`📊 Loaded ${allLeases.length} leases`);
+                    console.log('Sample lease data:', allLeases[0]);
+                    console.log('Rental values:', allLeases.map(l => ({id: l.lease_id, rent: l.rental_1})));
+                    updateSummaryCards(allLeases);
+                    populateFilters(allLeases);
+                    filterLeases(); // Display leases (will apply filters)
                 }
             } catch (error) {
                 console.error('Failed to load leases:', error);
             }
+        }
+
+        function getLeaseStatus(lease) {
+            if (!lease.end_date) return 'active';
+            const endDate = new Date(lease.end_date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const threeMonthsFromNow = new Date(today);
+            threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
+            
+            if (endDate < today) return 'expired';
+            if (endDate <= threeMonthsFromNow) return 'expiring';
+            return 'active';
+        }
+
+        function updateSummaryCards(leases) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const threeMonthsFromNow = new Date(today);
+            threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
+
+            const active = leases.filter(l => {
+                if (!l.end_date) return true;
+                return new Date(l.end_date) >= today;
+            });
+
+            const expiring = leases.filter(l => {
+                if (!l.end_date) return false;
+                const endDate = new Date(l.end_date);
+                return endDate >= today && endDate <= threeMonthsFromNow;
+            });
+
+            const totalMonthlyRent = active.reduce((sum, l) => {
+                // rental_1 might be null, undefined, or 0 - handle all cases
+                const rent = parseFloat(l.rental_1);
+                return sum + (isNaN(rent) ? 0 : rent);
+            }, 0);
+
+            document.getElementById('totalLeases').textContent = leases.length;
+            document.getElementById('activeLeases').textContent = active.length;
+            document.getElementById('expiringLeases').textContent = expiring.length;
+            document.getElementById('totalMonthlyRent').textContent = '$' + totalMonthlyRent.toLocaleString('en-US', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        }
+
+        function populateFilters(leases) {
+            const assetClasses = [...new Set(leases.map(l => l.asset_class).filter(Boolean))];
+            const currencies = [...new Set(leases.map(l => l.currency).filter(Boolean))];
+
+            const assetClassSelect = document.getElementById('assetClassFilter');
+            assetClasses.forEach(ac => {
+                const option = document.createElement('option');
+                option.value = ac;
+                option.textContent = ac;
+                assetClassSelect.appendChild(option);
+            });
+
+            const currencySelect = document.getElementById('currencyFilter');
+            currencies.forEach(curr => {
+                const option = document.createElement('option');
+                option.value = curr;
+                option.textContent = curr;
+                currencySelect.appendChild(option);
+            });
+        }
+
+        function filterLeases() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const assetClassFilter = document.getElementById('assetClassFilter').value;
+            const currencyFilter = document.getElementById('currencyFilter').value;
+
+            filteredLeases = allLeases.filter(lease => {
+                // Search filter
+                if (searchTerm) {
+                    const searchText = [
+                        lease.description || '',
+                        lease.asset_id_code || '',
+                        lease.asset_class || '',
+                        lease.lease_name || ''
+                    ].join(' ').toLowerCase();
+                    if (!searchText.includes(searchTerm)) return false;
+                }
+
+                // Status filter
+                if (statusFilter) {
+                    const status = getLeaseStatus(lease);
+                    if (status !== statusFilter) return false;
+                }
+
+                // Asset class filter
+                if (assetClassFilter && lease.asset_class !== assetClassFilter) return false;
+
+                // Currency filter
+                if (currencyFilter && lease.currency !== currencyFilter) return false;
+
+                return true;
+            });
+
+            sortLeases();
+        }
+
+        function sortLeases() {
+            const sortBy = document.getElementById('sortSelect').value;
+            const leases = filteredLeases.length > 0 ? filteredLeases : allLeases;
+
+            const sorted = [...leases].sort((a, b) => {
+                switch(sortBy) {
+                    case 'created_desc':
+                        return new Date(b.created_at) - new Date(a.created_at);
+                    case 'created_asc':
+                        return new Date(a.created_at) - new Date(b.created_at);
+                    case 'start_asc':
+                        return (new Date(a.lease_start_date || 0)) - (new Date(b.lease_start_date || 0));
+                    case 'start_desc':
+                        return (new Date(b.lease_start_date || 0)) - (new Date(a.lease_start_date || 0));
+                    case 'end_asc':
+                        return (new Date(a.end_date || 0)) - (new Date(b.end_date || 0));
+                    case 'end_desc':
+                        return (new Date(b.end_date || 0)) - (new Date(a.end_date || 0));
+                    case 'rent_asc':
+                        return (parseFloat(a.rental_1) || 0) - (parseFloat(b.rental_1) || 0);
+                    case 'rent_desc':
+                        return (parseFloat(b.rental_1) || 0) - (parseFloat(a.rental_1) || 0);
+                    case 'asset_class':
+                        return (a.asset_class || '').localeCompare(b.asset_class || '');
+                    default:
+                        return 0;
+                }
+            });
+
+            displayLeases(sorted);
         }
 
         function displayLeases(leases) {
@@ -198,23 +494,52 @@
             if (leases.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <h2>No leases yet</h2>
-                        <p>Create your first lease to get started</p>
+                        <h2>No leases found</h2>
+                        <p>Try adjusting your search or filters</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = leases.map(lease => `
+            container.innerHTML = leases.map(lease => {
+                const status = getLeaseStatus(lease);
+                const statusBadge = {
+                    active: '<span class="status-badge status-active">🟢 Active</span>',
+                    expired: '<span class="status-badge status-expired">🔴 Expired</span>',
+                    expiring: '<span class="status-badge status-expiring">🟡 Expiring Soon</span>'
+                }[status] || '';
+
+                // Calculate remaining term
+                let remainingTerm = '';
+                if (lease.end_date) {
+                    const today = new Date();
+                    const endDate = new Date(lease.end_date);
+                    const diffTime = endDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays > 0) {
+                        const months = Math.floor(diffDays / 30);
+                        remainingTerm = months > 0 ? `${months} months` : `${diffDays} days`;
+                    } else {
+                        remainingTerm = 'Expired';
+                    }
+                }
+
+                return `
                 <div class="lease-card">
                     <div class="lease-header">
                         <div class="lease-name">${escapeHtml(lease.lease_name || 'Untitled Lease')}</div>
-                        <span class="lease-badge">${escapeHtml(lease.asset_class || 'N/A')}</span>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            ${statusBadge}
+                            <span class="lease-badge">${escapeHtml(lease.asset_class || 'N/A')}</span>
+                        </div>
                     </div>
                     <div class="lease-info">
                         <div><strong>Asset:</strong> ${escapeHtml(lease.asset_id_code || 'N/A')}</div>
                         <div><strong>Start:</strong> ${lease.lease_start_date || 'N/A'}</div>
                         <div><strong>End:</strong> ${lease.end_date || 'N/A'}</div>
+                        ${remainingTerm ? `<div><strong>Remaining Term:</strong> ${remainingTerm}</div>` : ''}
+                        ${lease.rental_1 ? `<div><strong>Monthly Rent:</strong> $${(parseFloat(lease.rental_1) || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>` : ''}
+                        <div><strong>Currency:</strong> ${escapeHtml(lease.currency || 'N/A')}</div>
                         <div><strong>Created:</strong> ${new Date(lease.created_at).toLocaleDateString()}</div>
                     </div>
                     <div class="lease-actions">
@@ -223,7 +548,8 @@
                         <button onclick="deleteLease(${lease.lease_id})" class="btn-danger" style="background: #e74c3c; color: white;">Delete</button>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function createLease() {

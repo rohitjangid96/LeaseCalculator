@@ -140,6 +140,37 @@ def update_lease(lease_id):
     })
 
 
+@api_bp.route('/leases/bulk', methods=['GET'])
+@require_login
+def get_leases_for_bulk():
+    """Get leases with filters for bulk processing"""
+    user_id = session['user_id']
+    logger.info(f"📋 GET /api/leases/bulk - User {user_id} fetching leases for bulk processing")
+    
+    # Get optional filters from query parameters
+    cost_center = request.args.get('cost_center')
+    entity = request.args.get('entity')
+    asset_class = request.args.get('asset_class')
+    profit_center = request.args.get('profit_center')
+    
+    # Get all leases
+    leases = database.get_all_leases(user_id)
+    
+    # Apply filters if provided
+    filtered_leases = leases
+    if cost_center:
+        filtered_leases = [l for l in filtered_leases if l.get('cost_centre') == cost_center]
+    if entity:
+        filtered_leases = [l for l in filtered_leases if l.get('group_entity_name') == entity]
+    if asset_class:
+        filtered_leases = [l for l in filtered_leases if l.get('asset_class') == asset_class]
+    if profit_center:
+        filtered_leases = [l for l in filtered_leases if l.get('profit_center') == profit_center]
+    
+    logger.info(f"Found {len(filtered_leases)} leases (filtered from {len(leases)})")
+    return jsonify({'success': True, 'leases': filtered_leases})
+
+
 @api_bp.route('/leases/<int:lease_id>', methods=['DELETE'])
 @require_login
 def delete_lease(lease_id):

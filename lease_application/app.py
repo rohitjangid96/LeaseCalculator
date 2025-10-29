@@ -117,6 +117,15 @@ def create_app(config_name=None):
             logger.error(f"Error rendering dashboard.html: {e}")
             return f"Error loading dashboard: {e}", 500
     
+    @app.route('/bulk_results.html')
+    def bulk_results_page():
+        from flask import render_template
+        try:
+            return render_template('bulk_results.html')
+        except Exception as e:
+            logger.error(f"Error rendering bulk_results.html: {e}")
+            return f"Error loading bulk results page: {e}", 500
+    
     @app.route('/calculate')
     @app.route('/calculate.html')
     def calculate_page():

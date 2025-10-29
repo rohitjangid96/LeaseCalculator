@@ -295,4 +295,7 @@ class ProcessingFilters:
     asset_class_filter: Optional[str] = None
     profit_center_filter: Optional[str] = None
     gaap_standard: str = "IFRS"  # IFRS, IndAS, or US-GAAP
+    enable_projections: bool = True  # VBA: A3.Value = 1 (enable projections)
+    projection_periods: int = 3  # Number of periods to calculate (max 6)
+    projection_period_months: int = 3  # Months per period (VBA: A4.Value)
 

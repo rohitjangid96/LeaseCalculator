@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Lease Processing - Results Summary</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        input[type="date"], select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+
+        input[type="date"]:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .results-table {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background: #667eea;
+            color: white;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .totals-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .totals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .total-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .total-item:last-child {
+            border-bottom: none;
+        }
+
+        .total-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .total-value {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .lease-selector {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .lease-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+        }
+
+        .lease-checkbox input {
+            margin-right: 8px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        .header-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .header-btn {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .header-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Bulk Lease Processing</h1>
+        <div class="header-right">
+            <a href="dashboard.html" class="header-btn">Home</a>
+            <a href="calculate.html" class="header-btn">Calculate</a>
+            <a href="bulk_results.html" class="header-btn" style="background: rgba(255,255,255,0.4);">Bulk Results</a>
+            <button class="header-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+    <div class="container">
+        <p class="subtitle">Process multiple leases and view consolidated results</p>
+
+        <div class="controls">
+            <div class="control-group">
+                <div class="control-item">
+                    <label>From Date</label>
+                    <input type="date" id="fromDate" required>
+                </div>
+                <div class="control-item">
+                    <label>To Date</label>
+                    <input type="date" id="toDate" required>
+                </div>
+                <div class="control-item">
+                    <label>GAAP Standard</label>
+                    <select id="gaapStandard">
+                        <option value="IFRS">IFRS</option>
+                        <option value="IndAS">IndAS</option>
+                        <option value="US-GAAP">US-GAAP</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="control-item">
+                    <label>Filter by Cost Center</label>
+                    <select id="costCenterFilter">
+                        <option value="">All Cost Centers</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <label>Filter by Entity</label>
+                    <select id="entityFilter">
+                        <option value="">All Entities</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <label>Filter by Asset Class</label>
+                    <select id="assetClassFilter">
+                        <option value="">All Asset Classes</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <button class="btn btn-primary" onclick="processBulkLeases()">
+                    🔄 Process All Leases
+                </button>
+                <button class="btn btn-primary" onclick="exportToExcel()" style="margin-left: 10px;" id="exportBtn" disabled>
+                    📥 Export to Excel
+                </button>
+            </div>
+        </div>
+
+        <div id="messageArea"></div>
+
+        <div id="statsArea" style="display: none;">
+            <div class="stats" id="statsCards"></div>
+        </div>
+
+        <div id="resultsArea" style="display: none;">
+            <h2 style="margin-bottom: 20px;">Results Summary Table</h2>
+            <div class="results-table">
+                <table id="resultsTable">
+                    <thead id="resultsTableHead"></thead>
+                    <tbody id="resultsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="totalsArea" style="display: none;">
+            <div class="totals-section">
+                <h3>Aggregated Totals</h3>
+                <div class="totals-grid" id="totalsGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentResults = null;
+        let allLeases = [];
+
+        async function loadLeasesForBulk() {
+            try {
+                const response = await fetch('http://localhost:5001/api/leases', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    allLeases = data.leases || [];
+                    populateFilters(allLeases);
+                }
+            } catch (error) {
+                console.error('Failed to load leases:', error);
+                showMessage('Failed to load leases', 'error');
+            }
+        }
+
+        function populateFilters(leases) {
+            const costCenters = new Set();
+            const entities = new Set();
+            const assetClasses = new Set();
+
+            leases.forEach(lease => {
+                if (lease.cost_centre) costCenters.add(lease.cost_centre);
+                if (lease.group_entity_name) entities.add(lease.group_entity_name);
+                if (lease.asset_class && lease.asset_class !== 'N/A') assetClasses.add(lease.asset_class);
+            });
+
+            populateSelect('costCenterFilter', Array.from(costCenters).sort());
+            populateSelect('entityFilter', Array.from(entities).sort());
+            populateSelect('assetClassFilter', Array.from(assetClasses).sort());
+        }
+
+        function populateSelect(selectId, options) {
+            const select = document.getElementById(selectId);
+            options.forEach(option => {
+                const optionEl = document.createElement('option');
+                optionEl.value = option;
+                optionEl.textContent = option;
+                select.appendChild(optionEl);
+            });
+        }
+
+        async function processBulkLeases() {
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+
+            if (!fromDate || !toDate) {
+                showMessage('Please select both From Date and To Date', 'error');
+                return;
+            }
+
+            showMessage('Processing leases...', 'loading');
+
+            try {
+                const payload = {
+                    from_date: fromDate,
+                    to_date: toDate,
+                    gaap_standard: document.getElementById('gaapStandard').value,
+                    cost_center: document.getElementById('costCenterFilter').value || null,
+                    entity: document.getElementById('entityFilter').value || null,
+                    asset_class: document.getElementById('assetClassFilter').value || null,
+                };
+
+                const response = await fetch('http://localhost:5001/api/calculate_leases', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentResults = data;
+                    displayResults(data);
+                    showMessage(`Successfully processed ${data.stats.processed_count} leases`, 'success');
+                } else {
+                    showMessage(data.error || 'Failed to process leases', 'error');
+                }
+            } catch (error) {
+                console.error('Error processing leases:', error);
+                showMessage('Error processing leases: ' + error.message, 'error');
+            }
+        }
+
+        function displayResults(data) {
+            // Display stats
+            displayStats(data.stats);
+            
+            // Display results table
+            displayResultsTable(data.results);
+            
+            // Display aggregated totals
+            displayAggregatedTotals(data.aggregated_totals);
+            
+            document.getElementById('exportBtn').disabled = false;
+        }
+
+        function displayStats(stats) {
+            const statsArea = document.getElementById('statsArea');
+            const statsCards = document.getElementById('statsCards');
+            statsArea.style.display = 'block';
+            
+            statsCards.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Processed</div>
+                    <div class="stat-value">${stats.processed_count || 0}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Skipped</div>
+                    <div class="stat-value">${stats.skipped_count || 0}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Leases</div>
+                    <div class="stat-value">${stats.total_count || 0}</div>
+                </div>
+            `;
+        }
+
+        function displayResultsTable(results) {
+            if (!results || results.length === 0) {
+                document.getElementById('resultsArea').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('resultsArea').style.display = 'block';
+            
+            // Get all unique keys from results to build columns
+            const columns = [
+                'lease_id', 'description', 'asset_class', 'asset_id_code',
+                'opening_liability', 'closing_liability_total', 'closing_liability_current', 'closing_liability_non_current',
+                'opening_rou_asset', 'closing_rou_asset',
+                'interest_expense', 'depreciation_expense', 'rent_paid',
+                'closing_security_deposit', 'closing_aro_liability',
+                'gain_loss_pnl', 'currency', 'cost_centre'
+            ];
+
+            // Fields that should NOT be formatted as currency (IDs, text fields)
+            const nonCurrencyFields = ['lease_id', 'description', 'asset_class', 'asset_id_code', 'currency', 'cost_centre'];
+
+            // Build table header
+            const thead = document.getElementById('resultsTableHead');
+            thead.innerHTML = '<tr>' + columns.map(col => `<th>${col.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</th>`).join('') + '</tr>';
+
+            // Build table body
+            const tbody = document.getElementById('resultsTableBody');
+            tbody.innerHTML = results.map(row => {
+                return '<tr>' + columns.map(col => {
+                    const value = row[col];
+                    if (typeof value === 'number' && !nonCurrencyFields.includes(col)) {
+                        return `<td style="text-align: right;">${formatCurrency(value)}</td>`;
+                    } else if (typeof value === 'number' && nonCurrencyFields.includes(col)) {
+                        // For numeric IDs, just display as integer
+                        return `<td style="text-align: right;">${Math.round(value)}</td>`;
+                    }
+                    return `<td>${value || ''}</td>`;
+                }).join('') + '</tr>';
+            }).join('');
+        }
+
+        function displayAggregatedTotals(totals) {
+            if (!totals) return;
+
+            document.getElementById('totalsArea').style.display = 'block';
+            const grid = document.getElementById('totalsGrid');
+            
+            // Fields that should NOT be formatted as currency
+            const nonCurrencyFields = ['total_leases'];
+            
+            grid.innerHTML = Object.entries(totals).map(([key, value]) => {
+                const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const displayValue = typeof value === 'number' && !nonCurrencyFields.includes(key) 
+                    ? formatCurrency(value) 
+                    : (typeof value === 'number' ? value : value);
+                return `
+                    <div class="total-item">
+                        <span class="total-label">${label}:</span>
+                        <span class="total-value">${displayValue}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatCurrency(value) {
+            if (value === null || value === undefined) return '$0.00';
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+
+        function showMessage(message, type) {
+            const messageArea = document.getElementById('messageArea');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'loading';
+            messageArea.innerHTML = `<div class="${className}">${message}</div>`;
+        }
+
+        function exportToExcel() {
+            if (!currentResults) {
+                showMessage('No results to export', 'error');
+                return;
+            }
+            // TODO: Implement Excel export
+            showMessage('Excel export coming soon!', 'success');
+        }
+
+        // Load leases on page load
+        loadLeasesForBulk();
+
+        // Set default dates (current year)
+        const today = new Date();
+        const yearStart = new Date(today.getFullYear(), 0, 1);
+        const yearEnd = new Date(today.getFullYear(), 11, 31);
+        
+        document.getElementById('fromDate').value = yearStart.toISOString().split('T')[0];
+        document.getElementById('toDate').value = yearEnd.toISOString().split('T')[0];
+
+        function logout() {
+            fetch('http://localhost:5001/api/logout', {
+                method: 'POST',
+                credentials: 'include'
+            }).then(() => {
+                window.location.href = 'login.html';
+            });
+        }
+    </script>
+</body>
+</html>
+

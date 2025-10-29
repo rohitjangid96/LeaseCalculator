@@ -14,21 +14,21 @@ This document lists all features, reports, and displays that exist in the Excel/
 
 **Missing Fields/Columns in Results Sheet:**
 - ✅ C4: Auto ID (Lease ID) - **EXISTS**
-- ❌ D4: Opening Lease Liability (Non-current) - **PARTIAL** (only in lease result)
-- ❌ E4: Opening Lease Liability (Current) - **PARTIAL** (only in lease result)  
+- ✅ D4: Opening Lease Liability (Non-current) - **NOW DISPLAYED** (in summary)
+- ✅ E4: Opening Lease Liability (Current) - **NOW DISPLAYED** (in summary)  
 - ✅ F4: Total Interest Expense - **EXISTS**
-- ❌ G4: Opening ROU Asset - **EXISTS** but not in summary view
+- ✅ G4: Opening ROU Asset - **NOW DISPLAYED** (in summary)
 - ✅ H4: Total Depreciation - **EXISTS**
-- ❌ I4: Gain/Loss in P&L (Termination, Modifications, COVID PE, Sublease) - **PARTIAL** (gain_loss_pnl exists but not detailed breakdown)
-- ❌ J4: ARO Interest - **EXISTS** but not in summary view
-- ❌ K4: Closing Security Deposit PV - **EXISTS** but not in summary view
-- ❌ L4: Security Deposit Interest - **EXISTS** but not in summary view
-- ❌ M4: Closing Security Deposit (Non-current) - **EXISTS** but not in summary view
-- ❌ N4: Closing Security Deposit (Current) - **EXISTS** but not in summary view
+- ⚠️ I4: Gain/Loss in P&L (Termination, Modifications, COVID PE, Sublease) - **PARTIAL** (gain_loss_pnl displayed but not detailed breakdown)
+- ✅ J4: ARO Interest - **NOW DISPLAYED** (in summary)
+- ✅ K4: Closing Security Deposit PV - **NOW DISPLAYED** (in summary)
+- ✅ L4: Security Deposit Interest - **NOW DISPLAYED** (in summary)
+- ❌ M4: Closing Security Deposit (Non-current) - **MISSING** (split logic not implemented)
+- ❌ N4: Closing Security Deposit (Current) - **MISSING** (split logic not implemented)
 - ✅ O4: Total Rent Paid - **EXISTS**
-- ❌ P4: Opening ARO Liability - **EXISTS** but not in summary view
+- ✅ P4: Opening ARO Liability - **NOW DISPLAYED** (in summary)
 - ❌ Q4: Opening Lease Liability (for terminated leases) - **MISSING**
-- ❌ R4: Change in ROU Asset - **EXISTS** but not in summary view
+- ✅ R4: Change in ROU Asset - **NOW DISPLAYED** (in schedule table)
 - ❌ S4: Opening ROU Asset (for terminated leases) - **MISSING**
 - ❌ T4: Opening Security Deposit (for terminated leases) - **MISSING**
 - ✅ U4: Asset Class - **EXISTS**
@@ -44,8 +44,8 @@ This document lists all features, reports, and displays that exist in the Excel/
 - ❌ BC4: Accumulated Depreciation (from lease start) - **MISSING**
 - ❌ BD4: Initial Direct Expenditure (on transition) - **MISSING**
 - ❌ BE4: Prepaid Accrual - **MISSING**
-- ❌ BG4: Borrowing Rate - **EXISTS** but not in summary
-- ❌ BH4: Remaining ROU Life (in days) - **EXISTS** but not in summary
+- ✅ BG4: Borrowing Rate - **NOW DISPLAYED** (in summary)
+- ✅ BH4: Remaining ROU Life (in days) - **NOW DISPLAYED** (in summary)
 - ❌ BI4: COVID Practical Expedient Gain - **MISSING**
 
 ### 2. **Projections/Forecasting Report**
@@ -254,13 +254,13 @@ This document lists all features, reports, and displays that exist in the Excel/
 
 ### 19. **Schedule Table Enhancements**
 **Missing Columns:**
-- ❌ Principal Payment
-- ❌ Remaining Balance (for each row)
-- ❌ Cumulative Interest
-- ❌ Cumulative Depreciation
-- ❌ Change in ROU Asset
-- ❌ ARO Provision (per row)
-- ❌ Full detailed 13-column schedule display
+- ✅ Principal Payment - **NOW DISPLAYED**
+- ✅ Remaining Balance (for each row) - **NOW DISPLAYED**
+- ❌ Cumulative Interest - **EASY TO ADD** (just running total)
+- ❌ Cumulative Depreciation - **EASY TO ADD** (just running total)
+- ✅ Change in ROU Asset - **NOW DISPLAYED**
+- ✅ ARO Provision (per row) - **NOW DISPLAYED**
+- ✅ Full detailed 15-column schedule display - **COMPLETE** (was 13, now 15 columns)
 
 ### 20. **Filters & Search**
 **Missing:**
