@@ -366,53 +366,119 @@
 2025-10-29 16:14:14 - api - INFO - 📋 GET /api/leases - User 2 fetching leases
 2025-10-29 16:14:14 - api - INFO - Found 2 leases for user 2
 2025-10-29 16:14:14 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:14:14] "GET /api/leases HTTP/1.1" 200 -
-n valid
-2025-10-29 16:13:45 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:13:45] "GET /api/user HTTP/1.1" 200 -
-2025-10-29 16:13:45 - api - INFO - 📋 GET /api/leases - User 2 fetching leases
-2025-10-29 16:13:45 - api - INFO - Found 2 leases for user 2
-2025-10-29 16:13:45 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:13:45] "GET /api/leases HTTP/1.1" 200 -
-2025-10-29 16:13:47 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:13:47] "GET /calculate.html?lease_id=17 HTTP/1.1" 200 -
-2025-10-29 16:13:47 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:13:47] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
-2025-10-29 16:13:47 - auth - DEBUG - 👤 GET /api/user - Checking user session
-2025-10-29 16:13:47 - auth - DEBUG - User Rohit session valid
-2025-10-29 16:13:47 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:13:47] "GET /api/user HTTP/1.1" 200 -
-2025-10-29 16:13:47 - api - INFO - 📋 GET /api/leases - User 2 fetching leases
-2025-10-29 16:13:47 - api - INFO - Found 2 leases for user 2
-2025-10-29 16:13:47 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:13:47] "GET /api/leases HTTP/1.1" 200 -
-2025-10-29 16:13:55 - api - INFO - 🔍 GET /api/leases/16 - User 2 fetching lease
-2025-10-29 16:13:55 - api - INFO - Lease 16 found
-2025-10-29 16:13:55 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:13:55] "GET /api/leases/16 HTTP/1.1" 200 -
-2025-10-29 16:13:55 - complete_lease_backend - INFO - 📥 Received calculation request:
-2025-10-29 16:13:55 - complete_lease_backend - INFO -    rental_1: 150000
-2025-10-29 16:13:55 - complete_lease_backend - INFO -    lease_start: 2024-01-01, end: 2028-12-31
-2025-10-29 16:13:55 - complete_lease_backend - INFO -    from_date: 2024-01-01, to_date: 2028-12-31
-2025-10-29 16:13:55 - complete_lease_backend - INFO - 📊 Generated full schedule: 64 rows
-2025-10-29 16:13:55 - complete_lease_backend - INFO -    First row: date=2024-01-01, rental=0.0, liability=43795556.5829851, ROU=43815556.5829851
-2025-10-29 16:13:55 - complete_lease_backend - INFO -    Last row: date=2028-12-31, rental=2668455.127731856, liability=1.9804429030045867e-07
-2025-10-29 16:13:55 - complete_lease_backend - INFO - 📅 Date range filtering: from 2024-01-01 to 2028-12-31
-2025-10-29 16:13:55 - complete_lease_backend - INFO -    VBA: opendate = from_date - 1 = 2023-12-31
-2025-10-29 16:13:55 - complete_lease_backend - INFO -    VBA: baldate = to_date = 2028-12-31
-2025-10-29 16:13:55 - complete_lease_backend - INFO -    Adjusted opening balances (opening_date=2023-12-31 < first_payment=2024-01-16): liability=43795556.5829851
-2025-10-29 16:13:55 - complete_lease_backend - INFO -    Closing balances at 2028-12-31: liability=0.00, ROU=0.00
-2025-10-29 16:13:55 - complete_lease_backend - INFO - 📊 Schedule: 64 rows (FULL schedule - never filtered per VBA logic)
-2025-10-29 16:13:55 - complete_lease_backend - INFO -    Interpolated row inserted: False
-2025-10-29 16:13:55 - complete_lease_backend - INFO -    Opening liability: 43795556.5829851
-2025-10-29 16:13:55 - complete_lease_backend - INFO - ✅ Calculation completed successfully
-2025-10-29 16:13:55 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:13:55] "POST /api/calculate_lease HTTP/1.1" 200 -
-2025-10-29 16:14:06 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:14:06] "GET /dashboard.html HTTP/1.1" 200 -
-2025-10-29 16:14:06 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:14:06] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
-2025-10-29 16:14:06 - auth - DEBUG - 👤 GET /api/user - Checking user session
-2025-10-29 16:14:06 - auth - DEBUG - User Rohit session valid
-2025-10-29 16:14:06 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:14:06] "GET /api/user HTTP/1.1" 200 -
-2025-10-29 16:14:06 - api - INFO - 📋 GET /api/leases - User 2 fetching leases
-2025-10-29 16:14:06 - api - INFO - Found 2 leases for user 2
-2025-10-29 16:14:06 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:14:06] "GET /api/leases HTTP/1.1" 200 -
-2025-10-29 16:14:12 - api - INFO - 📋 GET /api/leases - User 2 fetching leases
-2025-10-29 16:14:12 - api - INFO - Found 2 leases for user 2
-2025-10-29 16:14:12 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:14:12] "GET /api/leases HTTP/1.1" 200 -
-2025-10-29 16:14:13 - api - INFO - 📋 GET /api/leases - User 2 fetching leases
-2025-10-29 16:14:13 - api - INFO - Found 2 leases for user 2
-2025-10-29 16:14:13 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:14:13] "GET /api/leases HTTP/1.1" 200 -
-2025-10-29 16:14:14 - api - INFO - 📋 GET /api/leases - User 2 fetching leases
-2025-10-29 16:14:14 - api - INFO - Found 2 leases for user 2
-2025-10-29 16:14:14 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:14:14] "GET /api/leases HTTP/1.1" 200 -
+2025-10-29 16:29:25 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:29:25] "GET /calculate.html?lease_id=17 HTTP/1.1" 200 -
+2025-10-29 16:29:25 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:29:25] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-29 16:29:25 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:29:25] "GET /api/user HTTP/1.1" 200 -
+2025-10-29 16:29:25 - api - INFO - 📋 GET /api/leases - User 2 fetching leases
+2025-10-29 16:29:25 - api - INFO - Found 2 leases for user 2
+2025-10-29 16:29:25 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:29:25] "GET /api/leases HTTP/1.1" 200 -
+2025-10-29 16:29:28 - api - INFO - 🔍 GET /api/leases/17 - User 2 fetching lease
+2025-10-29 16:29:28 - api - INFO - Lease 17 found
+2025-10-29 16:29:28 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:29:28] "GET /api/leases/17 HTTP/1.1" 200 -
+2025-10-29 16:29:28 - complete_lease_backend - INFO - 📥 Received calculation request:
+2025-10-29 16:29:28 - complete_lease_backend - INFO -    rental_1: 150000
+2025-10-29 16:29:28 - complete_lease_backend - INFO -    lease_start: 2024-01-01, end: 2028-12-31
+2025-10-29 16:29:28 - complete_lease_backend - INFO -    from_date: 2024-01-01, to_date: 2028-12-31
+2025-10-29 16:29:28 - complete_lease_backend - INFO - 📊 Generated full schedule: 64 rows
+2025-10-29 16:29:28 - complete_lease_backend - INFO -    First row: date=2024-01-01, rental=0.0, liability=42754134.87167598, ROU=42774134.87167598
+2025-10-29 16:29:28 - complete_lease_backend - INFO -    Last row: date=2028-12-31, rental=2541385.835935101, liability=2.2233871277421713e-07
+2025-10-29 16:29:28 - complete_lease_backend - INFO - 📅 Date range filtering: from 2024-01-01 to 2028-12-31
+2025-10-29 16:29:28 - complete_lease_backend - INFO -    VBA: opendate = from_date - 1 = 2023-12-31
+2025-10-29 16:29:28 - complete_lease_backend - INFO -    VBA: baldate = to_date = 2028-12-31
+2025-10-29 16:29:28 - complete_lease_backend - INFO -    Adjusted opening balances (opening_date=2023-12-31 < first_payment=2024-01-16): liability=42754134.87167598
+2025-10-29 16:29:28 - complete_lease_backend - INFO -    Closing balances at 2028-12-31: liability=0.00, ROU=0.00
+2025-10-29 16:29:28 - complete_lease_backend - INFO - 📊 Schedule: 64 rows (FULL schedule - never filtered per VBA logic)
+2025-10-29 16:29:28 - complete_lease_backend - INFO -    Interpolated row inserted: False
+2025-10-29 16:29:28 - complete_lease_backend - INFO -    Opening liability: 42754134.87167598
+2025-10-29 16:29:28 - complete_lease_backend - INFO - ✅ Calculation completed successfully
+2025-10-29 16:29:28 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:29:28] "POST /api/calculate_lease HTTP/1.1" 200 -
+2025-10-29 16:34:05 - werkzeug - INFO -  * Detected change in '/Users/rohitjangid/Downloads/Lease/lease_application/validate_calculation.py', reloading
+✅ Database initialized
+✅ Database initialized
+2025-10-29 16:34:05 - werkzeug - INFO -  * Restarting with stat
+2025-10-29 16:34:05 - root - INFO - 🚀 Initializing Lease Management Application...
+2025-10-29 16:34:05 - root - INFO - ✅ Database initialized
+2025-10-29 16:34:05 - root - INFO - ✅ Blueprints registered
+2025-10-29 16:34:05 - root - INFO - ✅ Application created successfully
+2025-10-29 16:34:05 - root - INFO - 📂 Template folder: frontend/templates
+2025-10-29 16:34:05 - root - INFO - 📂 Static folder: /Users/rohitjangid/Downloads/Lease/lease_application/frontend/static
+2025-10-29 16:34:05 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-29 16:34:05 - __main__ - INFO -    📊 Lease Management System - Starting Server
+2025-10-29 16:34:05 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-29 16:34:05 - __main__ - INFO - 📍 API Endpoint: http://localhost:5001/api/
+2025-10-29 16:34:05 - __main__ - INFO -    - /api/register - User registration
+2025-10-29 16:34:05 - __main__ - INFO -    - /api/login - User login
+2025-10-29 16:34:05 - __main__ - INFO -    - /api/leases - Manage leases
+2025-10-29 16:34:05 - __main__ - INFO -    - /api/calculate_lease - Calculate lease
+2025-10-29 16:34:05 - __main__ - INFO - 📝 Logs: /Users/rohitjangid/Downloads/Lease/lease_application/logs/lease_app.log
+2025-10-29 16:34:05 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-29 16:34:05 - werkzeug - WARNING -  * Debugger is active!
+2025-10-29 16:34:05 - werkzeug - INFO -  * Debugger PIN: 837-703-174
+2025-10-29 16:34:47 - werkzeug - INFO -  * Detected change in '/Users/rohitjangid/Downloads/Lease/lease_application/validate_calculation.py', reloading
+✅ Database initialized
+✅ Database initialized
+2025-10-29 16:34:47 - werkzeug - INFO -  * Restarting with stat
+2025-10-29 16:34:47 - root - INFO - 🚀 Initializing Lease Management Application...
+2025-10-29 16:34:47 - root - INFO - ✅ Database initialized
+2025-10-29 16:34:47 - root - INFO - ✅ Blueprints registered
+2025-10-29 16:34:47 - root - INFO - ✅ Application created successfully
+2025-10-29 16:34:47 - root - INFO - 📂 Template folder: frontend/templates
+2025-10-29 16:34:47 - root - INFO - 📂 Static folder: /Users/rohitjangid/Downloads/Lease/lease_application/frontend/static
+2025-10-29 16:34:47 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-29 16:34:47 - __main__ - INFO -    📊 Lease Management System - Starting Server
+2025-10-29 16:34:47 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-29 16:34:47 - __main__ - INFO - 📍 API Endpoint: http://localhost:5001/api/
+2025-10-29 16:34:47 - __main__ - INFO -    - /api/register - User registration
+2025-10-29 16:34:47 - __main__ - INFO -    - /api/login - User login
+2025-10-29 16:34:47 - __main__ - INFO -    - /api/leases - Manage leases
+2025-10-29 16:34:47 - __main__ - INFO -    - /api/calculate_lease - Calculate lease
+2025-10-29 16:34:47 - __main__ - INFO - 📝 Logs: /Users/rohitjangid/Downloads/Lease/lease_application/logs/lease_app.log
+2025-10-29 16:34:47 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-29 16:34:48 - werkzeug - WARNING -  * Debugger is active!
+2025-10-29 16:34:48 - werkzeug - INFO -  * Debugger PIN: 837-703-174
+ing balances at 2028-12-31: liability=0.00, ROU=0.00
+2025-10-29 16:29:28 - complete_lease_backend - INFO - 📊 Schedule: 64 rows (FULL schedule - never filtered per VBA logic)
+2025-10-29 16:29:28 - complete_lease_backend - INFO -    Interpolated row inserted: False
+2025-10-29 16:29:28 - complete_lease_backend - INFO -    Opening liability: 42754134.87167598
+2025-10-29 16:29:28 - complete_lease_backend - INFO - ✅ Calculation completed successfully
+2025-10-29 16:29:28 - werkzeug - INFO - 127.0.0.1 - - [29/Oct/2025 16:29:28] "POST /api/calculate_lease HTTP/1.1" 200 -
+2025-10-29 16:34:05 - werkzeug - INFO -  * Detected change in '/Users/rohitjangid/Downloads/Lease/lease_application/validate_calculation.py', reloading
+2025-10-29 16:34:05 - werkzeug - INFO -  * Restarting with stat
+2025-10-29 16:34:05 - root - INFO - 🚀 Initializing Lease Management Application...
+2025-10-29 16:34:05 - root - INFO - ✅ Database initialized
+2025-10-29 16:34:05 - root - INFO - ✅ Blueprints registered
+2025-10-29 16:34:05 - root - INFO - ✅ Application created successfully
+2025-10-29 16:34:05 - root - INFO - 📂 Template folder: frontend/templates
+2025-10-29 16:34:05 - root - INFO - 📂 Static folder: /Users/rohitjangid/Downloads/Lease/lease_application/frontend/static
+2025-10-29 16:34:05 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-29 16:34:05 - __main__ - INFO -    📊 Lease Management System - Starting Server
+2025-10-29 16:34:05 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-29 16:34:05 - __main__ - INFO - 📍 API Endpoint: http://localhost:5001/api/
+2025-10-29 16:34:05 - __main__ - INFO -    - /api/register - User registration
+2025-10-29 16:34:05 - __main__ - INFO -    - /api/login - User login
+2025-10-29 16:34:05 - __main__ - INFO -    - /api/leases - Manage leases
+2025-10-29 16:34:05 - __main__ - INFO -    - /api/calculate_lease - Calculate lease
+2025-10-29 16:34:05 - __main__ - INFO - 📝 Logs: /Users/rohitjangid/Downloads/Lease/lease_application/logs/lease_app.log
+2025-10-29 16:34:05 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-29 16:34:05 - werkzeug - WARNING -  * Debugger is active!
+2025-10-29 16:34:05 - werkzeug - INFO -  * Debugger PIN: 837-703-174
+2025-10-29 16:34:47 - werkzeug - INFO -  * Detected change in '/Users/rohitjangid/Downloads/Lease/lease_application/validate_calculation.py', reloading
+2025-10-29 16:34:47 - werkzeug - INFO -  * Restarting with stat
+2025-10-29 16:34:47 - root - INFO - 🚀 Initializing Lease Management Application...
+2025-10-29 16:34:47 - root - INFO - ✅ Database initialized
+2025-10-29 16:34:47 - root - INFO - ✅ Blueprints registered
+2025-10-29 16:34:47 - root - INFO - ✅ Application created successfully
+2025-10-29 16:34:47 - root - INFO - 📂 Template folder: frontend/templates
+2025-10-29 16:34:47 - root - INFO - 📂 Static folder: /Users/rohitjangid/Downloads/Lease/lease_application/frontend/static
+2025-10-29 16:34:47 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-29 16:34:47 - __main__ - INFO -    📊 Lease Management System - Starting Server
+2025-10-29 16:34:47 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-29 16:34:47 - __main__ - INFO - 📍 API Endpoint: http://localhost:5001/api/
+2025-10-29 16:34:47 - __main__ - INFO -    - /api/register - User registration
+2025-10-29 16:34:47 - __main__ - INFO -    - /api/login - User login
+2025-10-29 16:34:47 - __main__ - INFO -    - /api/leases - Manage leases
+2025-10-29 16:34:47 - __main__ - INFO -    - /api/calculate_lease - Calculate lease
+2025-10-29 16:34:47 - __main__ - INFO - 📝 Logs: /Users/rohitjangid/Downloads/Lease/lease_application/logs/lease_app.log
+2025-10-29 16:34:47 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-29 16:34:48 - werkzeug - WARNING -  * Debugger is active!
+2025-10-29 16:34:48 - werkzeug - INFO -  * Debugger PIN: 837-703-174

@@ -91,6 +91,11 @@
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
         }
+        .summary-grid h3 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            opacity: 0.95;
+        }
         .summary-item {
             background: rgba(255,255,255,0.1);
             padding: 15px;
@@ -114,6 +119,11 @@
             overflow: hidden;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 1200px) {
+            table { font-size: 0.8rem; }
+            table th, table td { padding: 8px 6px; }
         }
         thead {
             background: #667eea;
@@ -135,6 +145,10 @@
         .scrollable {
             max-height: 600px;
             overflow-y: auto;
+            overflow-x: auto;
+        }
+        .scrollable table {
+            min-width: 1400px; /* Ensure all 15 columns fit */
         }
         .error {
             color: #e74c3c;
@@ -194,11 +208,13 @@
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Rent</th>
+                            <th>Rental</th>
+                            <th>Principal</th>
                             <th>PV Factor</th>
                             <th>Interest</th>
-                            <th>Liability</th>
-                            <th>PV Rent</th>
+                            <th>Lease Liability</th>
+                            <th>Remaining Balance</th>
+                            <th>PV of Rent</th>
                             <th>ROU Asset</th>
                             <th>Depreciation</th>
                             <th>Change ROU</th>
@@ -541,17 +557,36 @@
         }
 
         function displayResults(result) {
-            // Display summary
+            const lr = result.lease_result || {};
+            
+            // Display summary with ALL available data
             const summaryGrid = document.getElementById('summaryGrid');
             summaryGrid.innerHTML = `
-                <div class="summary-item">
-                    <strong>Opening Liability</strong>
-                    <span>$${formatCurrency(result.lease_result.opening_lease_liability || 0)}</span>
+                <!-- Lease Information -->
+                <div class="summary-item" style="grid-column: 1 / -1; background: rgba(255,255,255,0.15); padding: 20px; border-radius: 8px;">
+                    <h3 style="margin-bottom: 10px; font-size: 1.1rem;">Lease Information</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                        <div><strong>Description:</strong> ${lr.description || 'N/A'}</div>
+                        <div><strong>Asset Code:</strong> ${lr.asset_code || 'N/A'}</div>
+                        <div><strong>Asset Class:</strong> ${lr.asset_class || 'N/A'}</div>
+                        <div><strong>Cost Center:</strong> ${lr.cost_center || 'N/A'}</div>
+                        <div><strong>Currency:</strong> ${lr.currency || 'USD'}</div>
+                        <div><strong>Borrowing Rate:</strong> ${lr.borrowing_rate ? (lr.borrowing_rate.toFixed(2) + '%') : 'N/A'}</div>
+                    </div>
                 </div>
-                <div class="summary-item">
-                    <strong>Closing Liability</strong>
-                    <span>$${formatCurrency((result.lease_result.closing_lease_liability_non_current || 0) + (result.lease_result.closing_lease_liability_current || 0))}</span>
+                
+                <!-- Opening Balances -->
+                <div class="summary-item" style="grid-column: 1 / -1; background: rgba(102, 126, 234, 0.2); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                    <h3 style="margin-bottom: 10px; font-size: 1rem;">📊 Opening Balances</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                        <div><strong>Lease Liability:</strong> <span>$${formatCurrency(lr.opening_lease_liability || 0)}</span></div>
+                        <div><strong>ROU Asset:</strong> <span>$${formatCurrency(lr.opening_rou_asset || 0)}</span></div>
+                        <div><strong>ARO Liability:</strong> <span>$${formatCurrency(lr.opening_aro_liability || 0)}</span></div>
+                        <div><strong>Security Deposit:</strong> <span>$${formatCurrency(lr.opening_security_deposit || 0)}</span></div>
+                    </div>
                 </div>
+                
+                <!-- Period Activity -->
                 <div class="summary-item">
                     <strong>Total Interest</strong>
                     <span>$${formatCurrency(result.summary.total_interest || 0)}</span>
@@ -565,30 +600,74 @@
                     <span>$${formatCurrency(result.summary.total_rent_paid || 0)}</span>
                 </div>
                 <div class="summary-item">
-                    <strong>Payments</strong>
+                    <strong>ARO Interest</strong>
+                    <span>$${formatCurrency(lr.aro_interest || 0)}</span>
+                </div>
+                <div class="summary-item">
+                    <strong>Security Deposit Interest</strong>
+                    <span>$${formatCurrency(lr.security_deposit_change || 0)}</span>
+                </div>
+                <div class="summary-item">
+                    <strong>Total Payments</strong>
                     <span>${result.summary.total_payments || 0}</span>
+                </div>
+                
+                <!-- Closing Balances -->
+                <div class="summary-item" style="grid-column: 1 / -1; background: rgba(118, 75, 162, 0.2); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                    <h3 style="margin-bottom: 10px; font-size: 1rem;">💰 Closing Balances</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+                        <div><strong>Lease Liability (Total):</strong> <span>$${formatCurrency((lr.closing_lease_liability_non_current || 0) + (lr.closing_lease_liability_current || 0))}</span></div>
+                        <div><strong>Lease Liability (Non-Current):</strong> <span>$${formatCurrency(lr.closing_lease_liability_non_current || 0)}</span></div>
+                        <div><strong>Lease Liability (Current):</strong> <span>$${formatCurrency(lr.closing_lease_liability_current || 0)}</span></div>
+                        <div><strong>ROU Asset:</strong> <span>$${formatCurrency(lr.closing_rou_asset || 0)}</span></div>
+                        <div><strong>ARO Liability:</strong> <span>$${formatCurrency(lr.closing_aro_liability || 0)}</span></div>
+                        <div><strong>Security Deposit:</strong> <span>$${formatCurrency(lr.closing_security_deposit || 0)}</span></div>
+                    </div>
+                </div>
+                
+                <!-- Gain/Loss & Other -->
+                <div class="summary-item">
+                    <strong>Gain/(Loss) P&L</strong>
+                    <span style="color: ${(lr.gain_loss_pnl || 0) >= 0 ? '#4caf50' : '#f44336'}">
+                        $${formatCurrency(lr.gain_loss_pnl || 0)}
+                    </span>
+                </div>
+                <div class="summary-item">
+                    <strong>Remaining ROU Life</strong>
+                    <span>${lr.remaining_rou_life ? Math.round(lr.remaining_rou_life) + ' days' : 'N/A'}</span>
                 </div>
             `;
 
-            // Display schedule
+            // Display schedule with ALL columns including Principal and Remaining Balance
             const scheduleBody = document.getElementById('scheduleBody');
             scheduleBody.innerHTML = result.schedule.map((row, idx) => {
                 const bgColor = idx % 2 === 0 ? '#f8f9fa' : '#ffffff';
+                // Highlight opening/closing rows
+                const rowStyle = idx === 0 ? 'background-color: #e3f2fd; font-weight: 500;' : 
+                                idx === result.schedule.length - 1 ? 'background-color: #fff3e0; font-weight: 500;' : 
+                                `background-color: ${bgColor};`;
+                
                 return `
-                <tr style="background-color: ${bgColor};">
+                <tr style="${rowStyle}">
                     <td style="padding: 8px; border: 1px solid #ddd;">${formatDate(row.date)}</td>
                     <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.rental_amount || 0)}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${(row.pv_factor || 0).toFixed(4)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.principal || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${(row.pv_factor || 0).toFixed(6)}</td>
                     <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.interest || 0)}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.lease_liability || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: ${idx === 0 || idx === result.schedule.length - 1 ? '600' : '400'};">
+                        $${formatCurrency(row.lease_liability || 0)}
+                    </td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${row.remaining_balance !== null && row.remaining_balance !== undefined ? '$' + formatCurrency(row.remaining_balance) : '-'}</td>
                     <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.pv_of_rent || 0)}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.rou_asset || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: ${idx === 0 || idx === result.schedule.length - 1 ? '600' : '400'};">
+                        $${formatCurrency(row.rou_asset || 0)}
+                    </td>
                     <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.depreciation || 0)}</td>
                     <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.change_in_rou || 0)}</td>
                     <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(row.security_deposit_pv || 0)}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${row.aro_gross ? '$' + formatCurrency(row.aro_gross) : '-'}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${row.aro_interest ? '$' + formatCurrency(row.aro_interest) : '-'}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${row.aro_provision ? '$' + formatCurrency(row.aro_provision) : '-'}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${row.aro_gross !== null && row.aro_gross !== undefined ? '$' + formatCurrency(row.aro_gross) : '-'}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${row.aro_interest !== null && row.aro_interest !== undefined ? '$' + formatCurrency(row.aro_interest) : '-'}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${row.aro_provision !== null && row.aro_provision !== undefined ? '$' + formatCurrency(row.aro_provision) : '-'}</td>
                 </tr>
             `;
             }).join('');
@@ -636,18 +715,20 @@
                 const cells = row.querySelectorAll('td');
                 return {
                     'Date': cells[0].textContent,
-                    'Rent': cells[1].textContent,
-                    'PV Factor': cells[2].textContent,
-                    'Interest': cells[3].textContent,
-                    'Liability': cells[4].textContent,
-                    'PV Rent': cells[5].textContent,
-                    'ROU Asset': cells[6].textContent,
-                    'Depreciation': cells[7].textContent,
-                    'Change ROU': cells[8].textContent,
-                    'Security PV': cells[9].textContent,
-                    'ARO Gross': cells[10].textContent,
-                    'ARO Interest': cells[11].textContent,
-                    'ARO Provision': cells[12].textContent
+                    'Rental': cells[1].textContent,
+                    'Principal': cells[2].textContent,
+                    'PV Factor': cells[3].textContent,
+                    'Interest': cells[4].textContent,
+                    'Lease Liability': cells[5].textContent,
+                    'Remaining Balance': cells[6].textContent,
+                    'PV of Rent': cells[7].textContent,
+                    'ROU Asset': cells[8].textContent,
+                    'Depreciation': cells[9].textContent,
+                    'Change ROU': cells[10].textContent,
+                    'Security PV': cells[11].textContent,
+                    'ARO Gross': cells[12].textContent,
+                    'ARO Interest': cells[13].textContent,
+                    'ARO Provision': cells[14].textContent
                 };
             });
 
