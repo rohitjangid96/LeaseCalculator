@@ -284,9 +284,18 @@ def calculate_leases():
         
         # Get lease IDs to process
         lease_ids = data.get('lease_ids', [])
+        
+        # Check if user is admin
+        from database import get_user
+        user = get_user(user_id)
+        is_admin = user and user.get('role') == 'admin'
+        
         if not lease_ids:
-            # Get all user leases if none specified
-            all_leases = database.get_all_leases(user_id)
+            # Get all leases - admin gets all, regular user gets their own
+            if is_admin:
+                all_leases = database.get_all_leases_admin()
+            else:
+                all_leases = database.get_all_leases(user_id)
             lease_ids = [lease['lease_id'] for lease in all_leases]
         
         logger.info(f"   Processing {len(lease_ids)} leases from {from_date} to {to_date}")
@@ -307,9 +316,15 @@ def calculate_leases():
         # Load lease data from database
         lease_data_list = []
         for lease_id in lease_ids:
-            lease_dict = database.get_lease(lease_id, user_id)
+            # Admin can load any lease, regular user only their own
+            if is_admin:
+                all_leases_admin = database.get_all_leases_admin()
+                lease_dict = next((l for l in all_leases_admin if l['lease_id'] == lease_id), None)
+            else:
+                lease_dict = database.get_lease(lease_id, user_id)
+            
             if not lease_dict:
-                logger.warning(f"⚠️  Lease {lease_id} not found or not owned by user {user_id}")
+                logger.warning(f"⚠️  Lease {lease_id} not found")
                 continue
             
             # Convert dict to LeaseData

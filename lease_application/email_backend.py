@@ -4,9 +4,13 @@ Handles email configuration and sending
 """
 
 from flask import Blueprint, request, jsonify, session
-from auth.auth import require_login
+from auth.auth import require_login, require_admin
 import database
 import logging
+from datetime import datetime
+import os
+import tempfile
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +30,7 @@ except ImportError as e:
 
 @email_bp.route('/email/settings', methods=['GET'])
 @require_login
+@require_admin
 def get_email_settings_api():
     """Get current email settings"""
     try:
@@ -51,6 +56,7 @@ def get_email_settings_api():
 
 @email_bp.route('/email/settings', methods=['POST'])
 @require_login
+@require_admin
 def save_email_settings_api():
     """Save email settings"""
     try:
@@ -90,6 +96,7 @@ def save_email_settings_api():
 
 @email_bp.route('/email/test', methods=['POST'])
 @require_login
+@require_admin
 def test_email():
     """Send a test email"""
     try:
@@ -191,16 +198,45 @@ def send_report_email():
         if not HAS_EMAIL_AVAILABLE:
             return jsonify({'success': False, 'error': 'Email service not available'}), 400
         
-        data = request.json
-        
-        to_email = data.get('to_email')
-        report_data = data.get('report_data', {})
-        attachment_path = data.get('attachment_path')
+        # Check if it's FormData (file upload) or JSON
+        if request.files:
+            # FormData upload
+            to_email = request.form.get('to_email')
+            report_json = request.form.get('report_json', '{}')
+            
+            try:
+                report_data = json.loads(report_json) if report_json else {}
+            except:
+                report_data = {}
+            
+            # Save uploaded file temporarily
+            file = request.files.get('attachment')
+            if file:
+                temp_dir = tempfile.gettempdir()
+                temp_filename = f"lease_report_{int(datetime.now().timestamp())}.xlsx"
+                temp_path = os.path.join(temp_dir, temp_filename)
+                file.save(temp_path)
+                attachment_path = temp_path
+            else:
+                attachment_path = None
+        else:
+            # JSON request (old format)
+            data = request.json
+            to_email = data.get('to_email')
+            report_data = data.get('report_data', {})
+            attachment_path = data.get('attachment_path')
         
         if not to_email:
             return jsonify({'success': False, 'error': 'Missing recipient email'}), 400
         
         success = send_lease_report(to_email, report_data, attachment_path)
+        
+        # Clean up temp file
+        if request.files and attachment_path and os.path.exists(attachment_path):
+            try:
+                os.remove(attachment_path)
+            except:
+                pass
         
         if success:
             return jsonify({

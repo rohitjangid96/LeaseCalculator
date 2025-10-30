@@ -35,6 +35,8 @@ def init_database():
                 username TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
                 email TEXT,
+                role TEXT DEFAULT 'user',
+                is_active INTEGER DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -168,7 +170,7 @@ def init_database():
             )
         """)
         
-        # Lease documents - stores uploaded contract documents
+        # Lease documents table
         conn.execute("""
             CREATE TABLE IF NOT EXISTS lease_documents (
                 doc_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -189,7 +191,7 @@ def init_database():
             )
         """)
         
-        # Email settings - stores SMTP configuration
+        # Email settings table
         conn.execute("""
             CREATE TABLE IF NOT EXISTS email_settings (
                 setting_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -206,7 +208,7 @@ def init_database():
             )
         """)
         
-        # Email notifications - stores notification preferences
+        # Email notifications table
         conn.execute("""
             CREATE TABLE IF NOT EXISTS email_notifications (
                 notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -262,7 +264,7 @@ def get_user(user_id: int) -> Optional[Dict]:
     """Get user by ID"""
     with get_db_connection() as conn:
         row = conn.execute(
-            "SELECT user_id, username, email, created_at FROM users WHERE user_id = ?",
+            "SELECT user_id, username, email, role, is_active, created_at FROM users WHERE user_id = ?",
             (user_id,)
         ).fetchone()
         return dict(row) if row else None
@@ -480,6 +482,65 @@ def get_calculation(calc_id: int) -> Optional[Dict]:
     return None
 
 
+# ============ ADMIN MANAGEMENT ============
+
+def get_all_users() -> List[Dict]:
+    """Get all users (admin only)"""
+    with get_db_connection() as conn:
+        rows = conn.execute("""
+            SELECT user_id, username, email, role, is_active, created_at 
+            FROM users 
+            ORDER BY created_at DESC
+        """).fetchall()
+        return [dict(row) for row in rows]
+
+
+def update_user_role(user_id: int, role: str) -> bool:
+    """Update user's role"""
+    with get_db_connection() as conn:
+        cursor = conn.execute(
+            "UPDATE users SET role = ? WHERE user_id = ?",
+            (role, user_id)
+        )
+        return cursor.rowcount > 0
+
+
+def set_user_active(user_id: int, is_active: bool) -> bool:
+    """Set user active/inactive status"""
+    with get_db_connection() as conn:
+        cursor = conn.execute(
+            "UPDATE users SET is_active = ? WHERE user_id = ?",
+            (1 if is_active else 0, user_id)
+        )
+        return cursor.rowcount > 0
+
+
+def get_all_leases_admin(user_id: Optional[int] = None) -> List[Dict]:
+    """Get all leases (admin only) - optionally filtered by user"""
+    with get_db_connection() as conn:
+        if user_id:
+            rows = conn.execute("""
+                SELECT * FROM leases WHERE user_id = ? ORDER BY created_at DESC
+            """, (user_id,)).fetchall()
+        else:
+            rows = conn.execute("""
+                SELECT * FROM leases ORDER BY created_at DESC
+            """).fetchall()
+        
+        leases = []
+        for row in rows:
+            lease_dict = dict(row)
+            # Get username separately
+            user_row = conn.execute(
+                "SELECT username FROM users WHERE user_id = ?",
+                (lease_dict['user_id'],)
+            ).fetchone()
+            lease_dict['username'] = user_row['username'] if user_row else 'Unknown'
+            leases.append(lease_dict)
+        
+        return leases
+
+
 # ============ DOCUMENT MANAGEMENT ============
 
 def save_document(lease_id: int, user_id: int, filename: str, original_filename: str, 
@@ -501,9 +562,7 @@ def get_lease_documents(lease_id: int, user_id: int) -> List[Dict]:
     """Get all documents for a lease"""
     with get_db_connection() as conn:
         rows = conn.execute("""
-            SELECT doc_id, filename, original_filename, file_path, file_size, 
-                   file_type, document_type, uploaded_at, version
-            FROM lease_documents 
+            SELECT * FROM lease_documents 
             WHERE lease_id = ? AND user_id = ?
             ORDER BY uploaded_at DESC
         """, (lease_id, user_id)).fetchall()
@@ -511,7 +570,7 @@ def get_lease_documents(lease_id: int, user_id: int) -> List[Dict]:
 
 
 def get_document(doc_id: int, user_id: int) -> Optional[Dict]:
-    """Get document by ID (only if owned by user)"""
+    """Get a specific document"""
     with get_db_connection() as conn:
         row = conn.execute("""
             SELECT * FROM lease_documents 
@@ -521,7 +580,7 @@ def get_document(doc_id: int, user_id: int) -> Optional[Dict]:
 
 
 def delete_document(doc_id: int, user_id: int) -> bool:
-    """Delete a document (only if owned by user)"""
+    """Delete a document"""
     with get_db_connection() as conn:
         cursor = conn.execute("""
             DELETE FROM lease_documents 
@@ -541,15 +600,13 @@ def get_document_count(lease_id: int) -> int:
 
 # ============ EMAIL MANAGEMENT ============
 
-def get_email_settings():
-    """Get active email settings"""
+def get_email_settings() -> Optional[Dict]:
+    """Get current active email settings"""
     with get_db_connection() as conn:
         row = conn.execute("""
             SELECT * FROM email_settings WHERE is_active = 1 ORDER BY setting_id DESC LIMIT 1
         """).fetchone()
-        if row:
-            return dict(row)
-    return None
+        return dict(row) if row else None
 
 
 def save_email_settings(host: str, port: int, username: str, password: str, 
@@ -569,7 +626,7 @@ def save_email_settings(host: str, port: int, username: str, password: str,
 
 
 def get_user_email_notifications(user_id: int) -> List[Dict]:
-    """Get email notification preferences for a user"""
+    """Get user's email notification preferences"""
     with get_db_connection() as conn:
         rows = conn.execute("""
             SELECT * FROM email_notifications WHERE user_id = ?
@@ -577,25 +634,15 @@ def get_user_email_notifications(user_id: int) -> List[Dict]:
         return [dict(row) for row in rows]
 
 
-def update_user_notification(user_id: int, notification_type: str, is_enabled: bool, reminder_days: int = 30):
-    """Update or create user notification preference"""
+def update_user_notification(user_id: int, notification_type: str, 
+                             is_enabled: bool, reminder_days: int = 30) -> None:
+    """Update user's notification preference"""
     with get_db_connection() as conn:
-        existing = conn.execute("""
-            SELECT notification_id FROM email_notifications 
-            WHERE user_id = ? AND notification_type = ?
-        """, (user_id, notification_type)).fetchone()
-        
-        if existing:
-            conn.execute("""
-                UPDATE email_notifications 
-                SET is_enabled = ?, reminder_days = ?
-                WHERE user_id = ? AND notification_type = ?
-            """, (1 if is_enabled else 0, reminder_days, user_id, notification_type))
-        else:
-            conn.execute("""
-                INSERT INTO email_notifications (user_id, notification_type, is_enabled, reminder_days)
-                VALUES (?, ?, ?, ?)
-            """, (user_id, notification_type, 1 if is_enabled else 0, reminder_days))
+        conn.execute("""
+            INSERT OR REPLACE INTO email_notifications 
+            (user_id, notification_type, is_enabled, reminder_days)
+            VALUES (?, ?, ?, ?)
+        """, (user_id, notification_type, 1 if is_enabled else 0, reminder_days))
 
 
 # Initialize database on import

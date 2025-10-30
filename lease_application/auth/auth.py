@@ -23,3 +23,23 @@ def require_login(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+def require_admin(f):
+    """
+    Decorator to require admin role
+    Must be used after @require_login
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        from database import get_user
+        
+        user_id = session.get('user_id')
+        user = get_user(user_id)
+        
+        if not user or user.get('role') != 'admin':
+            logger.warning(f"❌ Admin access denied for user_id={user_id}")
+            return jsonify({'error': 'Admin access required'}), 403
+        
+        return f(*args, **kwargs)
+    return decorated_function
+

@@ -442,7 +442,8 @@
     <div class="header">
         <h1>🏢 My Leases</h1>
         <div class="user-info">
-            <span>Welcome, <strong id="username">User</strong></span>
+            <span>Welcome, <strong id="username">User</strong> <span id="userRole" style="opacity: 0.8; font-size: 0.85rem;"></span></span>
+            <button id="adminBtn" class="btn btn-primary" onclick="window.location.href='admin.html'" style="display: none; background: rgba(220, 20, 60, 0.9);">🔐 Admin</button>
             <button class="btn btn-primary" onclick="window.location.href='calculate.html'">Calculate</button>
             <button class="btn btn-primary" onclick="window.location.href='bulk_results.html'">Bulk Results</button>
             <button class="btn" onclick="logout()" style="background: rgba(255,255,255,0.2);">Logout</button>
@@ -574,6 +575,7 @@
                     console.log('✓ Dashboard auth successful:', data.user.username);
                     document.getElementById('username').textContent = data.user.username;
                     loadLeases();
+                    checkAdminAccess(); // Check if user is admin
                 } else {
                     // Not logged in - redirect to login
                     console.error('❌ Auth failed:', data);
@@ -610,6 +612,22 @@
                 }
             } catch (error) {
                 console.error('Failed to load leases:', error);
+            }
+        }
+
+        async function checkAdminAccess() {
+            try {
+                const response = await fetch('http://localhost:5001/api/admin/check', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.success && data.is_admin) {
+                    document.getElementById('adminBtn').style.display = 'inline-block';
+                    document.getElementById('userRole').textContent = '(Admin)';
+                }
+            } catch (error) {
+                console.error('Failed to check admin access:', error);
             }
         }
 

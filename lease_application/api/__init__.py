@@ -21,10 +21,20 @@ api_bp = Blueprint('api', __name__, url_prefix='/api')
 @api_bp.route('/leases', methods=['GET'])
 @require_login
 def get_leases():
-    """Get all leases for current user"""
+    """Get all leases for current user (or all leases if admin)"""
     user_id = session['user_id']
-    logger.info(f"📋 GET /api/leases - User {user_id} fetching leases")
-    leases = database.get_all_leases(user_id)
+    
+    # Check if user is admin
+    user = database.get_user(user_id)
+    is_admin = user and user.get('role') == 'admin'
+    
+    logger.info(f"📋 GET /api/leases - User {user_id} {'(Admin)' if is_admin else ''} fetching leases")
+    
+    if is_admin:
+        leases = database.get_all_leases_admin()
+    else:
+        leases = database.get_all_leases(user_id)
+    
     logger.info(f"Found {len(leases)} leases for user {user_id}")
     return jsonify({'success': True, 'leases': leases})
 
@@ -34,8 +44,21 @@ def get_leases():
 def get_lease(lease_id):
     """Get a specific lease"""
     user_id = session['user_id']
-    logger.info(f"🔍 GET /api/leases/{lease_id} - User {user_id} fetching lease")
-    lease = database.get_lease(lease_id, user_id)
+    
+    # Check if user is admin
+    user = database.get_user(user_id)
+    is_admin = user and user.get('role') == 'admin'
+    
+    logger.info(f"🔍 GET /api/leases/{lease_id} - User {user_id} {'(Admin)' if is_admin else ''} fetching lease")
+    
+    if is_admin:
+        # Admin can access any lease
+        all_leases = database.get_all_leases_admin()
+        lease = next((l for l in all_leases if l['lease_id'] == lease_id), None)
+    else:
+        # Regular user can only access their own leases
+        lease = database.get_lease(lease_id, user_id)
+    
     if lease:
         logger.info(f"Lease {lease_id} found")
         return jsonify({'success': True, 'lease': dict(lease)})
@@ -105,7 +128,12 @@ def create_lease():
 def update_lease(lease_id):
     """Update an existing lease"""
     user_id = session['user_id']
-    logger.info(f"✏️ PUT /api/leases/{lease_id} - User {user_id} updating lease")
+    
+    # Check if user is admin
+    user = database.get_user(user_id)
+    is_admin = user and user.get('role') == 'admin'
+    
+    logger.info(f"✏️ PUT /api/leases/{lease_id} - User {user_id} {'(Admin)' if is_admin else ''} updating lease")
     data = request.json
     
     # Filter only valid database columns (same as create)
@@ -131,7 +159,18 @@ def update_lease(lease_id):
     filtered_data['lease_id'] = lease_id
     filtered_data['user_id'] = user_id
     
-    updated_id = database.save_lease(user_id, filtered_data)
+    # For admin, use save_lease_admin; for regular users, use regular save_lease
+    if is_admin:
+        # Admin can update any lease - need to find original user_id
+        all_leases = database.get_all_leases_admin()
+        original_lease = next((l for l in all_leases if l['lease_id'] == lease_id), None)
+        if original_lease:
+            updated_id = database.save_lease(original_lease['user_id'], filtered_data)
+        else:
+            return jsonify({'error': 'Lease not found'}), 404
+    else:
+        updated_id = database.save_lease(user_id, filtered_data)
+    
     logger.info(f"✅ Lease updated: lease_id={updated_id}")
     return jsonify({
         'success': True,
@@ -145,7 +184,12 @@ def update_lease(lease_id):
 def get_leases_for_bulk():
     """Get leases with filters for bulk processing"""
     user_id = session['user_id']
-    logger.info(f"📋 GET /api/leases/bulk - User {user_id} fetching leases for bulk processing")
+    
+    # Check if user is admin
+    user = database.get_user(user_id)
+    is_admin = user and user.get('role') == 'admin'
+    
+    logger.info(f"📋 GET /api/leases/bulk - User {user_id} {'(Admin)' if is_admin else ''} fetching leases for bulk processing")
     
     # Get optional filters from query parameters
     cost_center = request.args.get('cost_center')
@@ -153,8 +197,11 @@ def get_leases_for_bulk():
     asset_class = request.args.get('asset_class')
     profit_center = request.args.get('profit_center')
     
-    # Get all leases
-    leases = database.get_all_leases(user_id)
+    # Get all leases - admin gets all, regular user gets their own
+    if is_admin:
+        leases = database.get_all_leases_admin()
+    else:
+        leases = database.get_all_leases(user_id)
     
     # Apply filters if provided
     filtered_leases = leases
@@ -176,8 +223,24 @@ def get_leases_for_bulk():
 def delete_lease(lease_id):
     """Delete a lease"""
     user_id = session['user_id']
-    logger.info(f"🗑️ DELETE /api/leases/{lease_id} - User {user_id} deleting lease")
-    success = database.delete_lease(lease_id, user_id)
+    
+    # Check if user is admin
+    user = database.get_user(user_id)
+    is_admin = user and user.get('role') == 'admin'
+    
+    logger.info(f"🗑️ DELETE /api/leases/{lease_id} - User {user_id} {'(Admin)' if is_admin else ''} deleting lease")
+    
+    if is_admin:
+        # Admin can delete any lease - need to find original user_id
+        all_leases = database.get_all_leases_admin()
+        original_lease = next((l for l in all_leases if l['lease_id'] == lease_id), None)
+        if original_lease:
+            success = database.delete_lease(lease_id, original_lease['user_id'])
+        else:
+            return jsonify({'error': 'Lease not found'}), 404
+    else:
+        success = database.delete_lease(lease_id, user_id)
+    
     if success:
         logger.info(f"✅ Lease {lease_id} deleted")
         return jsonify({'success': True, 'message': 'Lease deleted'})

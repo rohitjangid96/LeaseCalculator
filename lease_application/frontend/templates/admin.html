@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Lease Management</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <style>
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .admin-tab-btn {
+            background: none;
+            border: none;
+            padding: 15px 30px;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .admin-tab-btn:hover {
+            background: #f5f5f5;
+        }
+        
+        .admin-tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: bold;
+        }
+        
+        .admin-tab-content {
+            display: none;
+        }
+        
+        .admin-tab-content.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .badge-admin {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .badge-user {
+            background: #4ecdc4;
+            color: white;
+        }
+        
+        .badge-active {
+            background: #28a745;
+            color: white;
+        }
+        
+        .badge-inactive {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.85rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 2px;
+        }
+        
+        .btn-primary-small {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-danger-small {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-success-small {
+            background: #28a745;
+            color: white;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>🔐 Admin Dashboard</h1>
+            <p>Manage users, view system statistics, and configure settings</p>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn" onclick="window.location.href='dashboard.html'" style="background: rgba(255,255,255,0.2); color: white;">← Back to Dashboard</button>
+                <button class="btn" onclick="logout()" style="background: rgba(255,255,255,0.2); color: white;">Logout</button>
+            </div>
+        </div>
+        
+        <div class="admin-tabs">
+            <button class="admin-tab-btn active" onclick="switchTab('overview')">📊 Overview</button>
+            <button class="admin-tab-btn" onclick="switchTab('users')">👥 Users</button>
+            <button class="admin-tab-btn" onclick="switchTab('leases')">🏢 All Leases</button>
+            <button class="admin-tab-btn" onclick="switchTab('email')">📧 Email Settings</button>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="overviewTab" class="admin-tab-content active">
+            <h2>📊 System Overview</h2>
+            <div id="statsContainer" class="stats-grid">
+                <div class="loading">Loading statistics...</div>
+            </div>
+        </div>
+        
+        <!-- Users Tab -->
+        <div id="usersTab" class="admin-tab-content">
+            <h2>👥 User Management</h2>
+            <div id="usersContainer">
+                <div class="loading">Loading users...</div>
+            </div>
+        </div>
+        
+        <!-- Leases Tab -->
+        <div id="leasesTab" class="admin-tab-content">
+            <h2>🏢 All Leases</h2>
+            <div id="leasesContainer">
+                <div class="loading">Loading leases...</div>
+            </div>
+        </div>
+        
+        <!-- Email Settings Tab -->
+        <div id="emailTab" class="admin-tab-content">
+            <h2>📧 Email Configuration</h2>
+            <p style="margin-bottom: 20px; color: #666;">Configure SMTP settings for sending emails (alerts, reports).</p>
+            <div id="emailSettingsContainer">
+                <div class="loading">Loading email settings...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            // Update buttons
+            document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update content
+            document.querySelectorAll('.admin-tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            // Load data for the tab
+            if (tabName === 'overview') {
+                loadStats();
+            } else if (tabName === 'users') {
+                loadUsers();
+            } else if (tabName === 'leases') {
+                loadAllLeases();
+            } else if (tabName === 'email') {
+                loadEmailSettings();
+            }
+        }
+        
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/admin/stats', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.stats;
+                    document.getElementById('statsContainer').innerHTML = `
+                        <div class="stat-card">
+                            <div class="stat-label">Total Users</div>
+                            <div class="stat-value">${stats.total_users}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Active Users</div>
+                            <div class="stat-value">${stats.active_users}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Leases</div>
+                            <div class="stat-value">${stats.total_leases}</div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('statsContainer').innerHTML = '<div class="alert alert-error">Failed to load statistics</div>';
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                document.getElementById('statsContainer').innerHTML = '<div class="alert alert-error">Failed to load statistics</div>';
+            }
+        }
+        
+        // Load users
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/admin/users', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const users = data.users;
+                    displayUsers(users);
+                } else {
+                    document.getElementById('usersContainer').innerHTML = '<div class="alert alert-error">Failed to load users</div>';
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                document.getElementById('usersContainer').innerHTML = '<div class="alert alert-error">Failed to load users</div>';
+            }
+        }
+        
+        function displayUsers(users) {
+            if (users.length === 0) {
+                document.getElementById('usersContainer').innerHTML = '<p>No users found.</p>';
+                return;
+            }
+            
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                            <tr>
+                                <td>${user.user_id}</td>
+                                <td>${escapeHtml(user.username)}</td>
+                                <td>${escapeHtml(user.email || 'N/A')}</td>
+                                <td><span class="badge badge-${user.role}">${user.role}</span></td>
+                                <td><span class="badge badge-${user.is_active ? 'active' : 'inactive'}">${user.is_active ? 'Active' : 'Inactive'}</span></td>
+                                <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                                <td>
+                                    ${user.role !== 'admin' ? `
+                                        <button class="btn-small btn-primary-small" onclick="promoteUser(${user.user_id})">Make Admin</button>
+                                    ` : '<span style="color: #999;">Cannot modify</span>'}
+                                    ${user.is_active ? `
+                                        <button class="btn-small btn-danger-small" onclick="deactivateUser(${user.user_id})">Deactivate</button>
+                                    ` : `
+                                        <button class="btn-small btn-success-small" onclick="activateUser(${user.user_id})">Activate</button>
+                                    `}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('usersContainer').innerHTML = html;
+        }
+        
+        async function promoteUser(userId) {
+            if (!confirm('Are you sure you want to make this user an admin?')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({role: 'admin'})
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('✅ User promoted to admin');
+                    loadUsers();
+                } else {
+                    alert('❌ Failed: ' + data.error);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+        
+        async function activateUser(userId) {
+            try {
+                const response = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({is_active: true})
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('✅ User activated');
+                    loadUsers();
+                } else {
+                    alert('❌ Failed: ' + data.error);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+        
+        async function deactivateUser(userId) {
+            if (!confirm('Are you sure you want to deactivate this user?')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({is_active: false})
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('✅ User deactivated');
+                    loadUsers();
+                } else {
+                    alert('❌ Failed: ' + data.error);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+        
+        // Load all leases
+        async function loadAllLeases() {
+            try {
+                const response = await fetch('/api/admin/leases', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const leases = data.leases;
+                    displayLeases(leases);
+                } else {
+                    document.getElementById('leasesContainer').innerHTML = '<div class="alert alert-error">Failed to load leases</div>';
+                }
+            } catch (error) {
+                console.error('Error loading leases:', error);
+                document.getElementById('leasesContainer').innerHTML = '<div class="alert alert-error">Failed to load leases</div>';
+            }
+        }
+        
+        function displayLeases(leases) {
+            if (leases.length === 0) {
+                document.getElementById('leasesContainer').innerHTML = '<p>No leases found.</p>';
+                return;
+            }
+            
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Description</th>
+                            <th>User</th>
+                            <th>Asset Class</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${leases.map(lease => `
+                            <tr>
+                                <td>${lease.lease_id}</td>
+                                <td>${escapeHtml(lease.lease_name || 'Untitled')}</td>
+                                <td>${escapeHtml(lease.username || 'Unknown')}</td>
+                                <td>${escapeHtml(lease.asset_class || 'N/A')}</td>
+                                <td>${lease.lease_start_date || 'N/A'}</td>
+                                <td>${lease.end_date || 'N/A'}</td>
+                                <td>
+                                    <button class="btn-small btn-primary-small" onclick="editLease(${lease.lease_id})">Edit</button>
+                                    <button class="btn-small btn-primary-small" onclick="calculateLease(${lease.lease_id})">Calc</button>
+                                    <button class="btn-small btn-danger-small" onclick="deleteLease(${lease.lease_id})">Del</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('leasesContainer').innerHTML = html;
+        }
+        
+        function editLease(leaseId) {
+            window.location.href = `complete_lease_form.html?lease_id=${leaseId}`;
+        }
+        
+        function calculateLease(leaseId) {
+            window.location.href = `calculate.html?lease_id=${leaseId}`;
+        }
+        
+        async function deleteLease(leaseId) {
+            if (!confirm('Are you sure you want to delete this lease?')) return;
+            
+            try {
+                const response = await fetch(`/api/leases/${leaseId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('✅ Lease deleted');
+                    loadAllLeases();
+                } else {
+                    alert('❌ Failed: ' + data.error);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+        
+        // Load email settings
+        async function loadEmailSettings() {
+            try {
+                const response = await fetch('/api/email/settings', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                let settingsHtml;
+                if (data.success && data.settings) {
+                    const settings = data.settings;
+                    settingsHtml = `
+                        <div class="alert alert-success">Email settings are configured</div>
+                        <form id="emailSettingsForm">
+                            <div class="form-group">
+                                <label>SMTP Host</label>
+                                <input type="text" name="smtp_host" value="${escapeHtml(settings.smtp_host || '')}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>SMTP Port</label>
+                                <input type="number" name="smtp_port" value="${settings.smtp_port || 587}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>SMTP Username</label>
+                                <input type="text" name="smtp_username" value="${escapeHtml(settings.smtp_username || '')}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>SMTP Password</label>
+                                <input type="password" name="smtp_password" placeholder="Enter new password" required>
+                            </div>
+                            <div class="form-group">
+                                <label>From Email</label>
+                                <input type="email" name="from_email" value="${escapeHtml(settings.from_email || '')}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>From Name</label>
+                                <input type="text" name="from_name" value="${escapeHtml(settings.from_name || '')}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" name="use_tls" ${settings.use_tls ? 'checked' : ''}> Use TLS
+                                </label>
+                            </div>
+                            <button type="submit" class="btn-primary">Save Email Settings</button>
+                            <button type="button" class="btn-primary" onclick="testEmail()" style="background: #27ae60; margin-left: 10px;">Test Email</button>
+                        </form>
+                    `;
+                } else {
+                    settingsHtml = `
+                        <div class="alert alert-error">Email settings not configured</div>
+                        <form id="emailSettingsForm">
+                            <div class="form-group">
+                                <label>SMTP Host (e.g., smtp.gmail.com)</label>
+                                <input type="text" name="smtp_host" required>
+                            </div>
+                            <div class="form-group">
+                                <label>SMTP Port</label>
+                                <input type="number" name="smtp_port" value="587" required>
+                            </div>
+                            <div class="form-group">
+                                <label>SMTP Username</label>
+                                <input type="text" name="smtp_username" required>
+                            </div>
+                            <div class="form-group">
+                                <label>SMTP Password</label>
+                                <input type="password" name="smtp_password" required>
+                            </div>
+                            <div class="form-group">
+                                <label>From Email</label>
+                                <input type="email" name="from_email" required>
+                            </div>
+                            <div class="form-group">
+                                <label>From Name</label>
+                                <input type="text" name="from_name" value="Lease Management" required>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" name="use_tls" checked> Use TLS
+                                </label>
+                            </div>
+                            <button type="submit" class="btn-primary">Save Email Settings</button>
+                            <button type="button" class="btn-primary" onclick="testEmail()" style="background: #27ae60; margin-left: 10px;">Test Email</button>
+                        </form>
+                    `;
+                }
+                document.getElementById('emailSettingsContainer').innerHTML = settingsHtml;
+                document.getElementById('emailSettingsForm').addEventListener('submit', saveEmailSettings);
+            } catch (error) {
+                console.error('Error loading email settings:', error);
+                document.getElementById('emailSettingsContainer').innerHTML = '<div class="alert alert-error">Failed to load email settings</div>';
+            }
+        }
+        
+        async function saveEmailSettings(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            const data = {
+                smtp_host: formData.get('smtp_host'),
+                smtp_port: parseInt(formData.get('smtp_port')),
+                smtp_username: formData.get('smtp_username'),
+                smtp_password: formData.get('smtp_password'),
+                from_email: formData.get('from_email'),
+                from_name: formData.get('from_name'),
+                use_tls: formData.has('use_tls')
+            };
+            
+            try {
+                const response = await fetch('/api/email/settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ Email settings saved successfully');
+                    loadEmailSettings();
+                } else {
+                    alert('❌ Failed: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+        
+        async function testEmail() {
+            if (!confirm('Send a test email to your account?')) return;
+            
+            try {
+                const response = await fetch('/api/email/test', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ Test email sent! Check your inbox.');
+                } else {
+                    alert('❌ Failed: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function logout() {
+            fetch('/api/logout', {method: 'POST', credentials: 'include'})
+                .then(() => window.location.href = 'login.html');
+        }
+        
+        // Load initial data
+        loadStats();
+    </script>
+</body>
+</html>
+

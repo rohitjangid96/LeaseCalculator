@@ -22,6 +22,7 @@ from complete_lease_backend import calc_bp
 from pdf_upload_backend import pdf_bp
 from document_backend import doc_bp
 from email_backend import email_bp
+from admin_backend import admin_bp
 
 # Import database
 import database
@@ -90,6 +91,7 @@ def create_app(config_name=None):
     app.register_blueprint(pdf_bp)
     app.register_blueprint(doc_bp)
     app.register_blueprint(email_bp)
+    app.register_blueprint(admin_bp)
     logger.info("✅ Blueprints registered")
     
     # Session configuration
@@ -122,6 +124,25 @@ def create_app(config_name=None):
         except Exception as e:
             logger.error(f"Error rendering dashboard.html: {e}")
             return f"Error loading dashboard: {e}", 500
+    
+    @app.route('/admin')
+    @app.route('/admin.html')
+    def admin_page():
+        from flask import render_template
+        try:
+            # Check if user is admin
+            from database import get_user
+            user_id = session.get('user_id')
+            if user_id:
+                user = get_user(user_id)
+                if user and user.get('role') == 'admin':
+                    return render_template('admin.html')
+            # Redirect non-admin users
+            from flask import redirect
+            return redirect('/dashboard.html')
+        except Exception as e:
+            logger.error(f"Error rendering admin.html: {e}")
+            return f"Error loading admin page: {e}", 500
     
     @app.route('/bulk_results.html')
     def bulk_results_page():

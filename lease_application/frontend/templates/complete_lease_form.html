@@ -882,6 +882,19 @@
             </div>
         </div>
     </div>
+    
+    <!-- Email Modal (static, always available) -->
+    <div id="emailModal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(68,66,90,0.3);">
+      <div style="background: white; width: 350px; margin: 120px auto 0 auto; border-radius: 15px; box-shadow: 0 4px 30px rgba(0,0,0,0.19); padding: 24px 28px 22px 28px; position: relative;">
+        <div style="font-size: 1.15rem; font-weight: bold; color: #444; margin-bottom: 12px;">📧 Email Lease Report</div>
+        <label style="font-size: 0.95rem; margin-bottom: 6px; color: #555;">Recipient Email</label>
+        <input type="email" id="recipientEmail" required style="width: 100%; padding: 10px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 0.97rem; margin-bottom: 16px; color: #222;">
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button onclick="window.sendReportEmail && window.sendReportEmail()" style="background: #22c55e; color: white; border: none; border-radius: 6px; padding: 10px 18px; font-weight: bold;">Send</button>
+          <button onclick="window.hideEmailModal && window.hideEmailModal()" style="background: #ef4444; color: white; border: none; border-radius: 6px; padding: 10px 16px;">Cancel</button>
+        </div>
+      </div>
+    </div>
 
     <script>
         // ============ PROGRESS BAR INITIALIZATION ============
@@ -1260,7 +1273,8 @@
                 
                 const response = await fetch('http://localhost:5001/api/extract_lease_pdf', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    credentials: 'include'
                 });
                 
                 const result = await response.json();
@@ -1277,9 +1291,18 @@
                     const data = result.data;
                     
                     // Map extracted fields to form fields
-                    if (data.description) document.getElementById('description').value = data.description;
-                    if (data.asset_class) document.getElementById('asset_class').value = data.asset_class;
-                    if (data.asset_id_code) document.getElementById('asset_id_code').value = data.asset_id_code;
+                    if (data.description) {
+                        const elem = document.getElementById('description');
+                        if (elem) elem.value = data.description;
+                    }
+                    if (data.asset_class) {
+                        const elem = document.getElementById('asset_class');
+                        if (elem) elem.value = data.asset_class;
+                    }
+                    if (data.asset_id_code) {
+                        const elem = document.getElementById('asset_id');
+                        if (elem) elem.value = data.asset_id_code;
+                    }
                     if (data.lease_start_date) {
                         const startDate = document.getElementById('lease_start');
                         if (startDate) startDate.value = data.lease_start_date;
@@ -1292,27 +1315,58 @@
                         const firstPayment = document.getElementById('first_payment');
                         if (firstPayment) firstPayment.value = data.first_payment_date;
                     }
-                    if (data.tenure) document.getElementById('tenure').value = data.tenure;
-                    if (data.frequency_months) document.getElementById('frequency').value = data.frequency_months;
-                    if (data.day_of_month) document.getElementById('day_of_month').value = data.day_of_month;
+                    if (data.tenure) {
+                        const elem = document.getElementById('tenure');
+                        if (elem) elem.value = data.tenure;
+                    }
+                    if (data.frequency_months) {
+                        const elem = document.getElementById('frequency');
+                        if (elem) elem.value = data.frequency_months;
+                    }
+                    if (data.day_of_month) {
+                        const elem = document.getElementById('day_of_month');
+                        if (elem) elem.value = data.day_of_month;
+                    }
                     if (data.rental_1) {
-                        document.getElementById('rental_amount').value = data.rental_1;
+                        const rentalElem = document.getElementById('rental_amount');
+                        if (rentalElem) rentalElem.value = data.rental_1;
                         // Auto-enable auto_rentals if rental found
                         const autoRentalsCheckbox = document.getElementById('auto_rentals');
                         if (autoRentalsCheckbox) autoRentalsCheckbox.checked = true;
                         toggleAutoRentals();
                     }
-                    if (data.currency) document.getElementById('currency').value = data.currency;
-                    if (data.borrowing_rate) document.getElementById('borrowing_rate').value = data.borrowing_rate;
-                    if (data.security_deposit) document.getElementById('security_deposit').value = data.security_deposit;
-                    if (data.esc_freq_months) document.getElementById('esc_freq_months').value = data.esc_freq_months;
-                    if (data.escalation_percent) document.getElementById('escalation_percent').value = data.escalation_percent;
+                    if (data.currency) {
+                        const elem = document.getElementById('currency');
+                        if (elem) elem.value = data.currency;
+                    }
+                    if (data.borrowing_rate) {
+                        const elem = document.getElementById('borrowing_rate');
+                        if (elem) elem.value = data.borrowing_rate;
+                    }
+                    if (data.security_deposit) {
+                        const elem = document.getElementById('security_deposit');
+                        if (elem) elem.value = data.security_deposit;
+                    }
+                    if (data.esc_freq_months) {
+                        const elem = document.getElementById('esc_freq_months');
+                        if (elem) elem.value = data.esc_freq_months;
+                    }
+                    if (data.escalation_percent) {
+                        const elem = document.getElementById('escalation_percent');
+                        if (elem) elem.value = data.escalation_percent;
+                    }
                     if (data.escalation_start_date) {
                         const escStart = document.getElementById('escalation_start');
                         if (escStart) escStart.value = data.escalation_start_date;
                     }
-                    if (data.lease_incentive) document.getElementById('lease_incentive').value = data.lease_incentive;
-                    if (data.initial_direct_expenditure) document.getElementById('initial_direct_expenditure').value = data.initial_direct_expenditure;
+                    if (data.lease_incentive) {
+                        const elem = document.getElementById('lease_incentive');
+                        if (elem) elem.value = data.lease_incentive;
+                    }
+                    if (data.initial_direct_expenditure) {
+                        const elem = document.getElementById('initial_direct_expenditure');
+                        if (elem) elem.value = data.initial_direct_expenditure;
+                    }
                     
                     statusDiv.innerHTML = `<span style="color: #28a745;">✅ Successfully extracted and filled ${Object.keys(data).length} fields!</span>`;
                     
@@ -2069,6 +2123,9 @@ Check terminal or restart with: ./start_app.sh
                         <button onclick="exportPythonResultsToExcel()" style="background: #28a745; color: white; padding: 12px 30px; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;">
                             📥 Download Results to Excel
                         </button>
+                        <button onclick="window.showEmailModal && window.showEmailModal()" style="background: #007bff; color: white; padding: 12px 30px; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                            📧 Email Report
+                        </button>
                     </div>
                 </div>
             `;
@@ -2565,6 +2622,85 @@ Check terminal or restart with: ./start_app.sh
             currentLeaseId = leaseId;
             loadDocuments();
         };
+
+        // Email Modal Functions
+        window.showEmailModal = function() {
+            // Try to get saved email from user info
+            let defaultEmail = '';
+            
+            // Try to get current user's email from database
+            fetch('http://localhost:5001/api/user', {
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.user && data.user.email) {
+                    defaultEmail = data.user.email;
+                }
+                document.getElementById('recipientEmail').value = defaultEmail;
+                document.getElementById('emailModal').style.display = 'block';
+            })
+            .catch(err => {
+                document.getElementById('recipientEmail').value = '';
+                document.getElementById('emailModal').style.display = 'block';
+            });
+        };
+        
+        window.hideEmailModal = function() {
+            document.getElementById('emailModal').style.display = 'none';
+        };
+        
+        // Email Report handler
+        window.sendReportEmail = async function() {
+            const toEmail = document.getElementById('recipientEmail').value.trim();
+            if (!toEmail || !toEmail.match(/^\S+@\S+\.\S+$/)) {
+                showNotification('error', 'Invalid Email', 'Please enter a valid recipient email');
+                return;
+            }
+            hideEmailModal();
+            NProgress.start();
+            try {
+                // Use existing Excel logic to get blob
+                const wb = XLSX.utils.book_new();
+                // Amortization Schedule
+                const schedTable = document.querySelector('#schedule_body').parentElement.parentElement;
+                const ws1 = XLSX.utils.table_to_sheet(schedTable);
+                XLSX.utils.book_append_sheet(wb, ws1, 'Amortization Schedule');
+                // Journal entries
+                const journalTable = document.querySelector('#journal_body').parentElement.parentElement;
+                const ws2 = XLSX.utils.table_to_sheet(journalTable);
+                XLSX.utils.book_append_sheet(wb, ws2, 'Journal Entries');
+                // To Blob
+                const wbout = XLSX.write(wb, {bookType: 'xlsx', type: 'array'});
+                const fileBlob = new Blob([wbout], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+
+                // Compose FormData
+                const formData = new FormData();
+                formData.append('to_email', toEmail);
+                formData.append('attachment', fileBlob, 'Lease_Report.xlsx');
+
+                // Add summary/report JSON data (if available)
+                if (window.lastLeaseResult) {
+                    formData.append('report_json', JSON.stringify(window.lastLeaseResult));
+                }
+                // Call API
+                const resp = await fetch('/api/email/send-report', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                const result = await resp.json();
+                NProgress.done();
+                if (result.success) {
+                    showNotification('success', 'Report Emailed', result.message || `Report sent to ${toEmail}`);
+                } else {
+                    showNotification('error', 'Email Failed', result.error || 'Failed to send report by email');
+                }
+            } catch (ex) {
+                NProgress.done();
+                showNotification('error', 'Email Failed', ex.message || 'Could not send email.');
+            }
+        }
     </script>
 </body>
 </html>
