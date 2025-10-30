@@ -205,6 +205,21 @@
             <form id="leaseForm">
                 <!-- Tab 1: General Information -->
                 <div class="tab-content active" id="tab0">
+                    <!-- AI PDF Extraction Section -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px; font-size: 1.1rem;">🤖 AI-Assisted Data Entry</h3>
+                        <p style="margin-bottom: 15px; font-size: 0.9rem; opacity: 0.9;">Upload a PDF lease document and let AI automatically fill the form for you!</p>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <input type="file" id="pdfFileInput" accept=".pdf" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 6px; border: 2px dashed rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;" />
+                            <input type="text" id="apiKeyInput" placeholder="Google AI API Key (optional)" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 6px; border: none; background: rgba(255,255,255,0.9); color: #333;" />
+                            <button type="button" onclick="extractFromPdf()" style="padding: 10px 20px; background: white; color: #667eea; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">🚀 Extract with AI</button>
+                        </div>
+                        <div id="extractionStatus" style="margin-top: 10px; font-size: 0.85rem;"></div>
+                        <div style="margin-top: 10px; font-size: 0.75rem; opacity: 0.8;">
+                            💡 Get your free Google AI API key at: <a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: white; text-decoration: underline;">https://makersuite.google.com/app/apikey</a>
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <label for="asset_name">Asset Name <span class="mandatory">*</span></label>
                         <input type="text" id="asset_name" name="Asset_Name" value="" required>
@@ -992,6 +1007,94 @@
             e.preventDefault();
             calculateLease();
         });
+
+        async function extractFromPdf() {
+            const fileInput = document.getElementById('pdfFileInput');
+            const statusDiv = document.getElementById('extractionStatus');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                statusDiv.innerHTML = '<span style="color: #dc3545;">❌ Please select a PDF file</span>';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const apiKey = document.getElementById('apiKeyInput').value;
+            
+            statusDiv.innerHTML = '<span style="color: #007bff;">⏳ Uploading and extracting data...</span>';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                if (apiKey) {
+                    formData.append('api_key', apiKey);
+                }
+                
+                const response = await fetch('http://localhost:5001/api/extract_lease_pdf', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Auto-fill form with extracted data
+                    const data = result.data;
+                    
+                    // Map extracted fields to form fields
+                    if (data.description) document.getElementById('description').value = data.description;
+                    if (data.asset_class) document.getElementById('asset_class').value = data.asset_class;
+                    if (data.asset_id_code) document.getElementById('asset_id_code').value = data.asset_id_code;
+                    if (data.lease_start_date) {
+                        const startDate = document.getElementById('lease_start');
+                        if (startDate) startDate.value = data.lease_start_date;
+                    }
+                    if (data.end_date) {
+                        const endDate = document.getElementById('end_date');
+                        if (endDate) endDate.value = data.end_date;
+                    }
+                    if (data.first_payment_date) {
+                        const firstPayment = document.getElementById('first_payment');
+                        if (firstPayment) firstPayment.value = data.first_payment_date;
+                    }
+                    if (data.tenure) document.getElementById('tenure').value = data.tenure;
+                    if (data.frequency_months) document.getElementById('frequency').value = data.frequency_months;
+                    if (data.day_of_month) document.getElementById('day_of_month').value = data.day_of_month;
+                    if (data.rental_1) {
+                        document.getElementById('rental_amount').value = data.rental_1;
+                        // Auto-enable auto_rentals if rental found
+                        const autoRentalsCheckbox = document.getElementById('auto_rentals');
+                        if (autoRentalsCheckbox) autoRentalsCheckbox.checked = true;
+                        toggleAutoRentals();
+                    }
+                    if (data.currency) document.getElementById('currency').value = data.currency;
+                    if (data.borrowing_rate) document.getElementById('borrowing_rate').value = data.borrowing_rate;
+                    if (data.security_deposit) document.getElementById('security_deposit').value = data.security_deposit;
+                    if (data.esc_freq_months) document.getElementById('esc_freq_months').value = data.esc_freq_months;
+                    if (data.escalation_percent) document.getElementById('escalation_percent').value = data.escalation_percent;
+                    if (data.escalation_start_date) {
+                        const escStart = document.getElementById('escalation_start');
+                        if (escStart) escStart.value = data.escalation_start_date;
+                    }
+                    if (data.lease_incentive) document.getElementById('lease_incentive').value = data.lease_incentive;
+                    if (data.initial_direct_expenditure) document.getElementById('initial_direct_expenditure').value = data.initial_direct_expenditure;
+                    
+                    statusDiv.innerHTML = `<span style="color: #28a745;">✅ Successfully extracted and filled ${Object.keys(data).length} fields!</span>`;
+                    
+                    // Show success message
+                    setTimeout(() => {
+                        alert('✅ AI extraction successful!\n\nPlease review the auto-filled fields and adjust if needed.');
+                    }, 500);
+                } else {
+                    statusDiv.innerHTML = `<span style="color: #dc3545;">❌ ${result.error}</span>`;
+                    if (result.help) {
+                        statusDiv.innerHTML += `<br><small style="color: #6c757d;">${result.help}</small>`;
+                    }
+                }
+            } catch (error) {
+                console.error('Extraction error:', error);
+                statusDiv.innerHTML = `<span style="color: #dc3545;">❌ Error: ${error.message}</span>`;
+            }
+        }
 
         async function saveLease() {
             const formData = new FormData(document.getElementById('leaseForm'));
