@@ -269,6 +269,43 @@
         .header-btn:hover {
             background: rgba(255,255,255,0.3);
         }
+        
+        /* GAAP Comparison Tabs */
+        .gaap-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .gaap-tab {
+            padding: 12px 24px;
+            background: #f8f9fa;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+        
+        .gaap-tab:hover {
+            background: #e9ecef;
+        }
+        
+        .gaap-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: white;
+        }
+        
+        .gaap-comparison-section {
+            display: none;
+        }
+        
+        .gaap-comparison-section.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -301,6 +338,15 @@
                         <option value="IndAS">IndAS</option>
                         <option value="US-GAAP">US-GAAP</option>
                     </select>
+                </div>
+            </div>
+            
+            <div class="control-group" style="margin-top: 10px;">
+                <div class="control-item">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="includeGaapComparison" style="width: auto; margin: 0;">
+                        Compare All GAAP Standards
+                    </label>
                 </div>
             </div>
 
@@ -343,6 +389,14 @@
 
         <div id="resultsArea" style="display: none;">
             <h2 style="margin-bottom: 20px;">Results Summary Table</h2>
+            
+            <!-- GAAP Comparison Tabs (shown when comparison enabled) -->
+            <div id="gaapTabs" class="gaap-tabs" style="display: none;">
+                <button class="gaap-tab active" onclick="switchGaapTab('IFRS')">IFRS</button>
+                <button class="gaap-tab" onclick="switchGaapTab('IndAS')">IndAS</button>
+                <button class="gaap-tab" onclick="switchGaapTab('US-GAAP')">US-GAAP</button>
+            </div>
+            
             <div class="results-table">
                 <table id="resultsTable">
                     <thead id="resultsTableHead"></thead>
@@ -365,6 +419,8 @@
     <script>
         let currentResults = null;
         let allLeases = [];
+        let gaapComparisonData = null;
+        let currentGaapView = 'IFRS';
 
         async function loadLeasesForBulk() {
             try {
@@ -421,6 +477,7 @@
             showMessage('Processing leases...', 'loading');
 
             try {
+                const includeComparison = document.getElementById('includeGaapComparison').checked;
                 const payload = {
                     from_date: fromDate,
                     to_date: toDate,
@@ -428,7 +485,8 @@
                     cost_center: document.getElementById('costCenterFilter').value || null,
                     entity: document.getElementById('entityFilter').value || null,
                     asset_class: document.getElementById('assetClassFilter').value || null,
-                    include_disclosures: true  // Request disclosures generation
+                    include_disclosures: true,  // Request disclosures generation
+                    include_gaap_comparison: includeComparison  // Request GAAP comparison
                 };
 
                 const response = await fetch('http://localhost:5001/api/calculate_leases', {
@@ -444,6 +502,7 @@
 
                 if (data.success) {
                     currentResults = data;
+                    gaapComparisonData = data.gaap_comparison || null;
                     displayResults(data);
                     showMessage(`Successfully processed ${data.stats.processed_count} leases`, 'success');
                 } else {
@@ -459,13 +518,41 @@
             // Display stats
             displayStats(data.stats);
             
-            // Display results table
-            displayResultsTable(data.results);
-            
-            // Display aggregated totals
-            displayAggregatedTotals(data.aggregated_totals);
+            // Show/hide GAAP comparison tabs
+            const gaapTabs = document.getElementById('gaapTabs');
+            if (gaapComparisonData) {
+                gaapTabs.style.display = 'flex';
+                // Display the selected GAAP view
+                switchGaapTab(currentGaapView);
+            } else {
+                gaapTabs.style.display = 'none';
+                // Display results table
+                displayResultsTable(data.results);
+                // Display aggregated totals
+                displayAggregatedTotals(data.aggregated_totals);
+            }
             
             document.getElementById('exportBtn').disabled = false;
+        }
+        
+        function switchGaapTab(gaapStandard) {
+            currentGaapView = gaapStandard;
+            
+            // Update active tab
+            document.querySelectorAll('.gaap-tab').forEach(tab => {
+                if (tab.textContent === gaapStandard) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            // Display results for the selected GAAP standard
+            if (gaapComparisonData && gaapComparisonData[gaapStandard]) {
+                const gaapData = gaapComparisonData[gaapStandard];
+                displayResultsTable(gaapData.results);
+                displayAggregatedTotals(gaapData.aggregated_totals);
+            }
         }
 
         function displayStats(stats) {

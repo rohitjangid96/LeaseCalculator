@@ -167,8 +167,12 @@ def calculate_lease():
         # Create filters
         filters = ProcessingFilters(
             start_date=from_date,
-            end_date=to_date
+            end_date=to_date,
+            gaap_standard=data.get('gaap_standard', 'IFRS')
         )
+        
+        # Set gaap_standard on lease_data so it's available for schedule generation
+        lease_data.gaap_standard = filters.gaap_standard
         
         # Import here to avoid circular imports
         from lease_accounting.schedule.generator_vba_complete import generate_complete_schedule
@@ -232,7 +236,7 @@ def calculate_lease():
         
         # Generate journal entries
         logger.info("📝 Generating journal entries...")
-        journal_gen = JournalGenerator(gaap_standard="IFRS")  # Default to IFRS
+        journal_gen = JournalGenerator(gaap_standard=filters.gaap_standard)  # Use GAAP from filters
         journals = journal_gen.generate_journals(result, schedule, None)
         
         # Prepare response
@@ -311,6 +315,8 @@ def calculate_leases():
             # Convert dict to LeaseData
             lease_data = _dict_to_lease_data(lease_dict)
             lease_data.auto_id = lease_id
+            # Set gaap_standard from filters so it's available for schedule generation
+            lease_data.gaap_standard = filters.gaap_standard
             lease_data_list.append(lease_data)
         
         if not lease_data_list:
@@ -318,7 +324,44 @@ def calculate_leases():
         
         logger.info(f"   Loaded {len(lease_data_list)} leases")
         
-        # Process bulk leases
+        # Check if GAAP comparison is requested
+        include_gaap_comparison = data.get('include_gaap_comparison', False)
+        gaap_comparison_results = {}
+        
+        if include_gaap_comparison:
+            # Calculate for all GAAP standards
+            for gaap_std in ['IFRS', 'IndAS', 'US-GAAP']:
+                logger.info(f"   Computing results for {gaap_std}...")
+                gaap_filters = ProcessingFilters(
+                    start_date=from_date,
+                    end_date=to_date,
+                    start_lease_id=data.get('start_lease_id'),
+                    end_lease_id=data.get('end_lease_id'),
+                    cost_center_filter=data.get('cost_center'),
+                    entity_filter=data.get('entity'),
+                    asset_class_filter=data.get('asset_class'),
+                    profit_center_filter=data.get('profit_center'),
+                    gaap_standard=gaap_std
+                )
+                
+                # Set GAAP standard on each lease data
+                for lease_data in lease_data_list:
+                    lease_data.gaap_standard = gaap_std
+                
+                # Process with this GAAP standard
+                gaap_results_processor = ResultsProcessor(gaap_filters)
+                gaap_bulk_results = gaap_results_processor.process_bulk_leases(lease_data_list)
+                gaap_comparison_results[gaap_std] = {
+                    'results': gaap_bulk_results['results'],
+                    'aggregated_totals': gaap_bulk_results['aggregated_totals'],
+                    'stats': {
+                        'processed_count': gaap_bulk_results['processed_count'],
+                        'skipped_count': gaap_bulk_results['skipped_count'],
+                        'total_count': gaap_bulk_results['total_count']
+                    }
+                }
+        
+        # Process bulk leases for the selected GAAP standard
         results_processor = ResultsProcessor(filters)
         bulk_results = results_processor.process_bulk_leases(lease_data_list)
         
@@ -389,7 +432,7 @@ def calculate_leases():
                 gaap_standard=filters.gaap_standard
             )
         
-        return jsonify({
+        response_data = {
             'success': True,
             'summary_id': summary_id,
             'results': bulk_results['results'],
@@ -406,7 +449,13 @@ def calculate_leases():
                 'skipped_count': bulk_results['skipped_count'],
                 'total_count': bulk_results['total_count']
             }
-        })
+        }
+        
+        # Add GAAP comparison results if requested
+        if include_gaap_comparison and gaap_comparison_results:
+            response_data['gaap_comparison'] = gaap_comparison_results
+        
+        return jsonify(response_data)
     
     except Exception as e:
         logger.error(f"❌ Error in calculate_leases: {e}", exc_info=True)

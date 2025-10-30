@@ -120,6 +120,9 @@ class LeaseData:
     short_term_lease_usgaap: str = "No"
     practical_expedient: str = "No"
     
+    # GAAP Standard (used for depreciation calculation)
+    gaap_standard: str = "IFRS"  # IFRS, IndAS, or US-GAAP
+    
     # Transition
     transition_option: Optional[str] = None
     
