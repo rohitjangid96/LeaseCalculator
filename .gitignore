@@ -36,6 +36,9 @@ Thumbs.db
 *.pyc
 .pytest_cache/
 
+# Uploaded documents
+uploaded_documents/
+
 # Temporary files
 *.tmp
 *.temp

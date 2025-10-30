@@ -168,6 +168,27 @@ def init_database():
             )
         """)
         
+        # Lease documents - stores uploaded contract documents
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS lease_documents (
+                doc_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                lease_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                filename TEXT NOT NULL,
+                original_filename TEXT NOT NULL,
+                file_path TEXT NOT NULL,
+                file_size INTEGER,
+                file_type TEXT,
+                document_type TEXT DEFAULT 'contract',
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                uploaded_by INTEGER,
+                version INTEGER DEFAULT 1,
+                FOREIGN KEY (lease_id) REFERENCES leases(lease_id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(user_id),
+                FOREIGN KEY (uploaded_by) REFERENCES users(user_id)
+            )
+        """)
+        
         print("✅ Database initialized")
 
 
@@ -427,6 +448,65 @@ def get_calculation(calc_id: int) -> Optional[Dict]:
             result['calculation_data'] = json.loads(result['calculation_data'])
             return result
     return None
+
+
+# ============ DOCUMENT MANAGEMENT ============
+
+def save_document(lease_id: int, user_id: int, filename: str, original_filename: str, 
+                  file_path: str, file_size: int, file_type: str, 
+                  document_type: str = 'contract', uploaded_by: Optional[int] = None) -> int:
+    """Save document metadata to database"""
+    with get_db_connection() as conn:
+        cursor = conn.execute("""
+            INSERT INTO lease_documents 
+            (lease_id, user_id, filename, original_filename, file_path, file_size, 
+             file_type, document_type, uploaded_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (lease_id, user_id, filename, original_filename, file_path, 
+              file_size, file_type, document_type, uploaded_by or user_id))
+        return cursor.lastrowid
+
+
+def get_lease_documents(lease_id: int, user_id: int) -> List[Dict]:
+    """Get all documents for a lease"""
+    with get_db_connection() as conn:
+        rows = conn.execute("""
+            SELECT doc_id, filename, original_filename, file_path, file_size, 
+                   file_type, document_type, uploaded_at, version
+            FROM lease_documents 
+            WHERE lease_id = ? AND user_id = ?
+            ORDER BY uploaded_at DESC
+        """, (lease_id, user_id)).fetchall()
+        return [dict(row) for row in rows]
+
+
+def get_document(doc_id: int, user_id: int) -> Optional[Dict]:
+    """Get document by ID (only if owned by user)"""
+    with get_db_connection() as conn:
+        row = conn.execute("""
+            SELECT * FROM lease_documents 
+            WHERE doc_id = ? AND user_id = ?
+        """, (doc_id, user_id)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_document(doc_id: int, user_id: int) -> bool:
+    """Delete a document (only if owned by user)"""
+    with get_db_connection() as conn:
+        cursor = conn.execute("""
+            DELETE FROM lease_documents 
+            WHERE doc_id = ? AND user_id = ?
+        """, (doc_id, user_id))
+        return cursor.rowcount > 0
+
+
+def get_document_count(lease_id: int) -> int:
+    """Get count of documents for a lease"""
+    with get_db_connection() as conn:
+        row = conn.execute("""
+            SELECT COUNT(*) as count FROM lease_documents WHERE lease_id = ?
+        """, (lease_id,)).fetchone()
+        return row['count'] if row else 0
 
 
 # Initialize database on import

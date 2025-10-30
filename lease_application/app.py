@@ -20,6 +20,7 @@ from auth import auth_bp
 from api import api_bp
 from complete_lease_backend import calc_bp
 from pdf_upload_backend import pdf_bp
+from document_backend import doc_bp
 
 # Import database
 import database
@@ -86,6 +87,7 @@ def create_app(config_name=None):
     app.register_blueprint(api_bp)
     app.register_blueprint(calc_bp)
     app.register_blueprint(pdf_bp)
+    app.register_blueprint(doc_bp)
     logger.info("✅ Blueprints registered")
     
     # Session configuration

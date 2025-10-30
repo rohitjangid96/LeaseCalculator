@@ -6,6 +6,9 @@
     <title>Complete Lease Accounting Form</title>
     <!-- Excel Export Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Progress Bar Library -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -175,9 +178,143 @@
             grid-template-columns: 1fr 1fr;
             gap: 15px;
         }
+        
+        /* Custom Notification System */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+        }
+        
+        .notification {
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .notification.hide {
+            animation: slideOut 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+        
+        .notification.success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .notification.error {
+            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+            color: white;
+        }
+        
+        .notification.warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            color: #333;
+        }
+        
+        .notification.info {
+            background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
+            color: white;
+        }
+        
+        .notification-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+        }
+        
+        .notification-message {
+            font-size: 0.85rem;
+            opacity: 0.95;
+            line-height: 1.4;
+        }
+        
+        .notification-close {
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            color: inherit;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        
+        .notification-close:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* NProgress Customization */
+        #nprogress .bar {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+            height: 3px !important;
+        }
+        
+        #nprogress .peg {
+            box-shadow: 0 0 10px #667eea, 0 0 5px #667eea !important;
+        }
+        
+        #nprogress .spinner-icon {
+            border-top-color: #667eea !important;
+            border-left-color: #764ba2 !important;
+        }
     </style>
 </head>
 <body>
+    <!-- Notification Container -->
+    <div class="notification-container" id="notificationContainer"></div>
+    
     <div class="header">
         <h1>🏢 Lease Management System</h1>
         <div class="user-info">
@@ -200,6 +337,7 @@
                 <button class="tab" onclick="showTab(2)">Rentals</button>
                 <button class="tab" onclick="showTab(3)">Financial</button>
                 <button class="tab" onclick="showTab(4)">Additional</button>
+                <button class="tab" onclick="showTab(5)">Documents</button>
             </div>
 
             <form id="leaseForm">
@@ -706,6 +844,36 @@
                     </div>
                 </div>
 
+                <!-- Tab 6: Documents -->
+                <div class="tab-content" id="tab5">
+                    <h3 style="margin-bottom: 20px;">📄 Lease Documents</h3>
+                    <p style="margin-bottom: 20px; color: #6c757d;">Upload and manage lease contract documents (PDF, Word, Excel, etc.)</p>
+                    
+                    <!-- Upload Section -->
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 15px;">Upload New Document</h4>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                            <input type="file" id="documentFileInput" style="flex: 1; min-width: 200px; padding: 10px; border: 2px solid #dee2e6; border-radius: 6px;" />
+                            <select id="documentTypeSelect" style="padding: 10px; border: 2px solid #dee2e6; border-radius: 6px;">
+                                <option value="contract">Contract</option>
+                                <option value="amendment">Amendment</option>
+                                <option value="addendum">Addendum</option>
+                                <option value="termination">Termination Notice</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <button type="button" onclick="uploadDocument()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">📤 Upload</button>
+                        </div>
+                        <div id="uploadStatus" style="margin-top: 10px; font-size: 0.9rem;"></div>
+                    </div>
+
+                    <!-- Documents List -->
+                    <div id="documentsList" style="background: white; border: 1px solid #dee2e6; border-radius: 10px; overflow: hidden;">
+                        <div style="padding: 20px; text-align: center; color: #6c757d;">
+                            <p>Loading documents...</p>
+                        </div>
+                    </div>
+                </div>
+
                 <button type="button" class="btn-primary" onclick="saveLease()">💾 Save Lease</button>
             </form>
 
@@ -716,6 +884,64 @@
     </div>
 
     <script>
+        // ============ PROGRESS BAR INITIALIZATION ============
+        NProgress.configure({ 
+            showSpinner: true,
+            trickleRate: 0.02,
+            trickleSpeed: 200
+        });
+        
+        // ============ NOTIFICATION SYSTEM ============
+        function showNotification(type, title, message, duration = 5000) {
+            const container = document.getElementById('notificationContainer');
+            if (!container) return;
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            notification.innerHTML = `
+                <div class="notification-icon">${icons[type] || 'ℹ️'}</div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+                <button class="notification-close" onclick="closeNotification(this)">&times;</button>
+            `;
+            
+            container.appendChild(notification);
+            
+            // Trigger animation
+            setTimeout(() => notification.classList.add('show'), 10);
+            
+            // Auto-remove after duration
+            if (duration > 0) {
+                setTimeout(() => closeNotification(notification.querySelector('.notification-close')), duration);
+            }
+            
+            return notification;
+        }
+        
+        function closeNotification(closeBtn) {
+            const notification = closeBtn.parentElement;
+            if (!notification) return;
+            
+            notification.classList.add('hide');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }
+        
+        // ============ END NOTIFICATION SYSTEM ============
+        
         // NO AUTH CHECK - PAGE LOADS IMMEDIATELY
         window.addEventListener('DOMContentLoaded', async () => {
             console.log('Page loaded - NO auth check');
@@ -1013,14 +1239,17 @@
             const statusDiv = document.getElementById('extractionStatus');
             
             if (!fileInput.files || fileInput.files.length === 0) {
-                statusDiv.innerHTML = '<span style="color: #dc3545;">❌ Please select a PDF file</span>';
+                showNotification('error', 'No File Selected', 'Please select a PDF file first.');
                 return;
             }
             
             const file = fileInput.files[0];
             const apiKey = document.getElementById('apiKeyInput').value;
             
-            statusDiv.innerHTML = '<span style="color: #007bff;">⏳ Uploading and extracting data...</span>';
+            // Show progress bar and notification
+            NProgress.start();
+            statusDiv.innerHTML = '';
+            const progressNotif = showNotification('info', 'AI Processing', '📄 Uploading PDF and analyzing with Google Gemini AI...', 0);
             
             try {
                 const formData = new FormData();
@@ -1037,6 +1266,13 @@
                 const result = await response.json();
                 
                 if (result.success) {
+                    NProgress.done();
+                    
+                    // Remove progress notification
+                    if (progressNotif) {
+                        closeNotification(progressNotif.querySelector('.notification-close'));
+                    }
+                    
                     // Auto-fill form with extracted data
                     const data = result.data;
                     
@@ -1080,25 +1316,116 @@
                     
                     statusDiv.innerHTML = `<span style="color: #28a745;">✅ Successfully extracted and filled ${Object.keys(data).length} fields!</span>`;
                     
-                    // Show success message
-                    setTimeout(() => {
-                        alert('✅ AI extraction successful!\n\nPlease review the auto-filled fields and adjust if needed.');
-                    }, 500);
+                    // Show success notification
+                    showNotification('success', 'AI Extraction Successful', `Extracted ${Object.keys(data).length} fields. Please review and adjust if needed.`, 8000);
+                    
+                    // Small success message in extraction status
+                    statusDiv.innerHTML = `<span style="color: #28a745;">✅ Extracted ${Object.keys(data).length} fields successfully!</span>`;
                 } else {
-                    statusDiv.innerHTML = `<span style="color: #dc3545;">❌ ${result.error}</span>`;
-                    if (result.help) {
-                        statusDiv.innerHTML += `<br><small style="color: #6c757d;">${result.help}</small>`;
+                    NProgress.done();
+                    
+                    // Remove progress notification
+                    if (progressNotif) {
+                        closeNotification(progressNotif.querySelector('.notification-close'));
                     }
+                    
+                    statusDiv.innerHTML = '';
+                    showNotification('error', 'Extraction Failed', result.error || 'Failed to extract data from PDF.');
                 }
             } catch (error) {
+                NProgress.done();
                 console.error('Extraction error:', error);
-                statusDiv.innerHTML = `<span style="color: #dc3545;">❌ Error: ${error.message}</span>`;
+                
+                // Remove progress notification
+                if (progressNotif) {
+                    closeNotification(progressNotif.querySelector('.notification-close'));
+                }
+                
+                statusDiv.innerHTML = '';
+                showNotification('error', 'Extraction Error', error.message);
             }
         }
 
         async function saveLease() {
             const formData = new FormData(document.getElementById('leaseForm'));
             const data = Object.fromEntries(formData);
+            
+            // Validate required fields
+            const requiredFields = {
+                'asset_name': 'Asset Name',
+                'asset_class': 'Asset Class',
+                'lease_start': 'Lease Start Date',
+                'first_payment': 'First Payment Date',
+                'end_date': 'Lease End Date',
+                'frequency': 'Rental Frequency',
+                'day_of_month': 'Day of Month',
+                'accrual_day': 'Rent Accrual Day',
+                'borrowing_rate': 'Borrowing Rate'
+            };
+            
+            const missingFields = [];
+            let firstMissingFieldId = null;
+            
+            for (const [field, label] of Object.entries(requiredFields)) {
+                const value = data[field] || document.getElementById(field)?.value;
+                if (!value || value.trim() === '' || value === 'Select...') {
+                    missingFields.push(label);
+                    if (!firstMissingFieldId) {
+                        firstMissingFieldId = field;
+                    }
+                }
+            }
+            
+            // Also check if rental amount is needed (when auto_rentals is enabled)
+            const autoRentals = document.getElementById('auto_rentals')?.checked;
+            if (autoRentals) {
+                const rentalAmount = data['rental_amount'] || document.getElementById('rental_amount')?.value;
+                if (!rentalAmount || rentalAmount.trim() === '') {
+                    missingFields.push('Rental Amount');
+                    if (!firstMissingFieldId) {
+                        firstMissingFieldId = 'rental_amount';
+                    }
+                }
+            }
+            
+            if (missingFields.length > 0) {
+                showNotification('error', 'Required Fields Missing', 
+                    'Please fill in: ' + missingFields.join(', ') + '. Required fields are marked with *', 8000);
+                
+                // Scroll to first missing field
+                if (firstMissingFieldId) {
+                    const element = document.getElementById(firstMissingFieldId);
+                    if (element) {
+                        // Switch to the appropriate tab if needed
+                        if (firstMissingFieldId.includes('asset')) {
+                            showTab(0); // General tab
+                        } else if (firstMissingFieldId.includes('lease_start') || firstMissingFieldId.includes('payment') || 
+                                   firstMissingFieldId.includes('end_date') || firstMissingFieldId.includes('frequency') ||
+                                   firstMissingFieldId.includes('day') || firstMissingFieldId.includes('accrual')) {
+                            showTab(1); // Dates & Terms tab
+                        } else if (firstMissingFieldId.includes('rental') || firstMissingFieldId.includes('Escalation')) {
+                            showTab(2); // Rentals tab
+                        } else if (firstMissingFieldId.includes('borrowing') || firstMissingFieldId.includes('currency')) {
+                            showTab(3); // Financial tab
+                        }
+                        
+                        // Scroll to element
+                        setTimeout(() => {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            element.focus();
+                            
+                            // Highlight the field
+                            element.style.border = '2px solid #dc3545';
+                            element.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.25)';
+                            setTimeout(() => {
+                                element.style.border = '';
+                                element.style.boxShadow = '';
+                            }, 3000);
+                        }, 300);
+                    }
+                }
+                return;
+            }
             
             // Remove results display
             const resultsDiv = document.getElementById('results');
@@ -1197,10 +1524,14 @@
                     console.log('Lease saved:', result);
                     
                     if (result.success) {
-                        alert('✅ Lease saved successfully! (ID: ' + result.lease_id + ')\n\nRedirecting to dashboard...');
-                        window.location.href = 'dashboard.html';
+                        // Set currentLeaseId before redirecting (for document tracking)
+                        if (result.lease_id) {
+                            currentLeaseId = result.lease_id;
+                        }
+                        showNotification('success', 'Lease Saved', 'Lease ID: ' + result.lease_id + '. Redirecting to dashboard...', 3000);
+                        setTimeout(() => window.location.href = 'dashboard.html', 1500);
                     } else {
-                        alert('Error saving lease: ' + result.error);
+                        showNotification('error', 'Save Failed', result.error || 'Failed to save lease.');
                     }
                     return;
                 } else {
@@ -1925,6 +2256,315 @@ Check terminal or restart with: ./start_app.sh
                 tbody.appendChild(tr);
             });
         }
+
+        // Document Management Functions
+        let currentLeaseId = null;
+
+        async function loadDocuments() {
+            if (!currentLeaseId) {
+                document.getElementById('documentsList').innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #6c757d;">
+                        <p style="font-size: 1.1rem;">📄 No documents uploaded yet</p>
+                        <p style="margin-top: 10px; font-size: 0.9rem;">Upload your first document using the form above.</p>
+                        <p style="margin-top: 10px; font-size: 0.85rem; color: #667eea;">💡 The lease will be saved automatically when you upload a document.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:5001/api/documents/${currentLeaseId}`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    displayDocuments(data.documents || []);
+                } else {
+                    displayDocuments([]);
+                }
+            } catch (error) {
+                console.error('Error loading documents:', error);
+                document.getElementById('documentsList').innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #dc3545;">
+                        <p>Error loading documents: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayDocuments(documents) {
+            const container = document.getElementById('documentsList');
+            
+            if (documents.length === 0) {
+                container.innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #6c757d;">
+                        <p style="font-size: 1.1rem;">📄 No documents uploaded yet</p>
+                        <p style="margin-top: 10px; font-size: 0.9rem;">Upload your first document using the form above.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<table style="width: 100%; border-collapse: collapse;"><thead><tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;"><th style="padding: 12px; text-align: left; font-weight: 600;">Filename</th><th style="padding: 12px; text-align: left; font-weight: 600;">Type</th><th style="padding: 12px; text-align: left; font-weight: 600;">Size</th><th style="padding: 12px; text-align: left; font-weight: 600;">Uploaded</th><th style="padding: 12px; text-align: center; font-weight: 600;">Actions</th></tr></thead><tbody>';
+            
+            documents.forEach(doc => {
+                html += `
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 12px;">${escapeHtml(doc.original_filename)}</td>
+                        <td style="padding: 12px;"><span style="padding: 4px 8px; background: #e9ecef; border-radius: 4px; font-size: 0.85rem;">${doc.document_type}</span></td>
+                        <td style="padding: 12px;">${doc.file_size_formatted}</td>
+                        <td style="padding: 12px;">${new Date(doc.uploaded_at).toLocaleDateString()}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="downloadDocument(${doc.doc_id})" style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;">⬇️ Download</button>
+                            <button onclick="deleteDocument(${doc.doc_id})" style="padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">🗑️ Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        async function uploadDocument() {
+            const fileInput = document.getElementById('documentFileInput');
+            const docTypeSelect = document.getElementById('documentTypeSelect');
+            const statusDiv = document.getElementById('uploadStatus');
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showNotification('error', 'No File Selected', 'Please select a file first.');
+                return;
+            }
+
+            // Show progress bar
+            NProgress.start();
+
+            // If no lease_id yet, save the lease first
+            if (!currentLeaseId) {
+                statusDiv.innerHTML = '<span style="color: #007bff;">⏳ Saving lease first...</span>';
+                
+                try {
+                    const savedLeaseId = await saveLeaseSilently();
+                    
+                    if (!savedLeaseId) {
+                        NProgress.done();
+                        statusDiv.innerHTML = '';
+                        showNotification('error', 'Save Failed', 'Please fill in all required fields (marked with *) and try again.');
+                        return;
+                    }
+                    
+                    currentLeaseId = savedLeaseId;
+                    statusDiv.innerHTML = '<span style="color: #007bff;">✅ Lease saved, uploading document...</span>';
+                    showNotification('success', 'Lease Saved', 'Now uploading document...', 2000);
+                } catch (error) {
+                    NProgress.done();
+                    statusDiv.innerHTML = '';
+                    showNotification('error', 'Save Error', error.message);
+                    return;
+                }
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('lease_id', currentLeaseId);
+            formData.append('document_type', docTypeSelect.value);
+
+            statusDiv.innerHTML = '<span style="color: #007bff;">⏳ Uploading...</span>';
+
+            try {
+                const response = await fetch('http://localhost:5001/api/documents/upload', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    NProgress.done();
+                    statusDiv.innerHTML = '';
+                    fileInput.value = '';
+                    showNotification('success', 'Upload Successful', `Document "${data.filename}" uploaded successfully!`, 4000);
+                    await loadDocuments();
+                } else {
+                    NProgress.done();
+                    statusDiv.innerHTML = '';
+                    showNotification('error', 'Upload Failed', data.error || 'Failed to upload document.');
+                }
+            } catch (error) {
+                NProgress.done();
+                console.error('Upload error:', error);
+                statusDiv.innerHTML = '';
+                showNotification('error', 'Upload Error', error.message);
+            }
+        }
+        
+        // Helper function to save lease without redirecting
+        async function saveLeaseSilently() {
+            try {
+                // Get and validate form data
+                const formData = new FormData(document.getElementById('leaseForm'));
+                const data = Object.fromEntries(formData);
+                
+                // Validate required fields (same as saveLease)
+                const requiredFields = {
+                    'asset_name': 'Asset Name',
+                    'asset_class': 'Asset Class',
+                    'lease_start': 'Lease Start Date',
+                    'first_payment': 'First Payment Date',
+                    'end_date': 'Lease End Date',
+                    'frequency': 'Rental Frequency',
+                    'day_of_month': 'Day of Month',
+                    'accrual_day': 'Rent Accrual Day',
+                    'borrowing_rate': 'Borrowing Rate'
+                };
+                
+                const missingFields = [];
+                for (const [field, label] of Object.entries(requiredFields)) {
+                    const value = data[field] || document.getElementById(field)?.value;
+                    if (!value || value.trim() === '' || value === 'Select...') {
+                        missingFields.push(label);
+                    }
+                }
+                
+                // Also check if rental amount is needed (when auto_rentals is enabled)
+                const autoRentals = document.getElementById('auto_rentals')?.checked;
+                if (autoRentals) {
+                    const rentalAmount = data['rental_amount'] || document.getElementById('rental_amount')?.value;
+                    if (!rentalAmount || rentalAmount.trim() === '') {
+                        missingFields.push('Rental Amount');
+                    }
+                }
+                
+                if (missingFields.length > 0) {
+                    return null; // Validation failed
+                }
+                
+                // Map fields (same as saveLease)
+                const fieldMappings = {
+                    'Escalation_Start': 'escalation_start_date',
+                    'escalation_start_date': 'escalation_start_date',
+                    'Esc_Freq_months': 'esc_freq_months',
+                    'esc_freq_months': 'esc_freq_months',
+                    'Asset_Name': 'asset_class',
+                    'Rental_1': 'rental_1',
+                    'Rental_2': 'rental_2',
+                    'lease_start': 'lease_start_date',
+                    'first_payment': 'first_payment_date',
+                    'end_date': 'end_date',
+                    'day_of_month': 'day_of_month',
+                    'frequency': 'frequency_months',
+                    'Escalation_percent': 'escalation_percent',
+                    'Borrowing_rate': 'borrowing_rate',
+                    'initial_direct_costs': 'initial_direct_expenditure',
+                    'initial_direct_expenditure': 'initial_direct_expenditure',
+                    'Security_deposit': 'security_deposit',
+                    'ARO': 'aro',
+                    'aro_initial': 'aro',
+                    'Lease_incentive': 'lease_incentive',
+                    'Finance_lease': 'finance_lease_usgaap',
+                    'Short_term_ifrs': 'shortterm_lease_ifrs_indas',
+                    'Is_sublease': 'sublease'
+                };
+                
+                const mappedData = {};
+                for (const [key, value] of Object.entries(data)) {
+                    let backendKey = fieldMappings[key] || key.replace(/-/g, '_').toLowerCase();
+                    if (fieldMappings[key] && mappedData[backendKey] === undefined) {
+                        mappedData[backendKey] = value || '';
+                    } else if (!fieldMappings[key] && !mappedData[backendKey]) {
+                        mappedData[backendKey] = value || '';
+                    }
+                }
+                
+                // Ensure escalation fields
+                if (mappedData['escalation_start_date'] === undefined) {
+                    mappedData['escalation_start_date'] = data['Escalation_Start'] || data['escalation_start_date'] || '';
+                }
+                if (mappedData['esc_freq_months'] === undefined) {
+                    mappedData['esc_freq_months'] = data['Esc_Freq_months'] || data['esc_freq_months'] || '';
+                }
+                
+                // Save to backend
+                const urlParams = new URLSearchParams(window.location.search);
+                const leaseId = urlParams.get('id') || urlParams.get('lease_id');
+                const isEdit = !!leaseId;
+                
+                const url = isEdit 
+                    ? `http://localhost:5001/api/leases/${leaseId}`
+                    : 'http://localhost:5001/api/leases';
+                
+                const method = isEdit ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(mappedData),
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success && result.lease_id) {
+                        return result.lease_id;
+                    }
+                }
+                
+                return null;
+            } catch (error) {
+                console.error('Silent save error:', error);
+                return null;
+            }
+        }
+
+        async function downloadDocument(docId) {
+            window.open(`http://localhost:5001/api/document/download/${docId}`, '_blank');
+        }
+
+        async function deleteDocument(docId) {
+            if (!confirm('Are you sure you want to delete this document?')) {
+                return;
+            }
+
+            NProgress.start();
+
+            try {
+                const response = await fetch(`http://localhost:5001/api/document/delete/${docId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    NProgress.done();
+                    showNotification('success', 'Document Deleted', 'Document has been deleted successfully.', 3000);
+                    await loadDocuments();
+                } else {
+                    NProgress.done();
+                    showNotification('error', 'Delete Failed', data.error || 'Failed to delete document.');
+                }
+            } catch (error) {
+                NProgress.done();
+                console.error('Delete error:', error);
+                showNotification('error', 'Delete Error', error.message);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Set currentLeaseId when lease is loaded for editing
+        const originalLoadLeaseForEdit = loadLeaseForEdit;
+        loadLeaseForEdit = async function(leaseId) {
+            await originalLoadLeaseForEdit(leaseId);
+            currentLeaseId = leaseId;
+            loadDocuments();
+        };
     </script>
 </body>
 </html>
