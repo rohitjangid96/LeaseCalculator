@@ -1656,26 +1656,36 @@ Check terminal or restart with: ./start_app.sh
             const result = window.lastLeaseResult;
             const wb = XLSX.utils.book_new();
             
-            // Create Summary Sheet
+            // 1. ENHANCED Summary Sheet with metadata
+            const today = new Date();
             const summaryData = [
-                ['Lease Calculation Summary'],
+                ['LEASE CALCULATION SUMMARY REPORT'],
                 [],
-                ['Total Payments', result.summary.total_payments],
-                ['Opening Liability', result.summary.opening_liability],
-                ['Closing Liability', result.summary.closing_liability],
-                ['Total Interest', result.summary.total_interest],
-                ['Total Depreciation', result.summary.total_depreciation],
-                ['Total Rent Paid', result.summary.total_rent_paid]
+                ['Report Information'],
+                ['Generated Date', today.toLocaleDateString() + ' ' + today.toLocaleTimeString()],
+                [],
+                ['Financial Summary'],
+                ['Opening Lease Liability', result.summary.opening_liability || 0],
+                ['Closing Lease Liability', result.summary.closing_liability || 0],
+                ['Total Interest Expense', result.summary.total_interest || 0],
+                ['Total Depreciation Expense', result.summary.total_depreciation || 0],
+                ['Total Rent Paid', result.summary.total_rent_paid || 0],
+                ['Total Payments', result.summary.total_payments || 0]
             ];
             const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
-            summaryWs['!cols'] = [{ wch: 25 }, { wch: 20 }];
+            summaryWs['!cols'] = [{ wch: 30 }, { wch: 22 }];
+            // Format currency values (rows 7-12)
+            for (let i = 7; i <= 12; i++) {
+                const cell = summaryWs['B' + (i + 1)];
+                if (cell && cell.t === 'n') cell.z = '$#,##0.00';
+            }
             XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
             
-            // Create Amortization Schedule Sheet
+            // 2. ENHANCED Amortization Schedule with proper date formatting
             const scheduleData = [['Date', 'Rent', 'PV Factor', 'Interest', 'Liability', 'PV Rent', 'ROU Asset', 'Depreciation']];
             result.schedule.forEach(row => {
                 scheduleData.push([
-                    row.date,
+                    row.date ? new Date(row.date) : '',  // Convert to Date object
                     row.rental_amount,
                     row.pv_factor,
                     row.interest,
@@ -1687,40 +1697,55 @@ Check terminal or restart with: ./start_app.sh
             });
             const scheduleWs = XLSX.utils.aoa_to_sheet(scheduleData);
             scheduleWs['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
-            // Format currency columns
-            for (let i = 1; i <= scheduleData.length; i++) {
-                ['B', 'D', 'E', 'F', 'G', 'H'].forEach(col => {
-                    const cell = scheduleWs[XLSX.utils.encode_cell({ r: i, c: col.charCodeAt(0) - 65 })];
+            
+            // Apply comprehensive formatting
+            const range = XLSX.utils.decode_range(scheduleWs['!ref']);
+            for (let R = 1; R <= range.e.r; R++) {
+                // Format dates
+                const dateCell = scheduleWs[XLSX.utils.encode_cell({ r: R, c: 0 })];
+                if (dateCell && dateCell.t === 'd') dateCell.z = 'mm/dd/yyyy';
+                
+                // Format currency columns (B, D, E, F, G, H)
+                [1, 3, 4, 5, 6, 7].forEach(colIdx => {
+                    const cell = scheduleWs[XLSX.utils.encode_cell({ r: R, c: colIdx })];
                     if (cell && cell.t === 'n') cell.z = '$#,##0.00';
                 });
             }
             XLSX.utils.book_append_sheet(wb, scheduleWs, "Amortization Schedule");
             
-            // Create Journal Entries Sheet  
-            const journalData = [['BS/PL', 'Account', 'Result Period', 'Previous Period', 'Incremental Adjustment']];
+            // 3. ENHANCED Journal Entries with all columns
+            const journalData = [['Account Code', 'Account Name', 'BS/PL', 'Result Period', 'Previous Period', 'Incremental Adjustment', 'US-GAAP Entry', 'IFRS Adjustment']];
             result.journal_entries.forEach(entry => {
-                // Keep original signs - don't use Math.abs()
                 journalData.push([
-                    entry.bs_pl,
-                    entry.account_name,
+                    entry.account_code || '',
+                    entry.account_name || '',
+                    entry.bs_pl || '',
                     entry.result_period || 0,
                     entry.previous_period || 0,
-                    entry.incremental_adjustment || 0
+                    entry.incremental_adjustment || 0,
+                    entry.usgaap_entry || 0,
+                    entry.ifrs_adjustment || 0
                 ]);
             });
             const journalWs = XLSX.utils.aoa_to_sheet(journalData);
-            journalWs['!cols'] = [{ wch: 8 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 22 }];
+            journalWs['!cols'] = [{ wch: 12 }, { wch: 35 }, { wch: 8 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 18 }, { wch: 18 }];
+            
             // Format currency columns
-            for (let i = 1; i <= journalData.length; i++) {
-                ['C', 'D', 'E'].forEach(col => {
-                    const cell = journalWs[XLSX.utils.encode_cell({ r: i, c: col.charCodeAt(0) - 65 })];
+            const journalRange = XLSX.utils.decode_range(journalWs['!ref']);
+            for (let R = 1; R <= journalRange.e.r; R++) {
+                [3, 4, 5, 6, 7].forEach(colIdx => {  // Columns D-H
+                    const cell = journalWs[XLSX.utils.encode_cell({ r: R, c: colIdx })];
                     if (cell && cell.t === 'n') cell.z = '$#,##0.00';
                 });
             }
             XLSX.utils.book_append_sheet(wb, journalWs, "Journal Entries");
             
-            // Download
-            XLSX.writeFile(wb, "Lease_Complete_Report.xlsx");
+            // Download with timestamp
+            const timestamp = today.toISOString().split('T')[0].replace(/-/g, '');
+            const filename = `Lease_Report_${timestamp}.xlsx`;
+            XLSX.writeFile(wb, filename);
+            
+            alert('✅ Enhanced Excel report downloaded!\n\nFeatures:\n• Professional summary with metadata\n• Formatted dates and currency\n• Complete journal entries\n• Timestamped filename');
         }
         
         function generatePythonSchedule(schedule) {

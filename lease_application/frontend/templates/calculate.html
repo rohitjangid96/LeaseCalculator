@@ -903,6 +903,8 @@
         }
 
         function exportToExcel() {
+            const today = new Date();
+            
             // Get data from displayed tables
             const scheduleData = Array.from(document.querySelectorAll('#scheduleBody tr')).map(row => {
                 const cells = row.querySelectorAll('td');
@@ -938,21 +940,61 @@
                     'IFRS Adjustment': cells[7].textContent
                 };
             });
+            
+            // Get summary data from displayed HTML (using <strong> and <span> tags)
+            const summaryValues = {};
+            document.querySelectorAll('#summaryGrid .summary-item').forEach(item => {
+                const strong = item.querySelector('strong');
+                const span = item.querySelector('span');
+                if (strong && span) {
+                    const label = strong.textContent.trim();
+                    const value = span.textContent.trim();
+                    // Skip items with specific styling (grid-column, etc.)
+                    const hasGridColumn = item.style.gridColumn || item.getAttribute('style')?.includes('grid-column');
+                    if (!hasGridColumn && label && value) {
+                        summaryValues[label] = value;
+                    }
+                }
+            });
 
             // Create workbook
             const wb = XLSX.utils.book_new();
             
-            // Add schedule sheet
+            // 1. ENHANCED Summary Sheet
+            const summarySheetData = [
+                ['LEASE CALCULATION SUMMARY REPORT'],
+                [],
+                ['Report Information'],
+                ['Generated Date', today.toLocaleDateString() + ' ' + today.toLocaleTimeString()],
+                [],
+                ['Financial Summary'],
+                ...Object.entries(summaryValues).map(([label, value]) => [label, value]),
+            ];
+            const wsSummary = XLSX.utils.aoa_to_sheet(summarySheetData);
+            wsSummary['!cols'] = [{ wch: 30 }, { wch: 22 }];
+            XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+            
+            // 2. Schedule Sheet with formatting
             const wsSchedule = XLSX.utils.json_to_sheet(scheduleData);
+            wsSchedule['!cols'] = [
+                { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 15 },
+                { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+                { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+            ];
             XLSX.utils.book_append_sheet(wb, wsSchedule, 'Schedule');
             
-            // Add journal sheet
+            // 3. Journal Entries Sheet with formatting
             const wsJournal = XLSX.utils.json_to_sheet(journalData);
+            wsJournal['!cols'] = [{ wch: 12 }, { wch: 35 }, { wch: 8 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
             XLSX.utils.book_append_sheet(wb, wsJournal, 'Journal Entries');
 
-            // Download
+            // Download with timestamp
+            const timestamp = today.toISOString().split('T')[0].replace(/-/g, '');
             const leaseId = document.getElementById('leaseSelect').value;
-            XLSX.writeFile(wb, `Lease_${leaseId}_Calculation.xlsx`);
+            const filename = `Lease_${leaseId}_${timestamp}.xlsx`;
+            XLSX.writeFile(wb, filename);
+            
+            alert('✅ Enhanced Excel report downloaded!\n\nFile: ' + filename + '\n\nContains:\n• Professional summary with metadata\n• Amortization schedule\n• Journal entries\n• Timestamped filename');
         }
 
         async function logout() {

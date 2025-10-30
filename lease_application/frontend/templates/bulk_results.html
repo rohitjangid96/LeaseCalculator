@@ -685,24 +685,35 @@
             
             const wb = XLSX.utils.book_new();
             
-            // 1. Summary Sheet
+            // 1. ENHANCED Summary Sheet with metadata
+            const today = new Date();
             const summaryData = [
-                ['Lease Portfolio Summary'],
-                ['Generated Date', new Date().toLocaleDateString()],
+                ['LEASE PORTFOLIO SUMMARY REPORT'],
                 [],
-                ['Aggregated Totals'],
+                ['Report Information'],
+                ['Generated Date', today.toLocaleDateString() + ' ' + today.toLocaleTimeString()],
+                ['Reporting Period', `${currentResults.filters?.from_date || 'N/A'} to ${currentResults.filters?.to_date || 'N/A'}`],
+                ['GAAP Standard', currentResults.filters?.gaap_standard || 'IFRS'],
+                [],
+                ['Aggregated Financial Totals'],
                 ...Object.entries(currentResults.aggregated_totals || {}).map(([key, value]) => [
                     key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
                     typeof value === 'number' ? value : value
                 ]),
                 [],
-                ['Statistics'],
+                ['Processing Statistics'],
                 ['Total Leases Processed', currentResults.processed_count || 0],
                 ['Total Leases Skipped', currentResults.skipped_count || 0],
                 ['Total Leases', currentResults.total_count || 0],
             ];
             const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
-            summaryWs['!cols'] = [{ wch: 35 }, { wch: 20 }];
+            summaryWs['!cols'] = [{ wch: 35 }, { wch: 25 }];
+            // Format currency values
+            const summaryRange = XLSX.utils.decode_range(summaryWs['!ref']);
+            for (let R = 9; R < summaryRange.e.r - 4; R++) {  // Format financial totals, not stats
+                const cell = summaryWs['B' + (R + 1)];
+                if (cell && cell.t === 'n') cell.z = '$#,##0.00';
+            }
             XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
             
             // 2. Results Sheet (Bulk Lease Results - all new columns)
@@ -845,10 +856,13 @@
             disclosuresWs['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 20 }];
             XLSX.utils.book_append_sheet(wb, disclosuresWs, 'Disclosures');
             
-            // Download
-            const fileName = `Bulk_Lease_Results_${new Date().toISOString().split('T')[0]}.xlsx`;
+            // Download with enhanced filename
+            const timestamp = today.toISOString().split('T')[0].replace(/-/g, '');
+            const gaapStd = currentResults.filters?.gaap_standard || 'IFRS';
+            const fileName = `Lease_Portfolio_${gaapStd}_${timestamp}.xlsx`;
             XLSX.writeFile(wb, fileName);
-            showMessage('Excel file downloaded successfully with all sheets!', 'success');
+            
+            showMessage(`✅ Enhanced Excel report downloaded successfully!\n\nFile: ${fileName}\n\nContains:\n• Professional summary with metadata\n• Formatted results table\n• Consolidated journal entries\n• Regulatory disclosures\n• Proper currency formatting`, 'success');
         }
 
         // Load leases on page load
