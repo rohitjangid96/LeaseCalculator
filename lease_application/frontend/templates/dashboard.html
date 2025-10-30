@@ -223,6 +223,219 @@
             font-size: 1.5rem;
             margin-bottom: 10px;
         }
+        
+        /* Enhanced Summary Cards (LeaseSync-style) */
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .grid-cols-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        @media (max-width: 768px) {
+            .grid-cols-2 { grid-template-columns: 1fr; }
+        }
+        .card-enhanced {
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .card-content {
+            padding: 1.5rem;
+        }
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-badge {
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        .stat-green {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .stat-yellow {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .stat-red {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .financial-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #EF4444;
+            margin: 0.75rem 0 0.5rem 0;
+        }
+        .financial-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            padding-top: 1rem;
+            border-top: 2px solid #e2e8f0;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .stat-value-small {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .alerts-container {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 2px solid #e2e8f0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .alerts-title {
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+        .alert-item {
+            padding: 0.875rem;
+            border-left: 4px solid #ef4444;
+            background-color: #fef2f2;
+            color: #991b1b;
+            border-radius: 6px;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s;
+        }
+        .alert-item:hover {
+            background-color: #fee2e2;
+        }
+        .alert-item strong {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+        .alert-item .alert-date {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        .alert-none {
+            color: #64748b;
+            font-size: 0.9rem;
+            padding: 0.75rem;
+            text-align: center;
+            font-style: italic;
+        }
+        
+        /* Table View Styles */
+        .table-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+        }
+        .table-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+        table.data-table thead {
+            background-color: #f1f5f9;
+        }
+        table.data-table th {
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.875rem;
+        }
+        table.data-table td {
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem 1rem;
+            color: #334155;
+            font-size: 0.9rem;
+        }
+        table.data-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        .status-text-active {
+            color: #059669;
+            font-weight: 600;
+        }
+        .status-text-due-soon {
+            color: #d97706;
+            font-weight: 600;
+        }
+        .status-text-expired {
+            color: #dc2626;
+            font-weight: 600;
+        }
+        .btn-table {
+            background: #3b82f6;
+            color: white;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        .btn-table:hover {
+            background: #2563eb;
+        }
     </style>
 </head>
 <body>
@@ -242,27 +455,48 @@
             <button class="btn btn-secondary" onclick="refreshLeases()">🔄 Refresh</button>
         </div>
 
-        <!-- Summary Cards -->
-        <div class="summary-cards" id="summaryCards">
-            <div class="summary-card">
-                <h3>Total Leases</h3>
-                <div class="value" id="totalLeases">0</div>
-                <div class="label">All leases</div>
+        <!-- Enhanced Summary Cards with Alerts (LeaseSync-style) -->
+        <div class="grid grid-cols-2" id="enhancedSummaryCards">
+            <!-- Leases Alert Card -->
+            <div class="card-enhanced">
+                <div class="card-content">
+                    <h2 class="card-title">📜 Lease Status Summary</h2>
+                    <div class="stats-container">
+                        <div class="stat-row stat-green">
+                            <div class="stat-badge">🟢 Active</div>
+                            <div class="stat-value" id="activeLeasesCount">0</div>
+                        </div>
+                        <div class="stat-row stat-yellow">
+                            <div class="stat-badge">🟡 Due Soon</div>
+                            <div class="stat-value" id="dueSoonCount">0</div>
+                        </div>
+                        <div class="stat-row stat-red">
+                            <div class="stat-badge">🔴 Overdue</div>
+                            <div class="stat-value" id="overdueCount">0</div>
+                        </div>
+                    </div>
+                    <div class="alerts-container">
+                        <div class="alerts-title">⚠️ Upcoming & Overdue Leases</div>
+                        <div id="leaseAlerts"></div>
+                    </div>
+                </div>
             </div>
-            <div class="summary-card">
-                <h3>Active Leases</h3>
-                <div class="value" id="activeLeases">0</div>
-                <div class="label">Currently active</div>
-            </div>
-            <div class="summary-card">
-                <h3>Expiring Soon</h3>
-                <div class="value" id="expiringLeases">0</div>
-                <div class="label">Next 3 months</div>
-            </div>
-            <div class="summary-card">
-                <h3>Total Monthly Rent</h3>
-                <div class="value" id="totalMonthlyRent">$0</div>
-                <div class="label">Active leases only</div>
+
+            <!-- Financial Summary Card -->
+            <div class="card-enhanced">
+                <div class="card-content">
+                    <h2 class="card-title">💰 Financial Summary</h2>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Leases</span>
+                            <span class="stat-value-small" id="totalLeases">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Monthly Rent</span>
+                            <span class="stat-value-small" id="totalMonthlyRent">$0</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -295,8 +529,33 @@
             </select>
         </div>
 
-        <div id="leasesContainer">
-            <!-- Leases will be loaded here -->
+        <!-- Lease Table (LeaseSync-style) -->
+        <div class="table-container">
+            <h2 class="table-header">📋 All Leases</h2>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Description</th>
+                            <th>Asset Class</th>
+                            <th>Status</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Monthly Rent</th>
+                            <th>Currency</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leasesTableBody">
+                        <tr>
+                            <td colspan="9" style="text-align: center; padding: 2rem; color: #64748b;">
+                                Loading leases...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -370,33 +629,68 @@
         function updateSummaryCards(leases) {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            const threeMonthsFromNow = new Date(today);
-            threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
+            const thirtyDaysFromNow = new Date(today);
+            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-            const active = leases.filter(l => {
-                if (!l.end_date) return true;
-                return new Date(l.end_date) >= today;
+            // Calculate lease statuses
+            const active = [];
+            const dueSoon = [];
+            const overdue = [];
+            const leaseWarnings = [];
+
+            leases.forEach(lease => {
+                if (!lease.end_date) {
+                    active.push(lease);
+                    return;
+                }
+
+                const endDate = new Date(lease.end_date);
+                const timeDiff = endDate - today;
+                const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+                if (endDate >= today && endDate <= thirtyDaysFromNow) {
+                    dueSoon.push(lease);
+                    leaseWarnings.push(`${lease.lease_name || 'Untitled Lease'} expires in ${daysRemaining} days (${lease.end_date})`);
+                } else if (endDate < today) {
+                    overdue.push(lease);
+                    leaseWarnings.push(`${lease.lease_name || 'Untitled Lease'} is overdue (${lease.end_date})`);
+                } else {
+                    active.push(lease);
+                }
             });
 
-            const expiring = leases.filter(l => {
-                if (!l.end_date) return false;
-                const endDate = new Date(l.end_date);
-                return endDate >= today && endDate <= threeMonthsFromNow;
-            });
-
-            const totalMonthlyRent = active.reduce((sum, l) => {
-                // rental_1 might be null, undefined, or 0 - handle all cases
+            const totalMonthlyRent = active.concat(dueSoon).reduce((sum, l) => {
                 const rent = parseFloat(l.rental_1);
                 return sum + (isNaN(rent) ? 0 : rent);
             }, 0);
 
+            // Update enhanced summary cards
+            document.getElementById('activeLeasesCount').textContent = active.length;
+            document.getElementById('dueSoonCount').textContent = dueSoon.length;
+            document.getElementById('overdueCount').textContent = overdue.length;
             document.getElementById('totalLeases').textContent = leases.length;
-            document.getElementById('activeLeases').textContent = active.length;
-            document.getElementById('expiringLeases').textContent = expiring.length;
             document.getElementById('totalMonthlyRent').textContent = '$' + totalMonthlyRent.toLocaleString('en-US', {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0
             });
+            
+            // Display alerts
+            const alertsContainer = document.getElementById('leaseAlerts');
+            if (leaseWarnings.length > 0) {
+                alertsContainer.innerHTML = leaseWarnings.map(warning => {
+                    const parts = warning.split('(');
+                    const name = parts[0].trim();
+                    const date = parts[1] ? parts[1].replace(')', '') : '';
+                    return `
+                        <div class="alert-item">
+                            <strong>${escapeHtml(name)}</strong>
+                            ${date ? `<span class="alert-date">Due: ${escapeHtml(date)}</span>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                alertsContainer.innerHTML = '<p class="alert-none">✅ No urgent lease alerts</p>';
+            }
         }
 
         function populateFilters(leases) {
@@ -489,65 +783,59 @@
         }
 
         function displayLeases(leases) {
-            const container = document.getElementById('leasesContainer');
+            const tableBody = document.getElementById('leasesTableBody');
             
             if (leases.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <h2>No leases found</h2>
-                        <p>Try adjusting your search or filters</p>
-                    </div>
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 2rem; color: #64748b;">
+                            No leases found. Try adjusting your search or filters.
+                        </td>
+                    </tr>
                 `;
                 return;
             }
 
-            container.innerHTML = leases.map(lease => {
+            tableBody.innerHTML = leases.map((lease, index) => {
                 const status = getLeaseStatus(lease);
-                const statusBadge = {
-                    active: '<span class="status-badge status-active">🟢 Active</span>',
-                    expired: '<span class="status-badge status-expired">🔴 Expired</span>',
-                    expiring: '<span class="status-badge status-expiring">🟡 Expiring Soon</span>'
+                const statusClass = {
+                    active: 'status-text-active',
+                    expired: 'status-text-expired',
+                    expiring: 'status-text-due-soon'
                 }[status] || '';
+                
+                const statusText = {
+                    active: 'Active',
+                    expired: 'Expired',
+                    expiring: 'Due Soon'
+                }[status] || 'Unknown';
 
-                // Calculate remaining term
-                let remainingTerm = '';
+                // Calculate remaining days
+                let remainingDays = '';
                 if (lease.end_date) {
                     const today = new Date();
                     const endDate = new Date(lease.end_date);
                     const diffTime = endDate - today;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    if (diffDays > 0) {
-                        const months = Math.floor(diffDays / 30);
-                        remainingTerm = months > 0 ? `${months} months` : `${diffDays} days`;
-                    } else {
-                        remainingTerm = 'Expired';
-                    }
+                    remainingDays = diffDays > 0 ? `${diffDays} days` : 'Expired';
                 }
 
                 return `
-                <div class="lease-card">
-                    <div class="lease-header">
-                        <div class="lease-name">${escapeHtml(lease.lease_name || 'Untitled Lease')}</div>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            ${statusBadge}
-                            <span class="lease-badge">${escapeHtml(lease.asset_class || 'N/A')}</span>
-                        </div>
-                    </div>
-                    <div class="lease-info">
-                        <div><strong>Asset:</strong> ${escapeHtml(lease.asset_id_code || 'N/A')}</div>
-                        <div><strong>Start:</strong> ${lease.lease_start_date || 'N/A'}</div>
-                        <div><strong>End:</strong> ${lease.end_date || 'N/A'}</div>
-                        ${remainingTerm ? `<div><strong>Remaining Term:</strong> ${remainingTerm}</div>` : ''}
-                        ${lease.rental_1 ? `<div><strong>Monthly Rent:</strong> $${(parseFloat(lease.rental_1) || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>` : ''}
-                        <div><strong>Currency:</strong> ${escapeHtml(lease.currency || 'N/A')}</div>
-                        <div><strong>Created:</strong> ${new Date(lease.created_at).toLocaleDateString()}</div>
-                    </div>
-                    <div class="lease-actions">
-                        <button onclick="editLease(${lease.lease_id})">Edit</button>
-                        <button onclick="calculateLease(${lease.lease_id})">Calculate</button>
-                        <button onclick="deleteLease(${lease.lease_id})" class="btn-danger" style="background: #e74c3c; color: white;">Delete</button>
-                    </div>
-                </div>
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${escapeHtml(lease.lease_name || 'Untitled Lease')}</td>
+                    <td>${escapeHtml(lease.asset_class || 'N/A')}</td>
+                    <td><span class="${statusClass}">${statusText}</span></td>
+                    <td>${lease.lease_start_date || 'N/A'}</td>
+                    <td>${lease.end_date || 'N/A'}${remainingDays ? `<br><small style="color: #64748b;">(${remainingDays})</small>` : ''}</td>
+                    <td>${lease.rental_1 ? '$' + (parseFloat(lease.rental_1) || 0).toLocaleString('en-US', {minimumFractionDigits: 2}) : 'N/A'}</td>
+                    <td>${escapeHtml(lease.currency || 'N/A')}</td>
+                    <td style="display: flex; gap: 0.5rem;">
+                        <button class="btn-table" onclick="editLease(${lease.lease_id})">Edit</button>
+                        <button class="btn-table" onclick="calculateLease(${lease.lease_id})">Calc</button>
+                        <button class="btn-table" onclick="deleteLease(${lease.lease_id})" style="background: #dc2626;">Del</button>
+                    </td>
+                </tr>
             `;
             }).join('');
         }
