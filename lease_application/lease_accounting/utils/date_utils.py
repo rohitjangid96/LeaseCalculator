@@ -152,8 +152,35 @@ def is_business_day(d: date) -> bool:
 def add_months(d: date, months: int) -> date:
     """
     Add months to a date - similar to EDATE in Excel
+    Excel EDATE preserves the day of month when possible
     """
     return d + relativedelta(months=months)
+
+
+def edate(d: date, months: int) -> date:
+    """
+    Excel EDATE function - adds months to a date
+    Preserves the day of month, adjusting for shorter months if needed
+    
+    Args:
+        d: Starting date
+        months: Number of months to add (can be negative)
+    Returns:
+        Date with months added
+    """
+    result = d + relativedelta(months=months)
+    # If day is out of range for the target month, adjust to last day of that month
+    if result.day != d.day:
+        # month overflow/underflow - adjust to last day of month
+        if result.month == 12:
+            result = date(result.year + 1, 1, 1) - timedelta(days=1)
+        elif result.month == 1:
+            result = date(result.year - 1, 12, 31)
+        else:
+            # Last day of target month
+            last_day = eomonth(result, 0)
+            result = last_day
+    return result
 
 
 def days_between(start_date: date, end_date: date) -> int:

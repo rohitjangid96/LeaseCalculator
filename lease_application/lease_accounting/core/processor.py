@@ -219,6 +219,236 @@ class LeaseProcessor:
         if projections:
             logger.info(f"   First projection: {projections[0].get('projection_date')}, Last: {projections[-1].get('projection_date')}")
         
+        # Calculate Security Deposit Current/Non-Current Split (VBA Lines 553-557)
+        # VBA Logic:
+        #   If projectionmode = 1 Then
+        #       If sec_current = 0 Then
+        #           N4 (Current) = M4 (Non-current) * subl
+        #           M4 (Non-current) = 0
+        #       End If
+        #   End If
+        # Where sec_current = security deposit PV at projection period 1 (12 months ahead)
+        closing_security_current = 0.0
+        closing_security_non_current = abs(closing_security) if closing_security > 0 else 0.0
+        
+        if projections and len(projections) > 0:
+            # Get security deposit PV at projection period 1 (12 months ahead)
+            # VBA Line 530: If projectionmode = 1 Then sec_current = cell.Offset(0, 9).Value
+            # We need to find the security deposit PV at the first projection date
+            first_projection_date_str = projections[0].get('projection_date')
+            if first_projection_date_str:
+                from datetime import datetime
+                try:
+                    first_projection_date = datetime.fromisoformat(first_projection_date_str).date() if isinstance(first_projection_date_str, str) else first_projection_date_str
+                    
+                    # Find security deposit PV at projection date
+                    sec_current_at_projection = 0.0
+                    for row in schedule:
+                        row_date = row.date if hasattr(row, 'date') else (row.payment_date if hasattr(row, 'payment_date') else None)
+                        if row_date and row_date == first_projection_date:
+                            sec_current_at_projection = row.security_deposit_pv or 0.0
+                            break
+                        elif row_date and row_date > first_projection_date:
+                            # Use previous row's value (interpolation)
+                            if len(schedule) > 0:
+                                prev_idx = schedule.index(row) - 1
+                                if prev_idx >= 0:
+                                    sec_current_at_projection = schedule[prev_idx].security_deposit_pv or 0.0
+                            break
+                    
+                    # VBA Line 554: If sec_current = 0 Then
+                    # If security deposit at projection date is 0, all is current
+                    if abs(sec_current_at_projection) < 0.01:  # Effectively 0
+                        closing_security_current = closing_security_non_current * subl
+                        closing_security_non_current = 0.0
+                    else:
+                        # Otherwise, split based on what will be returned in next 12 months
+                        # Current portion = difference between current security and security at projection
+                        closing_security_current = abs(closing_security - sec_current_at_projection) * abs(subl)
+                        closing_security_non_current = abs(sec_current_at_projection) * abs(subl)
+                        
+                        # Ensure totals match
+                        if closing_security_current + closing_security_non_current > abs(closing_security) * 1.01:
+                            # Recalculate to ensure accuracy
+                            closing_security_current = max(0, (abs(closing_security) - abs(sec_current_at_projection)) * abs(subl))
+                            closing_security_non_current = abs(sec_current_at_projection) * abs(subl)
+                    
+                except (ValueError, AttributeError) as e:
+                    logger.warning(f"Error parsing projection date for security split: {e}")
+                    # Default: keep as non-current
+                    closing_security_non_current = abs(closing_security) if closing_security > 0 else 0.0
+                    closing_security_current = 0.0
+        
+        # Calculate missing Results table columns (Z4, AA4, AB4, BB4, BC4, BD4, BE4, BI4)
+        # VBA Lines 600-603, 490, 585, 597, 599, 454, 473
+        
+        # Z4, AA4: Original Lease ID and Modification Indicator (VBA Lines 600-602)
+        original_lease_id = self._find_original_lease_id(lease_data)
+        modification_indicator = "Modifier" if lease_data.auto_id != original_lease_id else ""
+        
+        # AB4: Initial ROU Asset (VBA Line 603)
+        # If ai = oai And Lease_start_date > opendate And Lease_start_date <= baldate Then AB4 = I9 (initial ROU)
+        initial_rou_asset = None
+        if (lease_data.auto_id == original_lease_id and  # Only for original leases (not modifiers)
+            lease_data.lease_start_date and
+            self.filters.start_date and self.filters.end_date and
+            self.filters.start_date < lease_data.lease_start_date <= self.filters.end_date):
+            # Find initial ROU from schedule (first row after lease start = I9)
+            for row in schedule:
+                row_date = row.date if hasattr(row, 'date') else (row.payment_date if hasattr(row, 'payment_date') else None)
+                if row_date and row_date == lease_data.lease_start_date:
+                    initial_rou_asset = row.rou_asset or 0.0
+                    break
+        
+        # BB4: Security Deposit Gross (VBA Lines 421-424, 490)
+        security_deposit_gross = self._calculate_security_deposit_gross(lease_data, self.filters.end_date)
+        
+        # BC4: Accumulated Depreciation (VBA Line 585)
+        # Only calculated when projections enabled and projection mode 6 exists
+        accumulated_depreciation = None
+        if projections and len(projections) > 0:
+            # VBA: deprp + H4 + J7 (accumulated from Firstdate to opendate + period depreciation + J7)
+            # For now, calculate from lease start to end_date
+            accumulated_depreciation = self._calculate_accumulated_depreciation(
+                schedule, lease_data, self.filters.start_date, self.filters.end_date
+            )
+        
+        # BD4: Initial Direct Expenditure on transition (VBA Line 599)
+        initial_direct_expenditure_period = None
+        if lease_data.transition_option and lease_data.transition_option != "2B":
+            # VBA: If Firstdate >= opendate And Firstdate <= baldate And Transition_option <> "2B"
+            first_date = lease_data.transition_date if (lease_data.transition_option == "2B") else lease_data.lease_start_date
+            if (first_date and self.filters.start_date and self.filters.end_date and
+                self.filters.start_date <= first_date <= self.filters.end_date):
+                initial_direct_expenditure_period = lease_data.initial_direct_expenditure or 0.0
+        
+        # BE4: Prepaid Accrual (VBA Line 597)
+        prepaid_accrual_period = None
+        if lease_data.transition_date and self.filters.start_date:
+            transition_date_minus_one = lease_data.transition_date - timedelta(days=1)
+            # VBA: If transitiondate1 <= opendate Then BE4 = Prepaid_accrual
+            if transition_date_minus_one <= self.filters.start_date:
+                prepaid_accrual_period = lease_data.prepaid_accrual or 0.0
+        
+        # Calculate Gain/Loss Breakdown Components (VBA Lines 453-473)
+        # Get values from modification processing if available
+        covid_pe_gain = lease_data.calculated_fields.get('covid_pe_gain', None)
+        modification_gain = lease_data.calculated_fields.get('modification_gain', None)
+        sublease_gain_loss = lease_data.calculated_fields.get('sublease_gainloss', None)
+        sublease_modification_gain_loss = lease_data.calculated_fields.get('sublease_modification_gainloss', None)
+        
+        # VBA Line 454: COVID PE Gain - only if Lease_start_date in period
+        if covid_pe_gain is None:
+            if (lease_data.lease_start_date and self.filters.start_date and self.filters.end_date and
+                self.filters.start_date < lease_data.lease_start_date <= self.filters.end_date):
+                # COVID PE gain is calculated during modification processing (K7)
+                # For now, set to 0 if not calculated
+                covid_pe_gain = 0.0
+        
+        # VBA Line 456: Modification Gain - only if Lease_start_date in period
+        if modification_gain is None:
+            if (lease_data.lease_start_date and self.filters.start_date and self.filters.end_date and
+                self.filters.start_date < lease_data.lease_start_date <= self.filters.end_date and
+                lease_data.modifies_this_id and lease_data.modifies_this_id > 0):
+                # Modification gain is calculated during modification processing (K6)
+                # Would need modification processing to calculate properly
+                modification_gain = 0.0
+        
+        # VBA Line 458: Sublease Gain/Loss (initial recognition, not modification)
+        if sublease_gain_loss is None:
+            if (lease_data.sublease == "Yes" and
+                lease_data.lease_start_date and self.filters.start_date and self.filters.end_date and
+                self.filters.start_date < lease_data.lease_start_date <= self.filters.end_date and
+                (not lease_data.modifies_this_id or lease_data.modifies_this_id <= 0)):
+                # VBA: sublease_gainloss = I9 - G9 (ROU Asset - Lease Liability at lease start)
+                # Find initial ROU and Liability at lease start
+                initial_rou = 0.0
+                initial_liability = 0.0
+                for row in schedule:
+                    row_date = row.date if hasattr(row, 'date') else (row.payment_date if hasattr(row, 'payment_date') else None)
+                    if row_date and row_date == lease_data.lease_start_date:
+                        initial_rou = row.rou_asset or 0.0
+                        initial_liability = row.lease_liability or 0.0
+                        break
+                sublease_gain_loss = initial_rou - initial_liability
+        
+        # VBA Line 460: Sublease Modification Gain/Loss
+        if sublease_modification_gain_loss is None:
+            if (lease_data.sublease == "Yes" and
+                lease_data.lease_start_date and self.filters.start_date and self.filters.end_date and
+                self.filters.start_date < lease_data.lease_start_date <= self.filters.end_date and
+                lease_data.modifies_this_id and lease_data.modifies_this_id > 0):
+                # Sublease modification gain is calculated during modification processing (K5)
+                # Would need modification processing to calculate properly
+                sublease_modification_gain_loss = 0.0
+        
+        # VBA Line 462-468: Termination Gain/Loss (if termination_date in period)
+        termination_gain_loss = None
+        if (lease_data.termination_date and self.filters.start_date and self.filters.end_date and
+            self.filters.start_date < lease_data.termination_date <= self.filters.end_date):
+            # Find termination row in schedule
+            termination_row = None
+            for row in schedule:
+                row_date = row.date if hasattr(row, 'date') else (row.payment_date if hasattr(row, 'payment_date') else None)
+                if row_date and row_date == lease_data.termination_date:
+                    termination_row = row
+                    break
+            
+            if termination_row:
+                # VBA Line 468: Termination gain = Termination_penalty + ROU - Liability - sec_grossT + Security_PV - ARO_PV + All other gains
+                sec_grossT = self._calculate_security_deposit_gross(lease_data, lease_data.termination_date)
+                termination_penalty = lease_data.termination_penalty or 0.0
+                term_rou = termination_row.rou_asset or 0.0
+                term_liability = termination_row.lease_liability or 0.0
+                term_security_pv = termination_row.security_deposit_pv or 0.0
+                term_aro_pv = termination_row.aro_provision or 0.0
+                
+                termination_gain_loss = (
+                    termination_penalty +
+                    term_rou -
+                    term_liability -
+                    sec_grossT +
+                    term_security_pv -
+                    term_aro_pv +
+                    (covid_pe_gain or 0.0) +
+                    (modification_gain or 0.0) +
+                    (sublease_gain_loss or 0.0) +
+                    (sublease_modification_gain_loss or 0.0)
+                )
+        
+        # Calculate total gain_loss_pnl (VBA Line 468 or 472)
+        total_gain_loss = 0.0
+        if termination_gain_loss is not None:
+            total_gain_loss = termination_gain_loss
+        else:
+            # VBA Line 472: Non-termination gain = COVID_PE_Gain + modi_gain + sublease_gainloss + sublease_modi_gainloss
+            total_gain_loss = (
+                (covid_pe_gain or 0.0) +
+                (modification_gain or 0.0) +
+                (sublease_gain_loss or 0.0) +
+                (sublease_modification_gain_loss or 0.0)
+            )
+        
+        # Store individual components for later use
+        if covid_pe_gain is None:
+            covid_pe_gain = 0.0
+        
+        # Calculate remaining ROU life (BH4) - VBA Lines 495-497
+        remaining_rou_life = None
+        if schedule:
+            # Find last ROU date (useful_life or end_date)
+            last_rou_date = lease_data.useful_life or lease_data.end_date
+            if last_rou_date:
+                if self.filters.end_date:
+                    days_diff = (last_rou_date - self.filters.end_date).days
+                    remaining_rou_life = max(0, days_diff)
+                    # VBA: If termination_date < baldate Then rem_ROUlife = 0
+                    if lease_data.termination_date and lease_data.termination_date < self.filters.end_date:
+                        remaining_rou_life = 0
+                    # VBA: If date_modified < baldate Then rem_ROUlife = 0
+                    if lease_data.date_modified and lease_data.date_modified < self.filters.end_date:
+                        remaining_rou_life = 0
+        
         # Create result object (matching VBA Results sheet)
         result = LeaseResult(
             lease_id=lease_data.auto_id,
@@ -234,13 +464,31 @@ class LeaseProcessor:
             closing_rou_asset=closing_rou,
             closing_aro_liability=closing_aro,
             closing_security_deposit=closing_security,
+            closing_security_deposit_current=closing_security_current,
+            closing_security_deposit_non_current=closing_security_non_current,
+            gain_loss_pnl=total_gain_loss,
+            # Gain/Loss Breakdown Components
+            covid_pe_gain=covid_pe_gain,
+            modification_gain=modification_gain,
+            sublease_gain_loss=sublease_gain_loss,
+            sublease_modification_gain_loss=sublease_modification_gain_loss,
+            termination_gain_loss=termination_gain_loss,
             asset_class=lease_data.asset_class,
             cost_center=lease_data.cost_centre,
             currency=lease_data.currency,
             description=lease_data.description,
             asset_code=lease_data.asset_id_code,
             borrowing_rate=lease_data.borrowing_rate,
-            projections=projections
+            projections=projections,
+            # Missing columns
+            original_lease_id=original_lease_id,
+            modification_indicator=modification_indicator,
+            initial_rou_asset=initial_rou_asset,
+            security_deposit_gross=security_deposit_gross,
+            accumulated_depreciation=accumulated_depreciation,
+            initial_direct_expenditure_period=initial_direct_expenditure_period,
+            prepaid_accrual_period=prepaid_accrual_period,
+            remaining_rou_life=remaining_rou_life
         )
         
         return result
@@ -506,4 +754,86 @@ class LeaseProcessor:
             'security_change': security_change,
             'change_rou': change_rou
         }
+    
+    def _find_original_lease_id(self, lease_data: LeaseData) -> int:
+        """
+        Find original lease ID by following modifies_this_id chain
+        VBA Source: orj_id() Sub (Lines 1116-1123)
+        VBA Logic: Follows modifies_this_id chain until finding original lease
+        """
+        current_id = lease_data.auto_id
+        # VBA: oai = kai, then loop up to 100 times
+        for _ in range(100):  # Max 100 levels to avoid infinite loops
+            # In VBA: Range("Modifies_this_ID").Offset(oai, 0).Value
+            # For now, we track this in lease_data.modifies_this_id
+            # If lease_data doesn't have access to other leases, we return current_id
+            # This will need to be enhanced when we have lease database access
+            if lease_data.modifies_this_id and lease_data.modifies_this_id > 0:
+                current_id = lease_data.modifies_this_id
+                # TODO: Load the modified lease data to continue chain
+                # For now, return the first level of modification
+                break
+            else:
+                break
+        
+        return current_id
+    
+    def _calculate_security_deposit_gross(self, lease_data: LeaseData, balance_date: date) -> float:
+        """
+        Calculate Security Deposit Gross Amount
+        VBA Source: Lines 421-424, 490
+        VBA Logic: sec_gross = Security_deposit + sum of increases up to baldate
+        """
+        # VBA Line 421: sec_gross = Range("Security_deposit").Offset(ai, 0).Value
+        sec_gross = lease_data.security_deposit or 0.0
+        
+        # VBA Lines 422-424: Sum increases if security_date <= baldate
+        security_dates = lease_data.security_dates or []
+        if security_dates and len(security_dates) > 0:
+            for i, sec_date in enumerate(security_dates[:4]):  # VBA: qqq = 1 To 4
+                if sec_date and sec_date > date(1900, 1, 1):  # Valid date
+                    if sec_date <= balance_date:
+                        # Add corresponding increase amount
+                        increases = [lease_data.increase_security_1, lease_data.increase_security_2,
+                                   lease_data.increase_security_3, lease_data.increase_security_4]
+                        if i < len(increases) and increases[i]:
+                            sec_gross += increases[i] or 0.0
+                    else:
+                        # VBA: Exit For when date > baldate
+                        break
+        
+        return sec_gross
+    
+    def _calculate_accumulated_depreciation(self, schedule: List[PaymentScheduleRow],
+                                          lease_data: LeaseData, start_date: date, end_date: date) -> float:
+        """
+        Calculate Accumulated Depreciation from lease start
+        VBA Source: Line 585
+        VBA Logic: deprp (from Firstdate to opendate) + H4 (period depreciation) + J7 (from schedule calc)
+        """
+        # VBA Line 508: Firstdate = Transition_date if Option 2B, else Lease_start_date
+        first_date = lease_data.transition_date if (lease_data.transition_option == "2B") else lease_data.lease_start_date
+        if not first_date:
+            first_date = lease_data.lease_start_date
+        
+        if not first_date:
+            return 0.0
+        
+        accumulated_dep = 0.0
+        
+        # VBA Line 583: For cell.Value > Firstdate And cell.Value <= opendate
+        for row in schedule:
+            row_date = row.date if hasattr(row, 'date') else (row.payment_date if hasattr(row, 'payment_date') else None)
+            if not row_date:
+                continue
+            
+            # Accumulate depreciation from Firstdate to opendate (start_date)
+            if first_date < row_date <= start_date:
+                accumulated_dep += abs(row.depreciation or 0.0)
+        
+        # Add period depreciation (already calculated in period_activity)
+        # This would be added in results_processor when building the row
+        # For now, return accumulated up to start_date
+        
+        return accumulated_dep
 

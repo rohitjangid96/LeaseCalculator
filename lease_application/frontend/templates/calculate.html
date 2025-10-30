@@ -242,11 +242,12 @@
                             <th>Account Code</th>
                             <th>Account Name</th>
                             <th>BS/PL</th>
-                            <th>Result Period</th>
+                            <th>Opening Balance</th>
                             <th>Previous Period</th>
+                            <th>Result Period</th>
                             <th>Incremental</th>
-                            <th>US-GAAP</th>
                             <th>IFRS Adjustment</th>
+                            <th>US-GAAP</th>
                         </tr>
                     </thead>
                     <tbody id="journalBody"></tbody>
@@ -818,20 +819,25 @@
             `;
             }).join('');
 
-            // Display journal entries
+            // Display journal entries with Opening Balance and IFRS/US-GAAP columns
             const journalBody = document.getElementById('journalBody');
             journalBody.innerHTML = result.journal_entries.map((entry, idx) => {
+                // Check if entry has opening_balance field (new feature)
+                const openingBal = entry.opening_balance !== undefined ? entry.opening_balance : entry.previous_period;
+                const ifrsAdj = entry.ifrs_adjustment !== undefined ? entry.ifrs_adjustment : (entry.result_period || 0);
+                const usgaapEntry = entry.usgaap_entry !== undefined ? entry.usgaap_entry : 0;
                 const bgColor = idx % 2 === 0 ? '#f8f9fa' : '#ffffff';
                 return `
                 <tr style="background-color: ${bgColor};">
                     <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 500;">${entry.account_code || '-'}</td>
                     <td style="padding: 8px; border: 1px solid #ddd; text-align: left;">${entry.account_name || ''}</td>
                     <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 500;">${entry.bs_pl || ''}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(entry.result_period || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(openingBal || 0)}</td>
                     <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(entry.previous_period || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(entry.result_period || 0)}</td>
                     <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: 500;">$${formatCurrency(entry.incremental_adjustment || 0)}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(entry.usgaap_entry || 0)}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(entry.ifrs_adjustment || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(ifrsAdj || 0)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${formatCurrency(usgaapEntry || 0)}</td>
                 </tr>
             `;
             }).join('');

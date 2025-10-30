@@ -367,12 +367,40 @@ def calculate_leases():
         
         logger.info(f"✅ Bulk processing complete: {bulk_results['processed_count']} processed, {bulk_results['skipped_count']} skipped")
         
+        # Generate disclosures if requested
+        disclosures = None
+        if data.get('include_disclosures', False):
+            from lease_accounting.utils.disclosures_generator import DisclosuresGenerator
+            from lease_accounting.schedule.generator_vba_complete import generate_complete_schedule
+            
+            # Generate schedules for all leases
+            schedule_list = []
+            for lease_data in lease_data_list:
+                schedule = generate_complete_schedule(lease_data)
+                schedule_list.append(schedule or [])
+            
+            # Get results for disclosures
+            disclosures_gen = DisclosuresGenerator()
+            disclosures = disclosures_gen.generate_disclosures(
+                lease_results=[r for r in bulk_results['results'] if r],  # Convert dict results
+                lease_data_list=lease_data_list,
+                schedule_list=schedule_list,
+                balance_date=to_date,
+                gaap_standard=filters.gaap_standard
+            )
+        
         return jsonify({
             'success': True,
             'summary_id': summary_id,
             'results': bulk_results['results'],
             'aggregated_totals': bulk_results['aggregated_totals'],
             'consolidated_journals': bulk_results['consolidated_journals'],
+            'disclosures': disclosures,  # Include disclosures if generated
+            'filters': {
+                'from_date': from_date.isoformat(),
+                'to_date': to_date.isoformat(),
+                'gaap_standard': filters.gaap_standard
+            },
             'stats': {
                 'processed_count': bulk_results['processed_count'],
                 'skipped_count': bulk_results['skipped_count'],

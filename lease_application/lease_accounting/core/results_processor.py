@@ -235,6 +235,8 @@ class ResultsProcessor:
             'closing_liability_non_current': result.closing_lease_liability_non_current * subl,
             'closing_rou_asset': result.closing_rou_asset * subl,
             'closing_security_deposit': result.closing_security_deposit * subl,
+            'closing_security_deposit_current': result.closing_security_deposit_current * subl,  # N4
+            'closing_security_deposit_non_current': result.closing_security_deposit_non_current * subl,  # M4
             'closing_aro_liability': result.closing_aro_liability or 0.0,
             
             # Period Activity (F4, H4, J4, O4, R4 in VBA)
@@ -266,14 +268,75 @@ class ResultsProcessor:
             'date_modified': lease_data.date_modified.isoformat() if lease_data.date_modified else '',
             'sublease': lease_data.sublease or 'No',
             
-            # Projections would go here (AD4-AG4 for each projection mode)
-            # For now, we'll add placeholders
-            'projection_1_liability': 0.0,
-            'projection_1_rou': 0.0,
-            'projection_1_depreciation': 0.0,
-            'projection_1_interest': 0.0,
-            'projection_1_rent': 0.0,
+            # Missing Results Table Columns (Z4, AA4, AB4, AC4-AG4, BB4, BC4, BD4, BE4, BI4)
+            # Z4: Original Lease ID
+            'original_lease_id': result.original_lease_id or lease_data.auto_id,
+            # AA4: Modification Indicator
+            'modification_indicator': result.modification_indicator or '',
+            # AB4: Initial ROU Asset
+            'initial_rou_asset': result.initial_rou_asset or 0.0,
+            # BB4: Security Deposit Gross
+            'security_deposit_gross': result.security_deposit_gross or 0.0,
+            # BC4: Accumulated Depreciation (add period depreciation to accumulated from start)
+            'accumulated_depreciation': (result.accumulated_depreciation or 0.0) + (result.depreciation_expense * subl) if result.accumulated_depreciation is not None else None,
+            # BD4: Initial Direct Expenditure on transition
+            'initial_direct_expenditure_period': result.initial_direct_expenditure_period or 0.0,
+            # BE4: Prepaid Accrual
+            'prepaid_accrual_period': result.prepaid_accrual_period or 0.0,
+            # BI4: COVID Practical Expedient Gain
+            'covid_pe_gain': result.covid_pe_gain or 0.0,
+            # BH4: Remaining ROU Life (already calculated in result)
+            'remaining_rou_life': result.remaining_rou_life or 0.0,
+            # Gain/Loss Breakdown Components
+            'modification_gain': result.modification_gain or 0.0,
+            'sublease_gain_loss': result.sublease_gain_loss or 0.0,
+            'sublease_modification_gain_loss': result.sublease_modification_gain_loss or 0.0,
+            'termination_gain_loss': result.termination_gain_loss or 0.0,
+            
+            # AC4-AG4: Projection columns (for projection modes 1-6)
+            # Each mode has 5 columns: AC (closing liability), AD (closing liability), AE (depreciation), AF (interest), AG (rent)
+            # Note: VBA uses AC4 for ROU, AD4 for liability in projection mode
+            # But based on Line 528-529: AD4=liability, AC4=ROU
+            'projection_1_liability_ad': 0.0,
+            'projection_1_rou_ac': 0.0,
+            'projection_1_depreciation_ae': 0.0,
+            'projection_1_interest_af': 0.0,
+            'projection_1_rent_ag': 0.0,
+            'projection_2_liability_ad': 0.0,
+            'projection_2_rou_ac': 0.0,
+            'projection_2_depreciation_ae': 0.0,
+            'projection_2_interest_af': 0.0,
+            'projection_2_rent_ag': 0.0,
+            'projection_3_liability_ad': 0.0,
+            'projection_3_rou_ac': 0.0,
+            'projection_3_depreciation_ae': 0.0,
+            'projection_3_interest_af': 0.0,
+            'projection_3_rent_ag': 0.0,
+            'projection_4_liability_ad': 0.0,
+            'projection_4_rou_ac': 0.0,
+            'projection_4_depreciation_ae': 0.0,
+            'projection_4_interest_af': 0.0,
+            'projection_4_rent_ag': 0.0,
+            'projection_5_liability_ad': 0.0,
+            'projection_5_rou_ac': 0.0,
+            'projection_5_depreciation_ae': 0.0,
+            'projection_5_interest_af': 0.0,
+            'projection_5_rent_ag': 0.0,
         }
+        
+        # Populate projection columns (AC4-AG4) from projections list
+        # VBA Lines 528-550: Each projection mode gets 5 columns: AD4, AC4, AE4, AF4, AG4
+        # VBA: Offset(num, (projectionmode - 1) * 5)
+        if result.projections:
+            for proj in result.projections:
+                proj_mode = proj.get('projection_mode', 1)
+                if 1 <= proj_mode <= 6:
+                    mode_key = f'projection_{proj_mode}'
+                    results_row[f'{mode_key}_liability_ad'] = proj.get('closing_liability', 0.0)
+                    results_row[f'{mode_key}_rou_ac'] = proj.get('closing_rou_asset', 0.0)
+                    results_row[f'{mode_key}_depreciation_ae'] = proj.get('depreciation', 0.0)
+                    results_row[f'{mode_key}_interest_af'] = proj.get('interest', 0.0)
+                    results_row[f'{mode_key}_rent_ag'] = proj.get('rent_paid', 0.0)
         
         return results_row
     

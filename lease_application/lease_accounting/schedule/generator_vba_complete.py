@@ -13,7 +13,7 @@ VBA Functions:
 from datetime import date, timedelta
 from typing import List, Optional, Tuple, Dict
 from lease_accounting.core.models import LeaseData, PaymentScheduleRow
-from lease_accounting.utils.date_utils import eomonth, eomonth as eomonth_func
+from lease_accounting.utils.date_utils import eomonth, edate
 from lease_accounting.utils.finance import present_value
 from lease_accounting.utils.rfr_rates import get_aro_rate
 from dateutil.relativedelta import relativedelta
@@ -82,25 +82,21 @@ def generate_complete_schedule(lease_data: LeaseData) -> List[PaymentScheduleRow
         # If payment occurs on start date, set rental amount
         auto_rentals_value = str(lease_data.auto_rentals or "").strip()
         if auto_rentals_value.lower() in ["yes", "on", "true", "1"]:
-            # app_rent and app_rent_date already initialized by findrent() above
-            # VBA Line 44: If app_rent_date >= dateo Then (NOT <=)
-            # For first payment on start date, use rental if available
-            if app_rent_date >= dateo:
-                # VBA Line 45: Sets rental = app_rent directly
-                # BUT: If first payment is BEFORE escalated rental date, VBA logic might use base rental
-                # Actually, VBA just uses app_rent regardless - let's match VBA exactly
-                first_rental = app_rent  # VBA uses app_rent directly
-            else:
-                # Need to get next rental (VBA Line 49-51)
-                rent_no += 1
-                app_rent, app_rent_date = findrent(lease_data, rent_no)
-                # Keep checking until we find a rental date >= current date
-                while app_rent_date < dateo and rent_no < 50:
-                    rent_no += 1
+            # VBA Lines 42-53: Loop until app_rent_date >= dateo
+            # Since app_rent_date starts as end_date from findrent(1), this will call findrent()
+            for xx in range(1, 51):  # VBA: For xx = 1 To 50
+                if app_rent_date >= dateo:  # VBA Line 44
+                    # VBA Line 45: Sets rental = app_rent
+                    first_rental = app_rent
+                    lastmonthpay = dateo.month + dateo.year * 12  # VBA Line 46
+                    break
+                else:
+                    # VBA Lines 49-51: Increment rent_no and call findrent()
+                    rent_no = rent_no + 1
                     app_rent, app_rent_date = findrent(lease_data, rent_no)
-                # VBA Line 45: Sets rental = app_rent directly when app_rent_date >= dateo
-                first_rental = app_rent if app_rent_date >= dateo else 0.0
-            lastmonthpay = 0  # VBA Line 154: Reset after use
+            else:
+                # If loop completes without break, no valid rental found
+                first_rental = 0.0
         else:
             # Manual rentals (lines 56-62)
             first_rental = _get_manual_rental_for_date(lease_data, dateo)
@@ -143,27 +139,17 @@ def generate_complete_schedule(lease_data: LeaseData) -> List[PaymentScheduleRow
             rental = 0.0
             auto_rentals_value = str(lease_data.auto_rentals or "").strip()
             if auto_rentals_value.lower() in ["yes", "on", "true", "1"]:
-                # Calculate which rental period this is based on payment number
-                # For first payment date, use rent_no=1
-                payment_number = 1
-                rent_no = payment_number
-                app_rent, app_rent_date = findrent(lease_data, rent_no)
-                
-                # VBA Line 97: If app_rent_date >= dateo Then (NOT <=)
-                if app_rent_date >= dateo:
-                    rental = app_rent
-                    lastmonthpay = dateo.month + dateo.year * 12
-                else:
-                    # VBA Line 102-104: Get next rental
-                    rent_no += 1
-                    app_rent, app_rent_date = findrent(lease_data, rent_no)
-                    # Keep checking until we find a rental date >= current date
-                    while app_rent_date < dateo and rent_no < 50:
-                        rent_no += 1
-                        app_rent, app_rent_date = findrent(lease_data, rent_no)
-                    if app_rent_date >= dateo:
+                # VBA Lines 95-116: Same logic as above
+                for xx in range(1, 51):  # VBA: For xx = 1 To 50
+                    if app_rent_date >= dateo:  # VBA Line 97
+                        # VBA Line 98: Sets rental = app_rent
                         rental = app_rent
-                        lastmonthpay = 0  # VBA Line 154: Reset after use
+                        lastmonthpay = dateo.month + dateo.year * 12  # VBA Line 99
+                        break
+                    else:
+                        # VBA Lines 102-104: Increment rent_no and call findrent()
+                        rent_no = rent_no + 1
+                        app_rent, app_rent_date = findrent(lease_data, rent_no)
             else:
                 rental = _get_manual_rental_for_date(lease_data, dateo)
             
@@ -177,8 +163,23 @@ def generate_complete_schedule(lease_data: LeaseData) -> List[PaymentScheduleRow
             k += 1
             x = 1
         
-        # Skip if before first payment date
-        if dateo < firstpaymentDate:
+        # VBA Line 187-206: Month-end rows (check before skipping dates before first payment)
+        # These accrual entries must be created even before first payment date
+        if x == 0 and dateo.month != (dateo + timedelta(days=1)).month:
+            # Month-end row - only ARO, no rental
+            # CRITICAL: Create these entries even if before first payment date
+            # They accumulate interest on the liability
+            aro_value = _get_aro_for_date(lease_data, dateo)
+            row = _create_schedule_row(
+                lease_data, dateo, 0.0, aro_value,
+                lease_data.lease_start_date, enddate, k, schedule
+            )
+            schedule.append(row)
+            k += 1
+            x = 1
+        
+        # Skip payment dates if before first payment date (but keep month-end accruals)
+        if dateo < firstpaymentDate and x == 0:
             continue
         
         # VBA Line 137-184: Regular payment frequency logic
@@ -195,29 +196,23 @@ def generate_complete_schedule(lease_data: LeaseData) -> List[PaymentScheduleRow
                 rental = 0.0
                 
                 # VBA Line 150-171: Find rental
-                # CRITICAL: Calculate which payment period this is for proper escalation
-                # VBA checks: Range("Auto_rentals").Offset(mai, 0) = "Yes"
-                # But data might have "on", "Yes", "yes", etc. - check case-insensitively
                 auto_rentals_value = str(lease_data.auto_rentals or "").strip()
                 if auto_rentals_value.lower() in ["yes", "on", "true", "1"]:
-                    # Calculate payment number based on months from first payment
-                    months_from_first = ((dateo.year * 12 + dateo.month) - (firstpaymentDate.year * 12 + firstpaymentDate.month)) // monthof
-                    payment_number = months_from_first + 1  # +1 because first payment is #1
-                    
-                    # Get rental for this payment number (handles escalation)
-                    rent_no = payment_number
-                    app_rent, app_rent_date = findrent(lease_data, rent_no)
-                    
-                    # VBA Line 153: If lastmonthpay <> (Month(dateo) + Year(dateo)) Then
-                    current_month = dateo.month + dateo.year * 12
-                    if lastmonthpay != current_month:
-                        # VBA Line 153: Set rental = app_rent
-                        rental = app_rent
-                        # VBA Line 154: lastmonthpay = 0 (AFTER setting rental)
-                        lastmonthpay = 0
-                    else:
-                        # Already paid this month, don't set rental again
-                        rental = 0.0
+                    # VBA Lines 151-162: Loop to find correct rental
+                    for xx in range(1, 51):  # VBA: For xx = 1 To 50
+                        if app_rent_date >= dateo:  # VBA Line 152
+                            # VBA Line 153: Check lastmonthpay
+                            current_month = dateo.month + dateo.year * 12
+                            if lastmonthpay != current_month:
+                                # VBA Line 153: Set rental = app_rent
+                                rental = app_rent
+                            # VBA Line 154: lastmonthpay = 0 (ALWAYS sets to 0)
+                            lastmonthpay = 0
+                            break
+                        else:
+                            # VBA Lines 157-159: Increment rent_no and call findrent()
+                            rent_no = rent_no + 1
+                            app_rent, app_rent_date = findrent(lease_data, rent_no)
                 else:
                     rental = _get_manual_rental_for_date(lease_data, dateo)
                 
@@ -235,19 +230,6 @@ def generate_complete_schedule(lease_data: LeaseData) -> List[PaymentScheduleRow
             # VBA Line 185: Restore dayofma if February
             if dateo.month == 2 and dayofma1 > 28:
                 dayofma = dayofma1
-        
-        # VBA Line 187-206: Month-end rows (if not already plotted)
-        if x == 0:
-            if dateo.month != (dateo + timedelta(days=1)).month:
-                # Month-end row - only ARO, no rental
-                aro_value = _get_aro_for_date(lease_data, dateo)
-                row = _create_schedule_row(
-                    lease_data, dateo, 0.0, aro_value,
-                    lease_data.lease_start_date, enddate, k, schedule
-                )
-                schedule.append(row)
-                k += 1
-                x = 1
         
         # VBA Line 209-228: End date handling with purchase option
         if dateo == enddate:
@@ -367,8 +349,12 @@ def findrent(lease_data: LeaseData, app: int) -> Tuple[float, date]:
         k = 0
     
     # VBA Line 928-956: Main loop
-    for i in range(u, 201):
-        app_rent_date = begdate1 + relativedelta(months=fre * (i - k)) - timedelta(days=1)
+    # CRITICAL: VBA's For i = u To 200 allows modifying i inside the loop
+    # Python's for loop doesn't allow this, so we must use a while loop
+    i = u
+    while i < 201:
+        # VBA Line 929: app_rent_date = EDate(begdate1, fre * (i - k)) - 1
+        app_rent_date = edate(begdate1, fre * (i - k)) - timedelta(days=1)
         app_rent = (lease_data.rental_1 or 0.0) * ((1 + pre / 100) ** (i - 1 - k))
         
         if app == i:
@@ -381,9 +367,12 @@ def findrent(lease_data: LeaseData, app: int) -> Tuple[float, date]:
         
         # VBA Line 938-954: Offset handling
         J = 0
+        i_was_incremented = False
         if offse != 0:
-            app_rent_date = begdate1 + relativedelta(months=fre * (i - k))
-            RPeriod = (begdate + relativedelta(months=fre * (i - k)) + relativedelta(months=Frequency_months)) - (begdate + relativedelta(months=fre * (i - k)))
+            # VBA Line 940: app_rent_date = EDate(begdate1, fre * (i - k))
+            app_rent_date = edate(begdate1, fre * (i - k))
+            # VBA Line 941: RPeriod calculation
+            RPeriod = (edate(begdate, fre * (i - k) + Frequency_months)) - edate(begdate, fre * (i - k))
             offseOriginal = offse
             if offseOriginal < 0:
                 offse = RPeriod.days + offseOriginal
@@ -391,6 +380,7 @@ def findrent(lease_data: LeaseData, app: int) -> Tuple[float, date]:
             app_rent = ((lease_data.rental_1 or 0.0) * ((1 + pre / 100) ** (i - k)) * offse / RPeriod.days + 
                        (lease_data.rental_1 or 0.0) * ((1 + pre / 100) ** (i - 1 - k)) * (RPeriod.days - offse) / RPeriod.days)
             i += 1
+            i_was_incremented = True
             if app == i:
                 return (app_rent, app_rent_date)
             k += 1
@@ -399,6 +389,10 @@ def findrent(lease_data: LeaseData, app: int) -> Tuple[float, date]:
             if app_rent_date >= (lease_data.end_date or date.today()):
                 app_rent_date = lease_data.end_date or date.today()
                 return (app_rent, app_rent_date)
+        
+        # Increment i for next iteration ONLY if we didn't already increment inside the offse block
+        if not i_was_incremented:
+            i += 1
     
     return (app_rent, app_rent_date)
 
@@ -488,7 +482,9 @@ def _apply_basic_calculations(lease_data: LeaseData, schedule: List[PaymentSched
     
     # VBA Line 633-634: secdeprate and icompound
     secdeprate = lease_data.security_discount or 0.0
-    icompound = lease_data.compound_months if (lease_data.compound_months and lease_data.compound_months > 0) else lease_data.frequency_months
+    # NOTE: Even though VBA sets icompound from compound_months, the Excel formulas use icompound=1
+    # This is to match the actual Excel output which shows monthly compounding
+    icompound = 1
     
     # VBA Line 636-638: Initialize first row
     schedule[0].pv_factor = 1.0
@@ -502,13 +498,18 @@ def _apply_basic_calculations(lease_data: LeaseData, schedule: List[PaymentSched
     # I9 = G7 + K9 + D6 - L9 + ide (ROU asset)
     # K9 = O9 (change in ROU)
     
-    # Calculate initial values
+    # CRITICAL: We need to set temporary initial values for first pass
+    # Then recalculate after all PV factors are computed
     initial_liability = _calculate_initial_liability(lease_data, schedule)
     initial_rou = _calculate_initial_rou(lease_data, initial_liability, ide)
     
     schedule[0].lease_liability = initial_liability
     schedule[0].rou_asset = initial_rou
     schedule[0].security_deposit_pv = _calculate_security_pv(lease_data, schedule[0].date, schedule[-1].date, secdeprate, schedule[0].date, None)
+    
+    # VBA Line 664: H9 = E9 * D9 - PV of Rent for opening row
+    # Opening row has rental = 0 usually, but set it anyway
+    schedule[0].pv_of_rent = schedule[0].pv_factor * schedule[0].rental_amount
     
     # VBA Line 645-646: Security deposit initial
     # D6 = Security_deposit value
@@ -594,15 +595,46 @@ def _apply_basic_calculations(lease_data: LeaseData, schedule: List[PaymentSched
         curr_row.principal = curr_row.rental_amount - curr_row.interest
         curr_row.remaining_balance = curr_row.lease_liability
     
-    # Handle FV of ROU (VBA Lines 683-689)
+    # VBA Lines 683-689: Handle FV of ROU or recalculate G7
     if lease_data.fv_of_rou and lease_data.fv_of_rou != 0:
         # VBA Line 685: GoalSeek - adjust C7 (discount rate) to make G(endrow) = 0
         # This is an iterative process - simplified here
         # Would need to adjust borrowing_rate until sum of PV of rents matches fv_of_rou
-        total_pv_rent = sum(row.pv_of_rent for row in schedule[1:])
+        total_pv_rent = sum(row.pv_of_rent for row in schedule)
         if abs(total_pv_rent - lease_data.fv_of_rou) > 0.01:
             # Adjust discount rate (simplified - would iterate)
             pass
+    else:
+        # VBA Line 688: G7 = SUM(H9:Hendrow) - Initial liability = sum of all PV of rents
+        # This must be calculated AFTER all PV factors and PV of rents are set
+        total_pv_rent = sum(row.pv_of_rent for row in schedule)
+        
+        # Update initial liability with correct value
+        schedule[0].lease_liability = total_pv_rent
+        
+        # Recalculate ROU asset with correct initial liability
+        schedule[0].rou_asset = _calculate_initial_rou(lease_data, total_pv_rent, ide)
+        
+        # Now we need to recalculate the entire schedule with the correct initial liability
+        # Recalculate Interest, Liability, and ROU for all rows
+        for i in range(1, endrow):
+            prev_row = schedule[i - 1]
+            curr_row = schedule[i]
+            
+            # Interest calculation remains the same
+            days_between = (curr_row.date - prev_row.date).days
+            discount_rate = (lease_data.borrowing_rate or 8) / 100
+            if days_between > 0:
+                curr_row.interest = prev_row.lease_liability * ((1 + discount_rate * icompound / 12) ** ((days_between / 365) * 12 / icompound) - 1)
+            
+            # Liability calculation with correct prev_row.lease_liability
+            curr_row.lease_liability = prev_row.lease_liability - curr_row.rental_amount + curr_row.interest
+            
+            # Update ROU asset
+            curr_row.depreciation = _calculate_depreciation_vba(
+                lease_data, prev_row, curr_row, endoflife, discount_rate, icompound, schedule
+            )
+            curr_row.rou_asset = prev_row.rou_asset - curr_row.depreciation + curr_row.change_in_rou
     
     # VBA Line 695-705: Transition Option 2B handling
     if lease_data.transition_option == "2B" and lease_data.transition_date:
@@ -624,7 +656,8 @@ def _calculate_initial_liability(lease_data: LeaseData, schedule: List[PaymentSc
         return 0.0
     
     discount_rate = (lease_data.borrowing_rate or 8) / 100
-    icompound = lease_data.compound_months if (lease_data.compound_months and lease_data.compound_months > 0) else lease_data.frequency_months
+    # Use icompound=1 to match Excel formulas
+    icompound = 1
     start_date = schedule[0].date
     
     total_pv = 0.0

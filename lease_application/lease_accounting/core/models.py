@@ -237,9 +237,18 @@ class LeaseResult:
     closing_rou_asset: float = 0.0
     closing_aro_liability: float = 0.0
     closing_security_deposit: float = 0.0
+    closing_security_deposit_current: float = 0.0  # N4: Security Deposit Current portion
+    closing_security_deposit_non_current: float = 0.0  # M4: Security Deposit Non-Current portion
     
     # Gain/Loss
     gain_loss_pnl: float = 0.0
+    
+    # Gain/Loss Breakdown Components (VBA Lines 453-473)
+    covid_pe_gain: Optional[float] = None  # COVID Practical Expedient Gain (BI4, also separate)
+    modification_gain: Optional[float] = None  # Gain on modification
+    sublease_gain_loss: Optional[float] = None  # Gain/Loss on sublease initial recognition
+    sublease_modification_gain_loss: Optional[float] = None  # Gain/Loss on sublease modification
+    termination_gain_loss: Optional[float] = None  # Gain/Loss on termination (includes penalty)
     
     # Projections
     projections: List[Dict[str, Any]] = field(default_factory=list)
@@ -252,6 +261,19 @@ class LeaseResult:
     asset_code: str = ""
     borrowing_rate: Optional[float] = None
     remaining_rou_life: Optional[float] = None
+    
+    # Missing Results Table Columns (Z4, AA4, AB4, AC4-AG4, BB4, BC4, BD4, BE4, BI4)
+    original_lease_id: Optional[int] = None  # Z4: Original Lease ID (after following modifies_this_id chain)
+    modification_indicator: str = ""  # AA4: "Modifier" if this lease modifies another
+    initial_rou_asset: Optional[float] = None  # AB4: Initial ROU Asset for new leases
+    security_deposit_gross: Optional[float] = None  # BB4: Security Deposit Gross Amount
+    accumulated_depreciation: Optional[float] = None  # BC4: Accumulated Depreciation from lease start
+    initial_direct_expenditure_period: Optional[float] = None  # BD4: Initial Direct Expenditure on transition
+    prepaid_accrual_period: Optional[float] = None  # BE4: Prepaid Accrual on transition
+    covid_pe_gain: Optional[float] = None  # BI4: COVID Practical Expedient Gain
+    
+    # Projection data columns (AC4-AG4) - stored as list of projection dicts
+    # AC4-AG4 columns are populated from projections list, one set per projection mode (1-6)
     
     def to_dict(self) -> dict:
         """Convert to dictionary for API responses"""
@@ -280,6 +302,20 @@ class LeaseResult:
             'asset_code': self.asset_code,
             'borrowing_rate': self.borrowing_rate,
             'remaining_rou_life': self.remaining_rou_life,
+            # Missing Results Table Columns
+            'original_lease_id': self.original_lease_id,
+            'modification_indicator': self.modification_indicator,
+            'initial_rou_asset': self.initial_rou_asset,
+            'security_deposit_gross': self.security_deposit_gross,
+            'accumulated_depreciation': self.accumulated_depreciation,
+            'initial_direct_expenditure_period': self.initial_direct_expenditure_period,
+            'prepaid_accrual_period': self.prepaid_accrual_period,
+            'covid_pe_gain': self.covid_pe_gain,
+            # Gain/Loss Breakdown
+            'modification_gain': self.modification_gain,
+            'sublease_gain_loss': self.sublease_gain_loss,
+            'sublease_modification_gain_loss': self.sublease_modification_gain_loss,
+            'termination_gain_loss': self.termination_gain_loss,
         }
 
 

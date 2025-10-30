@@ -359,6 +359,9 @@
         </div>
     </div>
 
+    <!-- XLSX Library for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
     <script>
         let currentResults = null;
         let allLeases = [];
@@ -425,6 +428,7 @@
                     cost_center: document.getElementById('costCenterFilter').value || null,
                     entity: document.getElementById('entityFilter').value || null,
                     asset_class: document.getElementById('assetClassFilter').value || null,
+                    include_disclosures: true  // Request disclosures generation
                 };
 
                 const response = await fetch('http://localhost:5001/api/calculate_leases', {
@@ -494,17 +498,38 @@
             document.getElementById('resultsArea').style.display = 'block';
             
             // Get all unique keys from results to build columns
+            // Include all new columns: Z4, AA4, AB4, AC4-AG4, BB4, BC4, BD4, BE4, BI4
             const columns = [
+                // Identifiers
                 'lease_id', 'description', 'asset_class', 'asset_id_code',
+                // Closing Balances
                 'opening_liability', 'closing_liability_total', 'closing_liability_current', 'closing_liability_non_current',
                 'opening_rou_asset', 'closing_rou_asset',
+                // Period Activity
                 'interest_expense', 'depreciation_expense', 'rent_paid',
                 'closing_security_deposit', 'closing_aro_liability',
-                'gain_loss_pnl', 'currency', 'cost_centre'
+                'gain_loss_pnl', 
+                // New Columns (Z4, AA4, AB4, BB4, BC4, BD4, BE4, BI4)
+                'original_lease_id', 'modification_indicator', 'initial_rou_asset',
+                'security_deposit_gross', 'accumulated_depreciation',
+                'initial_direct_expenditure_period', 'prepaid_accrual_period',
+                'covid_pe_gain', 'remaining_rou_life',
+                // Projection Columns (AC4-AG4) - Show first 3 periods
+                'projection_1_liability_ad', 'projection_1_rou_ac', 'projection_1_depreciation_ae',
+                'projection_2_liability_ad', 'projection_2_rou_ac',
+                // Gain/Loss Breakdown
+                'modification_gain', 'sublease_gain_loss', 'sublease_modification_gain_loss', 'termination_gain_loss',
+                // Security Deposit Split (M4, N4)
+                'closing_security_deposit_current', 'closing_security_deposit_non_current',
+                // Other fields
+                'currency', 'cost_centre', 'borrowing_rate'
             ];
 
             // Fields that should NOT be formatted as currency (IDs, text fields)
-            const nonCurrencyFields = ['lease_id', 'description', 'asset_class', 'asset_id_code', 'currency', 'cost_centre'];
+            const nonCurrencyFields = [
+                'lease_id', 'description', 'asset_class', 'asset_id_code', 'currency', 'cost_centre',
+                'original_lease_id', 'modification_indicator', 'remaining_rou_life'
+            ];
 
             // Build table header
             const thead = document.getElementById('resultsTableHead');
@@ -570,8 +595,173 @@
                 showMessage('No results to export', 'error');
                 return;
             }
-            // TODO: Implement Excel export
-            showMessage('Excel export coming soon!', 'success');
+            
+            const wb = XLSX.utils.book_new();
+            
+            // 1. Summary Sheet
+            const summaryData = [
+                ['Lease Portfolio Summary'],
+                ['Generated Date', new Date().toLocaleDateString()],
+                [],
+                ['Aggregated Totals'],
+                ...Object.entries(currentResults.aggregated_totals || {}).map(([key, value]) => [
+                    key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    typeof value === 'number' ? value : value
+                ]),
+                [],
+                ['Statistics'],
+                ['Total Leases Processed', currentResults.processed_count || 0],
+                ['Total Leases Skipped', currentResults.skipped_count || 0],
+                ['Total Leases', currentResults.total_count || 0],
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            summaryWs['!cols'] = [{ wch: 35 }, { wch: 20 }];
+            XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+            
+            // 2. Results Sheet (Bulk Lease Results - all new columns)
+            if (currentResults.results && currentResults.results.length > 0) {
+                // Get all columns from first result
+                const allColumns = Object.keys(currentResults.results[0]);
+                
+                // Create header row
+                const resultsData = [allColumns.map(col => col.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()))];
+                
+                // Add data rows
+                currentResults.results.forEach(row => {
+                    resultsData.push(allColumns.map(col => {
+                        const value = row[col];
+                        // Handle dates
+                        if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}/)) {
+                            return new Date(value);
+                        }
+                        return value !== null && value !== undefined ? value : '';
+                    }));
+                });
+                
+                const resultsWs = XLSX.utils.aoa_to_sheet(resultsData);
+                
+                // Set column widths
+                const colWidths = allColumns.map(() => ({ wch: 15 }));
+                resultsWs['!cols'] = colWidths;
+                
+                // Format currency columns (columns with numeric values, not IDs or text)
+                const nonCurrencyFields = ['lease_id', 'description', 'asset_class', 'asset_id_code', 'currency', 'cost_centre',
+                                         'original_lease_id', 'modification_indicator'];
+                const range = XLSX.utils.decode_range(resultsWs['!ref']);
+                for (let R = 1; R <= range.e.r; R++) {
+                    allColumns.forEach((col, colIdx) => {
+                        if (!nonCurrencyFields.includes(col)) {
+                            const cellRef = XLSX.utils.encode_cell({ r: R, c: colIdx });
+                            if (resultsWs[cellRef] && resultsWs[cellRef].t === 'n') {
+                                resultsWs[cellRef].z = '$#,##0.00';
+                            }
+                        }
+                    });
+                }
+                
+                XLSX.utils.book_append_sheet(wb, resultsWs, 'Results');
+            }
+            
+            // 3. Consolidated Journal Entries Sheet
+            if (currentResults.consolidated_journals && currentResults.consolidated_journals.length > 0) {
+                const journalHeaders = ['Account Code', 'Account Name', 'BS/PL', 'Opening Balance', 
+                                       'Previous Period', 'Result Period', 'Incremental Adjustment',
+                                       'IFRS Adjustment', 'US-GAAP Entry'];
+                const journalData = [journalHeaders];
+                
+                currentResults.consolidated_journals.forEach(entry => {
+                    journalData.push([
+                        entry.account_code || '',
+                        entry.account_name || '',
+                        entry.bs_pl || '',
+                        entry.opening_balance || 0,
+                        entry.previous_period || 0,
+                        entry.result_period || 0,
+                        entry.incremental_adjustment || 0,
+                        entry.ifrs_adjustment || 0,
+                        entry.usgaap_entry || 0,
+                    ]);
+                });
+                
+                const journalWs = XLSX.utils.aoa_to_sheet(journalData);
+                journalWs['!cols'] = [{ wch: 12 }, { wch: 35 }, { wch: 8 }, { wch: 18 }, { wch: 18 }, 
+                                     { wch: 18 }, { wch: 22 }, { wch: 18 }, { wch: 18 }];
+                
+                // Format currency columns
+                const range = XLSX.utils.decode_range(journalWs['!ref']);
+                for (let R = 1; R <= range.e.r; R++) {
+                    ['D', 'E', 'F', 'G', 'H', 'I'].forEach(col => {
+                        const cellRef = journalWs[XLSX.utils.encode_cell({ r: R, c: col.charCodeAt(0) - 65 })];
+                        if (cellRef && cellRef.t === 'n') {
+                            cellRef.z = '$#,##0.00';
+                        }
+                    });
+                }
+                
+                XLSX.utils.book_append_sheet(wb, journalWs, 'Journal Entries');
+            }
+            
+            // 4. Disclosures Sheet (if available)
+            const disclosuresData = [['Lease Accounting Disclosures']];
+            const balanceSheetDate = currentResults.filters?.to_date || currentResults.to_date || new Date().toLocaleDateString();
+            disclosuresData.push(['Balance Sheet Date', balanceSheetDate]);
+            disclosuresData.push([]);
+            
+            if (currentResults.disclosures) {
+                // Maturity Analysis
+                disclosuresData.push(['Maturity Analysis', '', '']);
+                disclosuresData.push(['Period', 'Year', 'Total Payments']);
+                if (currentResults.disclosures.maturity_analysis) {
+                    currentResults.disclosures.maturity_analysis.forEach(item => {
+                        disclosuresData.push([
+                            item.period || '',
+                            item.year || item.years || '',
+                            item.total_payments || 0
+                        ]);
+                    });
+                }
+                disclosuresData.push([]);
+                
+                // Total Lease Liability by Entity
+                disclosuresData.push(['Total Lease Liability by Entity', '', '']);
+                disclosuresData.push(['Entity', 'Total Liability', '']);
+                if (currentResults.disclosures.liability_by_entity) {
+                    Object.entries(currentResults.disclosures.liability_by_entity).forEach(([entity, amount]) => {
+                        disclosuresData.push([entity, amount, '']);
+                    });
+                }
+                disclosuresData.push([]);
+                
+                // Total ROU Asset by Category
+                disclosuresData.push(['Total ROU Asset by Category', '', '']);
+                disclosuresData.push(['Asset Class', 'Total ROU Asset', '']);
+                if (currentResults.disclosures.rou_by_category) {
+                    Object.entries(currentResults.disclosures.rou_by_category).forEach(([category, amount]) => {
+                        disclosuresData.push([category, amount, '']);
+                    });
+                }
+                disclosuresData.push([]);
+                
+                // Other disclosures
+                if (currentResults.disclosures.variable_payments) {
+                    disclosuresData.push(['Variable Lease Payments', '', '']);
+                    disclosuresData.push(['Total Variable Payments', currentResults.disclosures.variable_payments.total_variable_payments || 0, '']);
+                }
+            } else {
+                // Placeholder if disclosures not available
+                disclosuresData.push(['Maturity Analysis', '', '']);
+                disclosuresData.push(['Period', 'Year', 'Total Payments']);
+                disclosuresData.push(['Note: Disclosures not calculated. Enable in API request.', '', '']);
+            }
+            
+            const disclosuresWs = XLSX.utils.aoa_to_sheet(disclosuresData);
+            disclosuresWs['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 20 }];
+            XLSX.utils.book_append_sheet(wb, disclosuresWs, 'Disclosures');
+            
+            // Download
+            const fileName = `Bulk_Lease_Results_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            showMessage('Excel file downloaded successfully with all sheets!', 'success');
         }
 
         // Load leases on page load
