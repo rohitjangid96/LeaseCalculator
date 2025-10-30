@@ -1,0 +1,42 @@
+# Database files
+*.db
+*.db-journal
+
+# Log files
+logs/
+*.log
+
+# Excel files
+*.xlsx
+*.xls
+*.xlsb
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+*.pyc
+.pytest_cache/
+
+# Temporary files
+*.tmp
+*.temp
+
