@@ -189,6 +189,36 @@ def init_database():
             )
         """)
         
+        # Email settings - stores SMTP configuration
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS email_settings (
+                setting_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                smtp_host TEXT NOT NULL,
+                smtp_port INTEGER NOT NULL,
+                smtp_username TEXT NOT NULL,
+                smtp_password TEXT NOT NULL,
+                use_tls INTEGER DEFAULT 1,
+                from_email TEXT NOT NULL,
+                from_name TEXT NOT NULL,
+                is_active INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # Email notifications - stores notification preferences
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS email_notifications (
+                notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                notification_type TEXT NOT NULL,
+                is_enabled INTEGER DEFAULT 1,
+                reminder_days INTEGER DEFAULT 30,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(user_id)
+            )
+        """)
+        
         print("✅ Database initialized")
 
 
@@ -507,6 +537,65 @@ def get_document_count(lease_id: int) -> int:
             SELECT COUNT(*) as count FROM lease_documents WHERE lease_id = ?
         """, (lease_id,)).fetchone()
         return row['count'] if row else 0
+
+
+# ============ EMAIL MANAGEMENT ============
+
+def get_email_settings():
+    """Get active email settings"""
+    with get_db_connection() as conn:
+        row = conn.execute("""
+            SELECT * FROM email_settings WHERE is_active = 1 ORDER BY setting_id DESC LIMIT 1
+        """).fetchone()
+        if row:
+            return dict(row)
+    return None
+
+
+def save_email_settings(host: str, port: int, username: str, password: str, 
+                        from_email: str, from_name: str, use_tls: bool = True) -> int:
+    """Save or update email settings"""
+    with get_db_connection() as conn:
+        # Deactivate old settings
+        conn.execute("UPDATE email_settings SET is_active = 0")
+        
+        # Insert new settings
+        cursor = conn.execute("""
+            INSERT INTO email_settings 
+            (smtp_host, smtp_port, smtp_username, smtp_password, from_email, from_name, use_tls, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+        """, (host, port, username, password, from_email, from_name, 1 if use_tls else 0))
+        return cursor.lastrowid
+
+
+def get_user_email_notifications(user_id: int) -> List[Dict]:
+    """Get email notification preferences for a user"""
+    with get_db_connection() as conn:
+        rows = conn.execute("""
+            SELECT * FROM email_notifications WHERE user_id = ?
+        """, (user_id,)).fetchall()
+        return [dict(row) for row in rows]
+
+
+def update_user_notification(user_id: int, notification_type: str, is_enabled: bool, reminder_days: int = 30):
+    """Update or create user notification preference"""
+    with get_db_connection() as conn:
+        existing = conn.execute("""
+            SELECT notification_id FROM email_notifications 
+            WHERE user_id = ? AND notification_type = ?
+        """, (user_id, notification_type)).fetchone()
+        
+        if existing:
+            conn.execute("""
+                UPDATE email_notifications 
+                SET is_enabled = ?, reminder_days = ?
+                WHERE user_id = ? AND notification_type = ?
+            """, (1 if is_enabled else 0, reminder_days, user_id, notification_type))
+        else:
+            conn.execute("""
+                INSERT INTO email_notifications (user_id, notification_type, is_enabled, reminder_days)
+                VALUES (?, ?, ?, ?)
+            """, (user_id, notification_type, 1 if is_enabled else 0, reminder_days))
 
 
 # Initialize database on import
