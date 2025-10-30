@@ -527,7 +527,20 @@ class LeaseProcessor:
         # Fallback: calculate PV factor directly
         if schedule:
             discount_rate = (lease_data.borrowing_rate or 8) / 100
-            icompound = lease_data.compound_months if (lease_data.compound_months and lease_data.compound_months > 0) else lease_data.frequency_months
+            # icompound should be compound_months if provided, otherwise derive from frequency
+            if lease_data.compound_months and lease_data.compound_months > 0:
+                icompound = lease_data.compound_months
+            else:
+                # Derive from frequency: 1=monthly, 3=quarterly, 6=semi-annually, 12=annually
+                freq = lease_data.frequency_months or 1
+                if freq == 3:
+                    icompound = 3  # Quarterly
+                elif freq == 6:
+                    icompound = 6  # Semi-annually
+                elif freq >= 12:
+                    icompound = 12  # Annually
+                else:
+                    icompound = 1  # Monthly
             first_row = schedule[0]
             start_date = first_row.date if hasattr(first_row, 'date') else (first_row.payment_date if hasattr(first_row, 'payment_date') else None)
             if not start_date:

@@ -481,10 +481,26 @@ def _apply_basic_calculations(lease_data: LeaseData, schedule: List[PaymentSched
         ide = 0
     
     # VBA Line 633-634: secdeprate and icompound
-    secdeprate = lease_data.security_discount or 0.0
-    # NOTE: Even though VBA sets icompound from compound_months, the Excel formulas use icompound=1
-    # This is to match the actual Excel output which shows monthly compounding
-    icompound = 1
+    # Security discount is stored as percentage in our system, but VBA uses it as decimal
+    # If value > 1, assume it's a percentage (e.g., 5 for 5%), divide by 100
+    # If value <= 1, assume it's already decimal (e.g., 0.05 for 5%)
+    raw_secdeprate = lease_data.security_discount or 0.0
+    secdeprate = raw_secdeprate / 100 if raw_secdeprate > 1 else raw_secdeprate
+    
+    # icompound should be compound_months if provided, otherwise derive from frequency
+    if lease_data.compound_months and lease_data.compound_months > 0:
+        icompound = lease_data.compound_months
+    else:
+        # Derive from frequency: 1=monthly, 3=quarterly, 6=semi-annually, 12=annually
+        freq = lease_data.frequency_months or 1
+        if freq == 3:
+            icompound = 3  # Quarterly
+        elif freq == 6:
+            icompound = 6  # Semi-annually
+        elif freq >= 12:
+            icompound = 12  # Annually
+        else:
+            icompound = 1  # Monthly
     
     # VBA Line 636-638: Initialize first row
     schedule[0].pv_factor = 1.0
@@ -656,8 +672,20 @@ def _calculate_initial_liability(lease_data: LeaseData, schedule: List[PaymentSc
         return 0.0
     
     discount_rate = (lease_data.borrowing_rate or 8) / 100
-    # Use icompound=1 to match Excel formulas
-    icompound = 1
+    # icompound should be compound_months if provided, otherwise derive from frequency
+    if lease_data.compound_months and lease_data.compound_months > 0:
+        icompound = lease_data.compound_months
+    else:
+        # Derive from frequency: 1=monthly, 3=quarterly, 6=semi-annually, 12=annually
+        freq = lease_data.frequency_months or 1
+        if freq == 3:
+            icompound = 3  # Quarterly
+        elif freq == 6:
+            icompound = 6  # Semi-annually
+        elif freq >= 12:
+            icompound = 12  # Annually
+        else:
+            icompound = 1  # Monthly
     start_date = schedule[0].date
     
     total_pv = 0.0
@@ -840,7 +868,8 @@ def _apply_security_deposit_increases(lease_data: LeaseData, schedule: List[Paym
     if not hasattr(lease_data, 'security_dates') or not lease_data.security_dates:
         return schedule
     
-    secdeprate = lease_data.security_discount or 0.0
+    raw_secdeprate = lease_data.security_discount or 0.0
+    secdeprate = raw_secdeprate / 100 if raw_secdeprate > 1 else raw_secdeprate
     i = 1
     
     for row in schedule:
