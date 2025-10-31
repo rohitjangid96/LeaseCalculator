@@ -41,6 +41,17 @@ def init_database():
             )
         """)
         
+        # Add role and is_active columns if they don't exist (migration for existing databases)
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
         # Leases table - stores all lease data
         conn.execute("""
             CREATE TABLE IF NOT EXISTS leases (

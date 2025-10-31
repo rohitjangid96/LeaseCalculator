@@ -4,146 +4,107 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculate Lease</title>
+    <link rel="stylesheet" href="/static/css/common.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
-            min-height: 100vh;
-        }
+        /* Calculate page-specific overrides */
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: var(--color-brand-green);
         }
-        .header h1 { font-size: 1.5rem; }
-        .header-right {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 30px auto;
-            padding: 20px;
+        .header h1 {
+            font-size: 1.5rem !important;
         }
         .form-section {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-        select, input[type="date"] {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-        select:focus, input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .btn {
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-        .results {
-            display: none;
-            margin-top: 30px;
+            box-shadow: var(--shadow-sm);
         }
         .summary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            background: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--color-brand-green);
         }
         .summary h2 {
-            margin-bottom: 15px;
+            color: var(--color-brand-green);
+            margin-bottom: var(--spacing-md);
         }
+        
+        /* Summary grid styling */
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            gap: var(--spacing-md);
         }
-        .summary-grid h3 {
-            margin: 0 0 10px 0;
-            font-size: 1rem;
-            opacity: 0.95;
-        }
+        
         .summary-item {
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 8px;
+            background: var(--color-bg-light) !important;
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            border-left: 3px solid var(--color-brand-green);
         }
+        
+        /* Remove colored backgrounds from summary sections */
+        .summary-item[style*="background: rgba"] {
+            background: var(--color-sage-1) !important;
+            border: 1px solid var(--color-border-sage) !important;
+        }
+        
         .summary-item strong {
             display: block;
-            font-size: 0.9rem;
-            opacity: 0.9;
-            margin-bottom: 5px;
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: var(--spacing-xs);
         }
+        
         .summary-item span {
-            font-size: 1.2rem;
-            font-weight: 700;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            font-size: 0.9rem;
-        }
-        @media (max-width: 1200px) {
-            table { font-size: 0.8rem; }
-            table th, table td { padding: 8px 6px; }
-        }
-        thead {
-            background: #667eea;
-            color: white;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        th {
+            display: block;
+            color: var(--color-text-primary);
+            font-size: 1.1rem;
             font-weight: 600;
         }
-        /* Table styles - reverted to original scrollable behavior */
-        #scheduleTable {
-            border-collapse: collapse;
+        
+        /* Override inline white text in summary sections */
+        .summary-item div strong,
+        .summary-item h3,
+        .summary div strong {
+            color: var(--color-text-primary) !important;
         }
-        tbody tr:hover {
-            background: #f8f9fa;
+        
+        .summary-item div span {
+            color: var(--color-text-primary) !important;
         }
+        
+        /* Remove purple/violet colors and replace with sage */
+        button[style*="#667eea"],
+        button[style*="background: #667eea"] {
+            background: var(--color-brand-green) !important;
+        }
+        
+        .summary-item[style*="rgba(102, 126, 234"],
+        .summary-item[style*="rgba(118, 75, 162"] {
+            background: var(--color-sage-1) !important;
+            border: 1px solid var(--color-border-sage) !important;
+        }
+        
+        /* Override purple borders in projections */
+        div[style*="border-top: 2px solid rgba(102, 126, 234"] {
+            border-top-color: var(--color-border-sage) !important;
+        }
+        
+        /* Override purple row colors in tables */
+        td[style*="color: #667eea"],
+        td[style*="color: #764ba2"] {
+            color: var(--color-brand-green) !important;
+        }
+        
+        /* Override all table thead backgrounds - use sage like dashboard */
+        thead,
+        table thead th,
+        #scheduleTable thead tr,
+        table thead tr {
+            background: var(--color-sage-1) !important;
+            color: var(--color-text-primary) !important;
+        }
+        
         .scrollable {
             max-height: 600px;
             overflow-y: auto;
@@ -151,19 +112,18 @@
             position: relative;
         }
         .scrollable table {
-            min-width: 1400px; /* Ensure all 15 columns fit */
+            min-width: 1400px;
         }
-        .error {
-            color: #e74c3c;
-            background: #ffe5e5;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #667eea;
+        
+        /* Section headers - use sage like dashboard */
+        .section-header {
+            background: var(--color-sage-1);
+            color: var(--color-text-primary);
+            padding: 15px 20px;
+            margin: 0;
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+            font-weight: 600;
+            font-size: 1.125rem !important;
         }
     </style>
 </head>
@@ -204,13 +164,13 @@
                 <h2>📈 Summary</h2>
                 <div class="summary-grid" id="summaryGrid"></div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn" onclick="exportToExcel()" style="background: rgba(255,255,255,0.2);">📥 Export to Excel</button>
-                    <button class="btn" onclick="showEmailModal()" style="background: rgba(255,255,255,0.2);">📧 Email Report</button>
+                    <button class="btn btn-primary" onclick="exportToExcel()">📥 Export to Excel</button>
+                    <button class="btn btn-primary" onclick="showEmailModal()">📧 Email Report</button>
                 </div>
             </div>
 
             <div style="position: relative;">
-                <h2 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; margin: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 10px 10px 0 0;">📅 Amortization Schedule</h2>
+                <h2 class="section-header">📅 Amortization Schedule</h2>
                 <div class="scrollable" style="max-height: 600px; overflow-y: auto; overflow-x: auto; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px; background: white;">
                     <table id="scheduleTable" style="width: 100%;">
                     <thead>
@@ -740,7 +700,7 @@
                         <div style="min-width: 100%; overflow-x: auto;">
                             <table style="width: 100%; min-width: 800px; border-collapse: collapse; font-size: 0.9rem; background: white;">
                                 <thead>
-                                    <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                    <tr>
                                         <th style="padding: 12px; text-align: left; border: 1px solid #ddd; color: white; font-weight: 600; white-space: nowrap;">Period</th>
                                         <th style="padding: 12px; text-align: left; border: 1px solid #ddd; color: white; font-weight: 600; white-space: nowrap;">Projection Date</th>
                                         <th style="padding: 12px; text-align: right; border: 1px solid #ddd; color: white; font-weight: 600; white-space: nowrap;">Closing Liability</th>

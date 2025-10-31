@@ -9,103 +9,76 @@
     <!-- Progress Bar Library -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.css"/>
     <script src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.js"></script>
+    <link rel="stylesheet" href="/static/css/common.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* Form-specific overrides for Trullion design */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 0;
+            background: var(--color-bg-light);
         }
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: var(--color-brand-green);
+            color: white !important;
         }
-        .header h1 { font-size: 1.5rem; margin: 0; }
-        .user-info {
-            display: flex;
-            gap: 20px;
-            align-items: center;
+        .header h1 {
+            font-size: 1.5rem !important;
+            color: white !important;
+        }
+        .header .user-info {
+            color: white !important;
         }
         .container {
-            max-width: 1400px;
-            margin: 20px auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
+            box-shadow: var(--shadow-lg);
         }
         header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
+            background: var(--color-bg-light);
+            border-bottom: 1px solid var(--color-border-sage);
         }
-        header h1 { font-size: 2rem; margin-bottom: 10px; }
-        .content { padding: 30px; }
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #dee2e6;
+        header h1 {
+            font-size: 1.5rem !important;
+            color: var(--color-text-primary) !important;
         }
-        .tab {
-            padding: 12px 24px;
-            cursor: pointer;
-            background: #f8f9fa;
-            border: none;
-            border-bottom: 3px solid transparent;
+        .content { padding: var(--spacing-xl); }
+        
+        /* Smaller Result Headings */
+        .results h2,
+        .results h3,
+        h2,
+        h3 {
+            font-size: 1.125rem !important;  /* Make headings smaller */
             font-weight: 600;
-            color: #6c757d;
         }
-        .tab.active {
-            background: white;
-            border-bottom-color: #667eea;
-            color: #667eea;
+        
+        /* Large Save Button */
+        .btn-primary {
+            padding: 1rem 2rem !important;
+            font-size: 1.125rem !important;
         }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #495057;
-            font-size: 0.9rem;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #dee2e6;
-            border-radius: 6px;
-            font-size: 0.95rem;
-        }
-        input:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        .mandatory { color: #dc3545; }
+        
+        /* Better Checkbox Toggle Styling */
         .switch-toggle {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin-bottom: 15px;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--color-bg-light);
+            border: 1px solid var(--color-border-sage);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-md);
+            transition: var(--transition-base);
+        }
+        .switch-toggle:hover {
+            background: var(--color-sage-1);
+        }
+        .switch-toggle label:first-child {
+            flex: 1;
+            font-weight: 600;
+            color: var(--color-text-primary);
         }
         .switch {
             position: relative;
+            display: inline-block;
             width: 50px;
             height: 24px;
-            cursor: pointer;
         }
         .switch input {
             opacity: 0;
@@ -114,69 +87,107 @@
         }
         .slider {
             position: absolute;
+            cursor: pointer;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: #dee2e6;
-            transition: .4s;
+            background-color: #ccc;
+            transition: 0.3s;
             border-radius: 24px;
         }
         .slider:before {
-            content: "";
             position: absolute;
+            content: "";
             height: 18px;
             width: 18px;
             left: 3px;
             bottom: 3px;
-            background: white;
-            transition: .4s;
+            background-color: white;
+            transition: 0.3s;
             border-radius: 50%;
         }
-        input:checked + .slider { background: #28a745; }
-        input:checked + .slider:before { transform: translateX(26px); }
-        .conditional-field {
-            display: none;
-            margin-top: 10px;
-            padding-left: 20px;
-            border-left: 3px solid #667eea;
+        input:checked + .slider {
+            background-color: var(--color-brand-green);
         }
-        .conditional-field.show {
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .switch-toggle > span {
+            font-weight: 600;
+            color: var(--color-text-secondary);
+        }
+        
+        /* Tab System */
+        .tabs {
+            display: flex;
+            gap: var(--spacing-xs);
+            margin-bottom: var(--spacing-lg);
+            border-bottom: 2px solid var(--color-border-sage);
+        }
+        .tab {
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--color-sage-1);
+            color: var(--color-text-secondary);
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: var(--transition-base);
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        }
+        .tab:hover {
+            background: var(--color-sage-2);
+        }
+        .tab.active {
+            background: white;
+            border-bottom-color: var(--color-brand-green);
+            color: var(--color-brand-green);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
             display: block;
         }
-        .rental-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr auto;
-            gap: 10px;
-            margin-bottom: 10px;
+        
+        .conditional-field {
+            border-left: 3px solid var(--color-brand-green);
+            padding: var(--spacing-md);
+            margin: var(--spacing-md) 0;
+            transition: var(--transition-base);
+            animation: slideDown 0.3s ease-out;
         }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 20px;
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
+        
         .results {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            display: none;
+            background: var(--color-bg-light);
         }
-        .results.show { display: block; }
-        .two-column {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+        
+        /* Override table headers to use sage */
+        table thead,
+        table thead th,
+        thead tr {
+            background: var(--color-sage-1) !important;
+            color: var(--color-text-primary) !important;
+        }
+        
+        /* Override purple/violet colors */
+        button[style*="#667eea"],
+        button[style*="background: #667eea"] {
+            background: var(--color-brand-green) !important;
         }
         
         /* Custom Notification System */
@@ -235,23 +246,27 @@
         }
         
         .notification.success {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
+            background: rgba(169, 255, 155, 0.3);
+            border-left: 4px solid var(--color-brand-green);
+            color: var(--color-brand-green);
         }
         
         .notification.error {
-            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
-            color: white;
+            background: rgba(255, 217, 190, 0.5);
+            border-left: 4px solid #dc2626;
+            color: #dc2626;
         }
         
         .notification.warning {
-            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-            color: #333;
+            background: rgba(220, 255, 121, 0.3);
+            border-left: 4px solid #b8860b;
+            color: #b8860b;
         }
         
         .notification.info {
-            background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
-            color: white;
+            background: rgba(160, 255, 229, 0.2);
+            border-left: 4px solid #36b0b0;
+            color: var(--color-brand-black);
         }
         
         .notification-icon {
@@ -295,19 +310,19 @@
             background: rgba(255, 255, 255, 0.5);
         }
         
-        /* NProgress Customization */
+        /* NProgress Customization (Trullion green) */
         #nprogress .bar {
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+            background: var(--color-brand-green) !important;
             height: 3px !important;
         }
         
         #nprogress .peg {
-            box-shadow: 0 0 10px #667eea, 0 0 5px #667eea !important;
+            box-shadow: 0 0 10px var(--color-brand-green), 0 0 5px var(--color-brand-green) !important;
         }
         
         #nprogress .spinner-icon {
-            border-top-color: #667eea !important;
-            border-left-color: #764ba2 !important;
+            border-top-color: var(--color-brand-green) !important;
+            border-left-color: var(--color-brand-green) !important;
         }
     </style>
 </head>
@@ -319,8 +334,8 @@
         <h1>🏢 Lease Management System</h1>
         <div class="user-info">
             <span>Welcome, <strong id="username">User</strong></span>
-            <button class="btn" onclick="window.location.href='dashboard.html'" style="background: rgba(255,255,255,0.2); padding: 8px 16px; border: none; border-radius: 5px; color: white; cursor: pointer; font-weight: 600;">🏠 Home</button>
-            <button class="btn" onclick="logout()" style="background: rgba(255,255,255,0.2); padding: 8px 16px; border: none; border-radius: 5px; color: white; cursor: pointer; font-weight: 600;">Logout</button>
+            <button class="btn" onclick="window.location.href='dashboard.html'">🏠 Home</button>
+            <button class="btn" onclick="logout()">Logout</button>
         </div>
     </div>
     
@@ -344,17 +359,17 @@
                 <!-- Tab 1: General Information -->
                 <div class="tab-content active" id="tab0">
                     <!-- AI PDF Extraction Section -->
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                        <h3 style="margin-bottom: 15px; font-size: 1.1rem;">🤖 AI-Assisted Data Entry</h3>
-                        <p style="margin-bottom: 15px; font-size: 0.9rem; opacity: 0.9;">Upload a PDF lease document and let AI automatically fill the form for you!</p>
+                    <div style="background: var(--color-sage-1); border: 1px solid var(--color-border-sage); color: var(--color-text-primary); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: var(--color-text-primary);">🤖 AI-Assisted Data Entry</h3>
+                        <p style="margin-bottom: 15px; font-size: 0.9rem; opacity: 0.9; color: var(--color-text-secondary);">Upload a PDF lease document and let AI automatically fill the form for you!</p>
                         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <input type="file" id="pdfFileInput" accept=".pdf" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 6px; border: 2px dashed rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;" />
-                            <input type="text" id="apiKeyInput" placeholder="Google AI API Key (optional)" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 6px; border: none; background: rgba(255,255,255,0.9); color: #333;" />
-                            <button type="button" onclick="extractFromPdf()" style="padding: 10px 20px; background: white; color: #667eea; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">🚀 Extract with AI</button>
+                            <input type="file" id="pdfFileInput" accept=".pdf" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 6px; border: 2px dashed var(--color-border-sage-strong); background: white; color: var(--color-text-primary);" />
+                            <input type="text" id="apiKeyInput" placeholder="Google AI API Key (optional)" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 6px; border: 1px solid var(--color-border-sage); background: white; color: var(--color-text-primary);" />
+                            <button type="button" onclick="extractFromPdf()" style="padding: 10px 20px; background: var(--color-brand-green); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">🚀 Extract with AI</button>
                         </div>
-                        <div id="extractionStatus" style="margin-top: 10px; font-size: 0.85rem;"></div>
-                        <div style="margin-top: 10px; font-size: 0.75rem; opacity: 0.8;">
-                            💡 Get your free Google AI API key at: <a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: white; text-decoration: underline;">https://makersuite.google.com/app/apikey</a>
+                        <div id="extractionStatus" style="margin-top: 10px; font-size: 0.85rem; color: var(--color-text-secondary);"></div>
+                        <div style="margin-top: 10px; font-size: 0.75rem; opacity: 0.8; color: var(--color-text-secondary);">
+                            💡 Get your free Google AI API key at: <a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: var(--color-brand-green); text-decoration: underline;">https://makersuite.google.com/app/apikey</a>
                         </div>
                     </div>
                     
@@ -568,7 +583,7 @@
                         <div id="rental_list">
                             <!-- Dynamically generated rental rows -->
                         </div>
-                        <button type="button" onclick="addRentalRow()" style="margin-top: 10px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer;">+ Add Rental</button>
+                        <button type="button" onclick="addRentalRow()" style="margin-top: 10px; padding: 8px 16px; background: var(--color-brand-green); color: white; border: none; border-radius: 6px; cursor: pointer;">+ Add Rental</button>
                     </div>
                 </div>
 
@@ -861,7 +876,7 @@
                                 <option value="termination">Termination Notice</option>
                                 <option value="other">Other</option>
                             </select>
-                            <button type="button" onclick="uploadDocument()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">📤 Upload</button>
+                            <button type="button" onclick="uploadDocument()" style="padding: 10px 20px; background: var(--color-brand-green); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">📤 Upload</button>
                         </div>
                         <div id="uploadStatus" style="margin-top: 10px; font-size: 0.9rem;"></div>
                     </div>
@@ -1667,7 +1682,7 @@ Check terminal or restart with: ./start_app.sh
             }
             resultsDiv2.innerHTML = `
                 <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-                    <h2 style="color: #667eea; margin-bottom: 20px; text-align: center;">📊 Lease Calculation Results</h2>
+                    <h2 style="color: var(--color-text-primary); margin-bottom: 20px; text-align: center;">📊 Lease Calculation Results</h2>
                     
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                         <h3 style="color: #333; margin-bottom: 15px;">Asset Information</h3>
@@ -1689,8 +1704,8 @@ Check terminal or restart with: ./start_app.sh
                         </div>
                     </div>
 
-                    <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <h3 style="color: #2e7d32; margin-bottom: 15px;">📈 Balance Sheet Items</h3>
+                    <div style="background: var(--color-sage-1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="color: var(--color-text-primary); margin-bottom: 15px;">📈 Balance Sheet Items</h3>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div><strong>Lease Liability (Initial):</strong> $${results.lease_liability}</div>
                             <div><strong>ROU Asset (Initial):</strong> $${results.rou_asset}</div>
@@ -1699,8 +1714,8 @@ Check terminal or restart with: ./start_app.sh
                         </div>
                     </div>
 
-                    <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <h3 style="color: #ef6c00; margin-bottom: 15px;">💰 P&L Items</h3>
+                    <div style="background: var(--color-sage-1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="color: var(--color-text-primary); margin-bottom: 15px;">💰 P&L Items</h3>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div><strong>Depreciation Expense:</strong> $${results.depreciation_expense}/month</div>
                             <div><strong>Interest Expense:</strong> $${results.interest_expense} (total)</div>
@@ -1709,16 +1724,16 @@ Check terminal or restart with: ./start_app.sh
                         </div>
                     </div>
 
-                    <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <h3 style="color: #7b1fa2; margin-bottom: 15px;">🔄 ARO (Asset Retirement Obligation)</h3>
+                    <div style="background: var(--color-sage-1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="color: var(--color-text-primary); margin-bottom: 15px;">🔄 ARO (Asset Retirement Obligation)</h3>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div><strong>ARO Amount:</strong> $${results.aro_amount}</div>
                             <div><strong>ARO Interest:</strong> $${results.aro_interest}</div>
                         </div>
                     </div>
 
-                    <div style="background: #e1f5fe; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <h3 style="color: #01579b; margin-bottom: 15px;">🏦 Additional Items</h3>
+                    <div style="background: var(--color-sage-1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="color: var(--color-text-primary); margin-bottom: 15px;">🏦 Additional Items</h3>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div><strong>Initial Direct Costs:</strong> $${results.initial_direct_costs}</div>
                             <div><strong>Lease Incentive:</strong> $${results.lease_incentive}</div>
@@ -1735,14 +1750,14 @@ Check terminal or restart with: ./start_app.sh
                     <!-- Lease Amortization Schedule - All 13 Columns from Excel -->
                     <div style="margin-top: 30px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h3 style="color: #667eea; margin: 0;">📊 Complete Lease Amortization Schedule (All 13 Excel Columns)</h3>
+                            <h3 style="color: var(--color-text-primary); margin: 0;">📊 Complete Lease Amortization Schedule (All 13 Excel Columns)</h3>
                             <button onclick="exportScheduleToExcel()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
                                 📥 Export to Excel
                             </button>
                         </div>
                         <div style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
                             <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem;">
-                                <thead style="position: sticky; top: 0; background: #667eea; color: white;">
+                                <thead style="position: sticky; top: 0; background: var(--color-sage-1); color: var(--color-text-primary);">
                                     <tr>
                                         <th style="padding: 8px; border: 1px solid #ddd; min-width: 80px;">Date</th>
                                         <th style="padding: 8px; border: 1px solid #ddd; min-width: 80px;">Rent</th>
@@ -1767,14 +1782,14 @@ Check terminal or restart with: ./start_app.sh
                     <!-- Journal Entries - Excel-style Structure -->
                     <div style="margin-top: 30px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h3 style="color: #667eea; margin: 0;">📔 Journal Entries (Excel JournalD Structure)</h3>
+                            <h3 style="color: var(--color-text-primary); margin: 0;">📔 Journal Entries (Excel JournalD Structure)</h3>
                             <button onclick="exportJournalsToExcel()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
                                 📥 Export to Excel
                             </button>
                         </div>
                         <div style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
                             <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem;">
-                                <thead style="position: sticky; top: 0; background: #667eea; color: white;">
+                                <thead style="position: sticky; top: 0; background: var(--color-sage-1); color: var(--color-text-primary);">
                                     <tr>
                                         <th style="padding: 8px; border: 1px solid #ddd;">BS/PL</th>
                                         <th style="padding: 8px; border: 1px solid #ddd;">Account Name</th>
@@ -1790,10 +1805,10 @@ Check terminal or restart with: ./start_app.sh
 
                     <!-- Disclosures -->
                     <div style="margin-top: 30px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                        <h3 style="color: #667eea; margin-bottom: 15px; text-align: center;">📋 Lease Disclosures</h3>
+                        <h3 style="color: var(--color-text-primary); margin-bottom: 15px; text-align: center;">📋 Lease Disclosures</h3>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div style="background: #e8f5e9; padding: 15px; border-radius: 8px;">
-                                <h4 style="color: #2e7d32; margin-bottom: 10px;">Balance Sheet Impact</h4>
+                            <div style="background: var(--color-bg-light); border: 1px solid var(--color-border-sage); padding: 15px; border-radius: 8px;">
+                                <h4 style="color: var(--color-text-primary); margin-bottom: 10px;">Balance Sheet Impact</h4>
                                 <div style="font-size: 0.9rem;">
                                     <p><strong>Right-of-Use Asset (Opening):</strong> $${results.rou_asset}</p>
                                     <p><strong>Lease Liability (Opening):</strong> $${results.lease_liability}</p>
@@ -1801,8 +1816,8 @@ Check terminal or restart with: ./start_app.sh
                                     <p><strong>Accumulated Depreciation:</strong> $${(parseFloat(results.depreciation_expense) * tenure).toFixed(2)}</p>
                                 </div>
                             </div>
-                            <div style="background: #fff3e0; padding: 15px; border-radius: 8px;">
-                                <h4 style="color: #ef6c00; margin-bottom: 10px;">Income Statement Impact</h4>
+                            <div style="background: var(--color-bg-light); border: 1px solid var(--color-border-sage); padding: 15px; border-radius: 8px;">
+                                <h4 style="color: var(--color-text-primary); margin-bottom: 10px;">Income Statement Impact</h4>
                                 <div style="font-size: 0.9rem;">
                                     <p><strong>Annual Interest Expense:</strong> $${totalInterest.toFixed(2)}</p>
                                     <p><strong>Annual Depreciation Expense:</strong> $${(parseFloat(results.depreciation_expense) * 12).toFixed(2)}</p>
@@ -2058,7 +2073,7 @@ Check terminal or restart with: ./start_app.sh
             let scheduleHTML = `
                 <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem;">
                     <thead>
-                        <tr style="background: #667eea; color: white;">
+                        <tr style="background: var(--color-sage-1); color: var(--color-text-primary);">
                             <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Date</th>
                             <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">Rent</th>
                             <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">PV Factor</th>
@@ -2076,7 +2091,7 @@ Check terminal or restart with: ./start_app.sh
             let journalHTML = `
                 <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem;">
                     <thead>
-                        <tr style="background: #667eea; color: white;">
+                        <tr style="background: var(--color-sage-1); color: var(--color-text-primary);">
                             <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">BS/PL</th>
                             <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Account</th>
                             <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">Result Period</th>
@@ -2090,38 +2105,38 @@ Check terminal or restart with: ./start_app.sh
             
             resultsDiv.innerHTML = `
                 <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 20px 0;">
-                    <h2 style="color: #667eea; margin-bottom: 25px; text-align: center; font-size: 1.8rem;">📊 Lease Calculation Results</h2>
+                    <h2 style="color: var(--color-text-primary); margin-bottom: 25px; text-align: center;">📊 Lease Calculation Results</h2>
                     
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-                        <h3 style="margin: 0 0 15px 0; font-size: 1.3rem;">Summary</h3>
+                    <div style="background: var(--color-bg-light); border: 1px solid var(--color-border-sage); padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                        <h3 style="margin: 0 0 15px 0;">Summary</h3>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; font-size: 1rem;">
-                            <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 5px;">
+                            <div style="background: white; border: 1px solid var(--color-border-sage); padding: 12px; border-radius: 5px;">
                                 <strong>Total Payments:</strong> ${result.summary.total_payments}
                             </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 5px;">
+                            <div style="background: white; border: 1px solid var(--color-border-sage); padding: 12px; border-radius: 5px;">
                                 <strong>Opening Liability:</strong> $${result.summary.opening_liability.toFixed(2)}
                             </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 5px;">
+                            <div style="background: white; border: 1px solid var(--color-border-sage); padding: 12px; border-radius: 5px;">
                                 <strong>Total Interest:</strong> $${result.summary.total_interest.toFixed(2)}
                             </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 5px;">
+                            <div style="background: white; border: 1px solid var(--color-border-sage); padding: 12px; border-radius: 5px;">
                                 <strong>Total Depreciation:</strong> $${result.summary.total_depreciation.toFixed(2)}
                             </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 5px;">
+                            <div style="background: white; border: 1px solid var(--color-border-sage); padding: 12px; border-radius: 5px;">
                                 <strong>Total Rent Paid:</strong> $${result.summary.total_rent_paid.toFixed(2)}
                             </div>
-                            <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 5px;">
+                            <div style="background: white; border: 1px solid var(--color-border-sage); padding: 12px; border-radius: 5px;">
                                 <strong>Closing Liability:</strong> $${result.summary.closing_liability.toFixed(2)}
                             </div>
                         </div>
                     </div>
                     
-                    <h3 style="color: #333; margin: 30px 0 15px 0; font-size: 1.3rem;">📅 Amortization Schedule</h3>
+                    <h3 style="color: #333; margin: 30px 0 15px 0;">📅 Amortization Schedule</h3>
                     <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
                         ${scheduleHTML}
                     </div>
                     
-                    <h3 style="color: #333; margin: 30px 0 15px 0; font-size: 1.3rem;">📝 Journal Entries</h3>
+                    <h3 style="color: #333; margin: 30px 0 15px 0;">📝 Journal Entries</h3>
                     <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
                         ${journalHTML}
                     </div>
@@ -2334,7 +2349,7 @@ Check terminal or restart with: ./start_app.sh
                     <div style="padding: 40px; text-align: center; color: #6c757d;">
                         <p style="font-size: 1.1rem;">📄 No documents uploaded yet</p>
                         <p style="margin-top: 10px; font-size: 0.9rem;">Upload your first document using the form above.</p>
-                        <p style="margin-top: 10px; font-size: 0.85rem; color: #667eea;">💡 The lease will be saved automatically when you upload a document.</p>
+                        <p style="margin-top: 10px; font-size: 0.85rem; color: var(--color-text-secondary);">💡 The lease will be saved automatically when you upload a document.</p>
                     </div>
                 `;
                 return;
@@ -2384,7 +2399,7 @@ Check terminal or restart with: ./start_app.sh
                         <td style="padding: 12px;">${doc.file_size_formatted}</td>
                         <td style="padding: 12px;">${new Date(doc.uploaded_at).toLocaleDateString()}</td>
                         <td style="padding: 12px; text-align: center;">
-                            <button onclick="downloadDocument(${doc.doc_id})" style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;">⬇️ Download</button>
+                            <button onclick="downloadDocument(${doc.doc_id})" style="padding: 6px 12px; background: var(--color-brand-green); color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;">⬇️ Download</button>
                             <button onclick="deleteDocument(${doc.doc_id})" style="padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">🗑️ Delete</button>
                         </td>
                     </tr>

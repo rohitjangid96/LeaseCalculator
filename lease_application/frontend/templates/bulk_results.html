@@ -4,318 +4,88 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bulk Lease Processing - Results Summary</title>
+    <link rel="stylesheet" href="/static/css/common.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* Bulk results page-specific overrides */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            background: var(--color-bg-light);
         }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 30px;
+        .header {
+            background: var(--color-brand-green);
         }
-
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 2rem;
+        .header h1 {
+            font-size: 1.5rem !important;
         }
-
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 0.95rem;
-        }
-
         .controls {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
+            background: var(--color-sage-1);
         }
-
-        .control-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .control-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        label {
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #333;
-            font-size: 0.9rem;
-        }
-
-        input[type="date"], select {
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            transition: border-color 0.3s;
-        }
-
-        input[type="date"]:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
         }
-
         .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.9;
-            margin-bottom: 8px;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-        }
-
-        .results-table {
-            overflow-x: auto;
-            margin-top: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        thead {
-            background: #667eea;
-            color: white;
-        }
-
-        th {
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-        }
-
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        tbody tr:hover {
-            background: #f8f9fa;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-
-        .error {
-            background: #fee;
-            color: #c33;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-        }
-
-        .success {
-            background: #efe;
-            color: #3c3;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-        }
-
-        .totals-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 30px;
-        }
-
-        .totals-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-        }
-
-        .total-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .total-item:last-child {
-            border-bottom: none;
-        }
-
-        .total-label {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .total-value {
-            color: #667eea;
-            font-weight: bold;
-        }
-
-        .lease-selector {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 10px;
-        }
-
-        .lease-checkbox {
-            display: flex;
-            align-items: center;
-            padding: 5px 0;
-        }
-
-        .lease-checkbox input {
-            margin-right: 8px;
-        }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .header h1 {
-            font-size: 1.5rem;
-            margin: 0;
-        }
-        .header-right {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-        .header-btn {
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 6px;
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        .header-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        
-        /* GAAP Comparison Tabs */
-        .gaap-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        
-        .gaap-tab {
-            padding: 12px 24px;
-            background: #f8f9fa;
-            border: none;
-            border-bottom: 3px solid transparent;
-            cursor: pointer;
-            font-weight: 600;
-            color: #666;
-            transition: all 0.3s;
-        }
-        
-        .gaap-tab:hover {
-            background: #e9ecef;
-        }
-        
-        .gaap-tab.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
             background: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--color-brand-green);
+            transition: var(--transition-base);
         }
-        
-        .gaap-comparison-section {
-            display: none;
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
-        
-        .gaap-comparison-section.active {
-            display: block;
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+        .stat-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--color-text-primary);
+        }
+        .stat-card .label {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            margin-top: var(--spacing-xs);
+        }
+        thead,
+        table thead th,
+        .results-table thead,
+        .results-table thead tr {
+            background: var(--color-sage-1) !important;
+            color: var(--color-text-primary) !important;
+        }
+        .totals-section {
+            background: var(--color-sage-1);
+        }
+        .total-value {
+            color: var(--color-brand-green);
+        }
+        .gaap-tabs {
+            border-bottom: 2px solid var(--color-border-sage);
+        }
+        .gaap-tab {
+            background: var(--color-sage-1);
+        }
+        .gaap-tab.active {
+            color: var(--color-brand-green);
+            border-bottom-color: var(--color-brand-green);
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>📊 Bulk Lease Processing</h1>
-        <div class="header-right">
-            <a href="dashboard.html" class="header-btn">Home</a>
-            <a href="calculate.html" class="header-btn">Calculate</a>
-            <a href="bulk_results.html" class="header-btn" style="background: rgba(255,255,255,0.4);">Bulk Results</a>
-            <button class="header-btn" onclick="logout()">Logout</button>
+        <div class="user-info">
+            <span>Welcome, <strong id="username">User</strong></span>
+            <button class="btn btn-primary" onclick="window.location.href='dashboard.html'">Home</button>
+            <button class="btn btn-primary" onclick="window.location.href='calculate.html'">Calculate</button>
+            <button class="btn btn-primary" onclick="window.location.href='bulk_results.html'">Bulk Results</button>
+            <button class="btn" onclick="logout()">Logout</button>
         </div>
     </div>
     <div class="container">
@@ -869,7 +639,25 @@
             showMessage(`✅ Enhanced Excel report downloaded successfully!\n\nFile: ${fileName}\n\nContains:\n• Professional summary with metadata\n• Formatted results table\n• Consolidated journal entries\n• Regulatory disclosures\n• Proper currency formatting`, 'success');
         }
 
-        // Load leases on page load
+        // Load username on page load
+        async function loadUsername() {
+            try {
+                const response = await fetch('http://localhost:5001/api/user', {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.user) {
+                        document.getElementById('username').textContent = data.user.username || 'User';
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load username:', error);
+            }
+        }
+        
+        // Load username and leases on page load
+        loadUsername();
         loadLeasesForBulk();
 
         // Set default dates (current year)
