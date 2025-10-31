@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Approvals - Review Dashboard</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <style>
+        .header {
+            background: var(--color-brand-green);
+        }
+        .header h1 {
+            font-size: 1.5rem !important;
+        }
+        .approval-card {
+            background: white;
+            border: 1px solid var(--color-border-sage);
+            border-left: 4px solid var(--color-brand-green);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+            transition: var(--transition-base);
+        }
+        .approval-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        .approval-card.pending {
+            border-left-color: #f59e0b;
+        }
+        .approval-card.approved {
+            border-left-color: #22c55e;
+        }
+        .approval-card.rejected {
+            border-left-color: #dc2626;
+        }
+        .approval-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-md);
+        }
+        .approval-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--color-text-primary);
+        }
+        .approval-badge {
+            padding: 4px 12px;
+            border-radius: var(--radius-pill);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .badge-approved {
+            background: rgba(169, 255, 155, 0.3);
+            color: var(--color-brand-green);
+        }
+        .badge-rejected {
+            background: rgba(255, 217, 190, 0.5);
+            color: #dc2626;
+        }
+        .approval-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .meta-label {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 4px;
+        }
+        .meta-value {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--color-text-primary);
+        }
+        .approval-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-md);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--color-border-sage);
+        }
+        .btn-approve {
+            background: #22c55e;
+            color: white;
+        }
+        .btn-reject {
+            background: #dc2626;
+            color: white;
+        }
+        .comments-section {
+            margin-top: var(--spacing-md);
+        }
+        .comments-section textarea {
+            width: 100%;
+            padding: var(--spacing-sm);
+            border: 1px solid var(--color-border-sage);
+            border-radius: var(--radius-sm);
+            font-size: 0.9375rem;
+            resize: vertical;
+        }
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-3xl);
+            color: var(--color-text-secondary);
+        }
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: var(--spacing-md);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔐 Pending Approvals</h1>
+        <div class="user-info">
+            <span>Welcome, <strong id="username">Reviewer</strong></span>
+            <button class="btn" onclick="window.location.href='dashboard.html'">🏠 Dashboard</button>
+            <button class="btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <header>
+            <h1>📋 Review Dashboard</h1>
+            <p style="opacity: 0.9;">Approve or reject lease creation and edit requests</p>
+        </header>
+        
+        <div class="content">
+            <div id="approvalsContainer">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading pending approvals...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/api.js"></script>
+    <script>
+        // Load pending approvals on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Load username
+            try {
+                const response = await fetch('http://localhost:5001/api/user', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (data.success && data.user) {
+                    document.getElementById('username').textContent = data.user.username;
+                }
+            } catch (e) {
+                console.error('Failed to load user info:', e);
+            }
+            
+            // Load approvals
+            await loadPendingApprovals();
+        });
+        
+        async function loadPendingApprovals() {
+            try {
+                const response = await fetch('http://localhost:5001/api/approvals/pending', {
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                
+                const container = document.getElementById('approvalsContainer');
+                
+                if (!result.success) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">❌</div>
+                            <p>Error loading approvals: ${result.error}</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                if (!result.approvals || result.approvals.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">✅</div>
+                            <h3>All caught up!</h3>
+                            <p>No pending approvals at this time.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = result.approvals.map(approval => {
+                    const cardClass = approval.approval_status;
+                    const badgeClass = `badge-${approval.approval_status}`;
+                    const requestTypeLabels = {
+                        creation: 'New Lease Creation',
+                        edit: 'Lease Edit',
+                        deletion: 'Lease Deletion'
+                    };
+                    
+                    return `
+                        <div class="approval-card ${cardClass}" id="approval-${approval.approval_id}">
+                            <div class="approval-header">
+                                <div>
+                                    <div class="approval-title">${escapeHtml(approval.lease_name || approval.description || 'Untitled Lease')}</div>
+                                    <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-top: 4px;">
+                                        Requested by: ${escapeHtml(approval.requester_name)} • ${requestTypeLabels[approval.request_type] || approval.request_type}
+                                    </div>
+                                </div>
+                                <span class="approval-badge ${badgeClass}">Pending</span>
+                            </div>
+                            
+                            <div class="approval-meta">
+                                <div class="meta-item">
+                                    <span class="meta-label">Asset Class</span>
+                                    <span class="meta-value">${escapeHtml(approval.asset_class || 'N/A')}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">Requested</span>
+                                    <span class="meta-value">${new Date(approval.created_at).toLocaleString()}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">Approval ID</span>
+                                    <span class="meta-value">#${approval.approval_id}</span>
+                                </div>
+                            </div>
+                            
+                            ${approval.comments ? `
+                                <div style="background: var(--color-bg-light); padding: var(--spacing-sm); border-radius: var(--radius-sm); margin-bottom: var(--spacing-md);">
+                                    <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">Request Comments:</div>
+                                    <div style="font-size: 0.9375rem; color: var(--color-text-primary);">${escapeHtml(approval.comments)}</div>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="comments-section">
+                                <label style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">Your Review Comments (Optional)</label>
+                                <textarea id="comments-${approval.approval_id}" placeholder="Add any comments for your decision..."></textarea>
+                            </div>
+                            
+                            <div class="approval-actions">
+                                <button class="btn btn-approve" onclick="approveLease(${approval.approval_id})">✅ Approve</button>
+                                <button class="btn btn-reject" onclick="rejectLease(${approval.approval_id})">❌ Reject</button>
+                                <button class="btn" onclick="viewLeaseDetails(${approval.lease_id})" style="margin-left: auto;">👁️ View Details</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading approvals:', error);
+                document.getElementById('approvalsContainer').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p>Failed to load approvals. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function approveLease(approvalId) {
+            const comments = document.getElementById(`comments-${approvalId}`).value;
+            
+            if (!confirm('Are you sure you want to approve this lease?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/approvals/${approvalId}/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ comments })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Lease approved successfully!');
+                    await loadPendingApprovals();
+                } else {
+                    alert('❌ Failed to approve: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error approving lease:', error);
+                alert('❌ Failed to approve lease. Please try again.');
+            }
+        }
+        
+        async function rejectLease(approvalId) {
+            const comments = document.getElementById(`comments-${approvalId}`).value;
+            
+            if (!confirm('Are you sure you want to reject this lease?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/approvals/${approvalId}/reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ comments })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('❌ Lease rejected.');
+                    await loadPendingApprovals();
+                } else {
+                    alert('❌ Failed to reject: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error rejecting lease:', error);
+                alert('❌ Failed to reject lease. Please try again.');
+            }
+        }
+        
+        function viewLeaseDetails(leaseId) {
+            window.open(`complete_lease_form.html?id=${leaseId}`, '_blank');
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        async function logout() {
+            try {
+                await fetch('http://localhost:5001/api/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                window.location.href = 'login.html';
+            } catch (error) {
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>
+

@@ -6,6 +6,38 @@ from datetime import date, datetime
 from typing import List, Dict, Optional
 import bcrypt
 from contextlib import contextmanager
+import base64
+import hashlib
+from cryptography.fernet import Fernet
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Encryption setup for sensitive data
+def _get_encryption_key():
+    """Generate encryption key from SECRET_KEY"""
+    from config import Config
+    secret = Config.SECRET_KEY.encode('utf-8')
+    key = hashlib.sha256(secret).digest()
+    return base64.urlsafe_b64encode(key)
+
+def _encrypt_text(text: str) -> str:
+    """Encrypt sensitive text"""
+    if not text:
+        return text
+    f = Fernet(_get_encryption_key())
+    return f.encrypt(text.encode('utf-8')).decode('utf-8')
+
+def _decrypt_text(encrypted_text: str) -> str:
+    """Decrypt sensitive text"""
+    if not encrypted_text:
+        return encrypted_text
+    try:
+        f = Fernet(_get_encryption_key())
+        return f.decrypt(encrypted_text.encode('utf-8')).decode('utf-8')
+    except Exception:
+        # If decryption fails, return as-is (might be plain text from older versions)
+        return encrypted_text
 
 DATABASE_PATH = "lease_management.db"
 
@@ -143,12 +175,23 @@ def init_database():
                 last_modified_by TEXT,
                 last_reviewed_by TEXT,
                 
+                -- Approval workflow
+                approval_status TEXT DEFAULT 'draft',  -- draft, pending, approved, rejected
+                approved_lease_id INTEGER,  -- For versioning: points to the approved version
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 
-                FOREIGN KEY (user_id) REFERENCES users(user_id)
+                FOREIGN KEY (user_id) REFERENCES users(user_id),
+                FOREIGN KEY (approved_lease_id) REFERENCES leases(lease_id) ON DELETE SET NULL
             )
         """)
+        
+        # Add approved_lease_id column if not exists (migration)
+        try:
+            conn.execute("ALTER TABLE leases ADD COLUMN approved_lease_id INTEGER")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_approved_lease_id ON leases(approved_lease_id)")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
         
         # Leases calculations - stores calculated schedules and journal entries
         conn.execute("""
@@ -219,6 +262,17 @@ def init_database():
             )
         """)
         
+        # Google AI API settings table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS google_ai_settings (
+                setting_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                api_key TEXT NOT NULL,
+                is_active INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
         # Email notifications table
         conn.execute("""
             CREATE TABLE IF NOT EXISTS email_notifications (
@@ -231,6 +285,30 @@ def init_database():
                 FOREIGN KEY (user_id) REFERENCES users(user_id)
             )
         """)
+        
+        # Lease approvals table - tracks approval workflow
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS lease_approvals (
+                approval_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                lease_id INTEGER NOT NULL,
+                requester_user_id INTEGER NOT NULL,
+                approver_user_id INTEGER,
+                approval_status TEXT NOT NULL DEFAULT 'pending',
+                request_type TEXT NOT NULL,
+                comments TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                reviewed_at TIMESTAMP,
+                FOREIGN KEY (lease_id) REFERENCES leases(lease_id) ON DELETE CASCADE,
+                FOREIGN KEY (requester_user_id) REFERENCES users(user_id),
+                FOREIGN KEY (approver_user_id) REFERENCES users(user_id)
+            )
+        """)
+        
+        # Migration: Add approval_status column to existing leases table if not exists
+        try:
+            conn.execute("ALTER TABLE leases ADD COLUMN approval_status TEXT DEFAULT 'draft'")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
         
         print("✅ Database initialized")
 
@@ -318,8 +396,20 @@ def save_lease(user_id: int, lease_data: Dict) -> int:
                 except:
                     pass
     
+    # Check user role for auto-approval
+    user = get_user(user_id)
+    is_admin = user.get('role') == 'admin' if user else False
+    is_checker = user.get('role') == 'reviewer' if user else False
+    
     if lease_id:
         # Update existing lease
+        # First, check if the lease is currently approved
+        with get_db_connection() as conn:
+            current_lease = conn.execute(
+                "SELECT approval_status FROM leases WHERE lease_id = ? AND user_id = ?",
+                (lease_id, user_id)
+            ).fetchone()
+        
         # Filter to only valid database columns
         valid_columns = [
             'lease_name', 'description', 'asset_class', 'asset_id_code', 'counterparty',
@@ -353,6 +443,18 @@ def save_lease(user_id: int, lease_data: Dict) -> int:
                     # Keep empty strings for non-date fields (they'll be stored as empty or None)
                     filtered_data[k] = v
         
+        # If editing an approved lease, set status to pending (unless user is admin or checker)
+        # If editing a rejected lease, set status to draft so user can rework and resubmit
+        needs_approval = False
+        if not is_admin and not is_checker and current_lease:
+            if current_lease['approval_status'] == 'approved':
+                # Add approval_status to filtered_data even though it's not in valid_columns
+                filtered_data['approval_status'] = 'pending'
+                needs_approval = True
+            elif current_lease['approval_status'] == 'rejected':
+                # Reset rejected lease to draft so user can fix issues and resubmit
+                filtered_data['approval_status'] = 'draft'
+        
         if not filtered_data:
             return lease_id  # Nothing to update
         
@@ -368,6 +470,22 @@ def save_lease(user_id: int, lease_data: Dict) -> int:
                 f"UPDATE leases SET {set_clause} WHERE lease_id = ? AND user_id = ?",
                 values
             )
+            
+            # Auto-create approval request if needed
+            if needs_approval:
+                conn.execute("""
+                    INSERT INTO lease_approvals 
+                    (lease_id, requester_user_id, approval_status, request_type, comments)
+                    VALUES (?, ?, 'pending', 'edit', 'Auto-submitted for approval after editing approved lease')
+                """, (lease_id, user_id))
+            
+            # Auto-approve if edited by admin or checker
+            if (is_admin or is_checker) and current_lease and current_lease['approval_status'] != 'approved':
+                conn.execute(
+                    "UPDATE leases SET approval_status = 'approved' WHERE lease_id = ?",
+                    (lease_id,)
+                )
+        
         return lease_id
     else:
         # Create new lease
@@ -380,7 +498,16 @@ def save_lease(user_id: int, lease_data: Dict) -> int:
                 f"INSERT INTO leases ({', '.join(fields)}) VALUES ({placeholders})",
                 values
             )
-            return cursor.lastrowid
+            lease_id = cursor.lastrowid
+            
+            # Auto-approve if created by admin or checker
+            if is_admin or is_checker:
+                conn.execute(
+                    "UPDATE leases SET approval_status = 'approved' WHERE lease_id = ?",
+                    (lease_id,)
+                )
+            
+            return lease_id
 
 
 def get_lease(lease_id: int, user_id: int) -> Optional[Dict]:
@@ -410,22 +537,26 @@ def get_lease(lease_id: int, user_id: int) -> Optional[Dict]:
 
 
 def get_all_leases(user_id: int) -> List[Dict]:
-    """Get all leases for a user"""
+    """Get all leases for a user (includes rejected with rejection reason)"""
     with get_db_connection() as conn:
         # Get column names to verify what's available
         conn.row_factory = lambda cursor, row: {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
         cursor = conn.execute(
             """
-            SELECT lease_id, lease_name, description,
-                   COALESCE(asset_class, 'N/A') as asset_class, 
-                   COALESCE(asset_id_code, 'N/A') as asset_id_code,
-                   lease_start_date, end_date,
-                   rental_1, rental_2,
-                   currency, cost_centre, profit_center, group_entity_name,
-                   auto_rentals, frequency_months,
-                   created_at, updated_at
-            FROM leases WHERE user_id = ?
-            ORDER BY created_at DESC
+            SELECT l.lease_id, l.lease_name, l.description,
+                   COALESCE(l.asset_class, 'N/A') as asset_class, 
+                   COALESCE(l.asset_id_code, 'N/A') as asset_id_code,
+                   l.lease_start_date, l.end_date,
+                   l.rental_1, l.rental_2,
+                   l.currency, l.cost_centre, l.profit_center, l.group_entity_name,
+                   l.auto_rentals, l.frequency_months,
+                   l.approval_status,
+                   l.created_at, l.updated_at,
+                   (SELECT comments FROM lease_approvals WHERE lease_id = l.lease_id AND approval_status = 'rejected' ORDER BY reviewed_at DESC LIMIT 1) as rejection_reason
+            FROM leases l
+            WHERE l.user_id = ? 
+              AND (l.approval_status IN ('draft', 'pending', 'approved', 'rejected') OR l.approval_status IS NULL)
+            ORDER BY l.created_at DESC
             """,
             (user_id,)
         )
@@ -440,6 +571,10 @@ def get_all_leases(user_id: int) -> List[Dict]:
             lease_dict['lease_start_date'] = lease_dict.get('lease_start_date') or 'N/A'
             lease_dict['end_date'] = lease_dict.get('end_date') or 'N/A'
             lease_dict['description'] = lease_dict.get('description') or ''
+            
+            # Ensure approval_status has a default
+            if not lease_dict.get('approval_status'):
+                lease_dict['approval_status'] = 'draft'
             
             # Ensure numeric fields are properly typed
             numeric_fields = ['rental_1', 'rental_2']
@@ -654,6 +789,198 @@ def update_user_notification(user_id: int, notification_type: str,
             (user_id, notification_type, is_enabled, reminder_days)
             VALUES (?, ?, ?, ?)
         """, (user_id, notification_type, 1 if is_enabled else 0, reminder_days))
+
+
+# ============ GOOGLE AI API SETTINGS ============
+
+def get_google_ai_settings() -> Optional[Dict]:
+    """Get current Google AI API settings (decrypted)"""
+    with get_db_connection() as conn:
+        row = conn.execute("""
+            SELECT * FROM google_ai_settings WHERE is_active = 1 ORDER BY setting_id DESC LIMIT 1
+        """).fetchone()
+        if row:
+            settings = dict(row)
+            # Decrypt the API key before returning
+            if 'api_key' in settings:
+                settings['api_key'] = _decrypt_text(settings['api_key'])
+            return settings
+        return None
+
+
+def save_google_ai_settings(api_key: str) -> int:
+    """Save or update Google AI API settings (encrypted)"""
+    with get_db_connection() as conn:
+        # Deactivate old settings
+        conn.execute("UPDATE google_ai_settings SET is_active = 0")
+        
+        # Encrypt the API key before storing
+        encrypted_key = _encrypt_text(api_key)
+        
+        # Insert new settings
+        cursor = conn.execute("""
+            INSERT INTO google_ai_settings 
+            (api_key, is_active)
+            VALUES (?, 1)
+        """, (encrypted_key,))
+        return cursor.lastrowid
+
+
+# ============ APPROVAL WORKFLOW ============
+
+def submit_for_approval(lease_id: int, requester_user_id: int, request_type: str, comments: str = None) -> int:
+    """Submit a lease for approval"""
+    with get_db_connection() as conn:
+        # Check if there's already a pending approval for this lease
+        existing = conn.execute("""
+            SELECT approval_id FROM lease_approvals 
+            WHERE lease_id = ? AND approval_status = 'pending'
+        """, (lease_id,)).fetchone()
+        
+        if existing:
+            # Return existing approval_id instead of creating duplicate
+            logger.info(f"⚠️ Lease {lease_id} already has pending approval, returning existing approval_id {existing['approval_id']}")
+            return existing['approval_id']
+        
+        # Create approval request
+        cursor = conn.execute("""
+            INSERT INTO lease_approvals 
+            (lease_id, requester_user_id, approval_status, request_type, comments)
+            VALUES (?, ?, 'pending', ?, ?)
+        """, (lease_id, requester_user_id, request_type, comments))
+        approval_id = cursor.lastrowid
+        
+        # Update lease status to pending
+        conn.execute("""
+            UPDATE leases 
+            SET approval_status = 'pending', updated_at = CURRENT_TIMESTAMP
+            WHERE lease_id = ?
+        """, (lease_id,))
+        
+        return approval_id
+
+
+def get_pending_approvals(approver_user_id: int = None) -> List[Dict]:
+    """Get all pending approvals (or for a specific approver)"""
+    with get_db_connection() as conn:
+        if approver_user_id:
+            # For specific approver - get pending approvals where they haven't reviewed yet
+            rows = conn.execute("""
+                SELECT la.*, l.lease_name, l.description, l.asset_class,
+                       l.created_at as lease_created, l.updated_at as lease_updated,
+                       u.username as requester_name
+                FROM lease_approvals la
+                JOIN leases l ON la.lease_id = l.lease_id
+                JOIN users u ON la.requester_user_id = u.user_id
+                WHERE la.approval_status = 'pending'
+                  AND l.approval_status = 'pending'
+                  AND (la.approver_user_id IS NULL OR la.approver_user_id = ?)
+                ORDER BY la.created_at DESC
+            """, (approver_user_id,)).fetchall()
+        else:
+            # All pending approvals
+            rows = conn.execute("""
+                SELECT la.*, l.lease_name, l.description, l.asset_class,
+                       l.created_at as lease_created, l.updated_at as lease_updated,
+                       u.username as requester_name
+                FROM lease_approvals la
+                JOIN leases l ON la.lease_id = l.lease_id
+                JOIN users u ON la.requester_user_id = u.user_id
+                WHERE la.approval_status = 'pending'
+                  AND l.approval_status = 'pending'
+                ORDER BY la.created_at DESC
+            """).fetchall()
+        return [dict(row) for row in rows]
+
+
+def approve_lease(approval_id: int, approver_user_id: int, comments: str = None) -> bool:
+    """Approve a lease request"""
+    with get_db_connection() as conn:
+        # Get the approval record
+        approval = conn.execute("""
+            SELECT * FROM lease_approvals WHERE approval_id = ?
+        """, (approval_id,)).fetchone()
+        
+        if not approval:
+            return False
+        
+        # Update approval record
+        conn.execute("""
+            UPDATE lease_approvals 
+            SET approval_status = 'approved',
+                approver_user_id = ?,
+                reviewed_at = CURRENT_TIMESTAMP,
+                comments = ?
+            WHERE approval_id = ?
+        """, (approver_user_id, comments, approval_id))
+        
+        # Update lease status
+        conn.execute("""
+            UPDATE leases 
+            SET approval_status = 'approved',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE lease_id = ?
+        """, (approval['lease_id'],))
+        
+        return True
+
+
+def reject_lease(approval_id: int, approver_user_id: int, comments: str = None) -> bool:
+    """Reject a lease request"""
+    with get_db_connection() as conn:
+        # Get the approval record
+        approval = conn.execute("""
+            SELECT * FROM lease_approvals WHERE approval_id = ?
+        """, (approval_id,)).fetchone()
+        
+        if not approval:
+            return False
+        
+        # Update approval record
+        conn.execute("""
+            UPDATE lease_approvals 
+            SET approval_status = 'rejected',
+                approver_user_id = ?,
+                reviewed_at = CURRENT_TIMESTAMP,
+                comments = ?
+            WHERE approval_id = ?
+        """, (approver_user_id, comments, approval_id))
+        
+        # Update lease status
+        conn.execute("""
+            UPDATE leases 
+            SET approval_status = 'rejected',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE lease_id = ?
+        """, (approval['lease_id'],))
+        
+        return True
+
+
+def get_approval_history(lease_id: int) -> List[Dict]:
+    """Get approval history for a lease"""
+    with get_db_connection() as conn:
+        rows = conn.execute("""
+            SELECT la.*, u1.username as requester_name, u2.username as approver_name
+            FROM lease_approvals la
+            LEFT JOIN users u1 ON la.requester_user_id = u1.user_id
+            LEFT JOIN users u2 ON la.approver_user_id = u2.user_id
+            WHERE la.lease_id = ?
+            ORDER BY la.created_at DESC
+        """, (lease_id,)).fetchall()
+        return [dict(row) for row in rows]
+
+
+def get_users_by_role(role: str) -> List[Dict]:
+    """Get all users with a specific role"""
+    with get_db_connection() as conn:
+        rows = conn.execute("""
+            SELECT user_id, username, email, role, is_active, created_at
+            FROM users
+            WHERE role = ? AND is_active = 1
+            ORDER BY username
+        """, (role,)).fetchall()
+        return [dict(row) for row in rows]
 
 
 # Initialize database on import

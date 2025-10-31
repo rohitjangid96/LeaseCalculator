@@ -23,6 +23,7 @@ from pdf_upload_backend import pdf_bp
 from document_backend import doc_bp
 from email_backend import email_bp
 from admin_backend import admin_bp
+from approval_backend import approval_bp
 
 # Import database
 import database
@@ -92,6 +93,7 @@ def create_app(config_name=None):
     app.register_blueprint(doc_bp)
     app.register_blueprint(email_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(approval_bp)
     logger.info("✅ Blueprints registered")
     
     # Session configuration
@@ -143,6 +145,25 @@ def create_app(config_name=None):
         except Exception as e:
             logger.error(f"Error rendering admin.html: {e}")
             return f"Error loading admin page: {e}", 500
+    
+    @app.route('/approvals')
+    @app.route('/approvals.html')
+    def approvals_page():
+        from flask import render_template
+        try:
+            # Check if user is admin or reviewer
+            from database import get_user
+            user_id = session.get('user_id')
+            if user_id:
+                user = get_user(user_id)
+                if user and user.get('role') in ['admin', 'reviewer']:
+                    return render_template('approvals.html')
+            # Redirect non-reviewer users
+            from flask import redirect
+            return redirect('/dashboard.html')
+        except Exception as e:
+            logger.error(f"Error rendering approvals.html: {e}")
+            return f"Error loading approvals page: {e}", 500
     
     @app.route('/bulk_results.html')
     def bulk_results_page():

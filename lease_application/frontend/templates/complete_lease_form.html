@@ -889,13 +889,42 @@
                     </div>
                 </div>
 
-                <button type="button" class="btn-primary" onclick="saveLease()">💾 Save Lease</button>
+                <button type="button" class="btn-primary" onclick="saveLease()">💾 Save as Draft</button>
+                <div id="statusIndicator" style="display: none; margin-top: 15px; padding: 12px 20px; border-radius: 8px; background: var(--color-sage-1); border: 1px solid var(--color-border-sage);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.5rem;">📋</span>
+                        <div>
+                            <strong style="color: var(--color-text-primary);">Draft Saved</strong>
+                            <div style="font-size: 0.9rem; color: var(--color-text-secondary); margin-top: 2px;">Ready to submit for approval</div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-primary" onclick="window.showSubmitApprovalModal && window.showSubmitApprovalModal()" id="submitApprovalBtn" style="margin-top: 15px; background: var(--color-brand-green); display: none;">✅ Submit for Approval</button>
             </form>
 
             <div class="results" id="results">
                 <!-- Results will be displayed here -->
             </div>
         </div>
+    </div>
+    
+    <!-- Submit for Approval Modal -->
+    <div id="submitApprovalModal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(68,66,90,0.3);">
+      <div style="background: white; width: 450px; margin: 120px auto 0 auto; border-radius: 15px; box-shadow: 0 4px 30px rgba(0,0,0,0.19); padding: 24px 28px 22px 28px; position: relative;">
+        <div style="font-size: 1.15rem; font-weight: bold; color: #444; margin-bottom: 12px;">✅ Submit for Approval</div>
+        <label style="font-size: 0.95rem; margin-bottom: 6px; color: #555;">Request Type</label>
+        <select id="approvalRequestType" style="width: 100%; padding: 10px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 0.97rem; margin-bottom: 16px;">
+            <option value="creation">New Lease Creation</option>
+            <option value="edit">Lease Edit</option>
+            <option value="deletion">Lease Deletion</option>
+        </select>
+        <label style="font-size: 0.95rem; margin-bottom: 6px; color: #555;">Comments (Optional)</label>
+        <textarea id="approvalComments" style="width: 100%; padding: 10px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 0.97rem; margin-bottom: 16px; min-height: 80px; resize: vertical;"></textarea>
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button onclick="window.submitForApproval && window.submitForApproval()" style="background: #22c55e; color: white; border: none; border-radius: 6px; padding: 10px 18px; font-weight: bold;">Submit</button>
+          <button onclick="window.hideSubmitApprovalModal && window.hideSubmitApprovalModal()" style="background: #ef4444; color: white; border: none; border-radius: 6px; padding: 10px 16px;">Cancel</button>
+        </div>
+      </div>
     </div>
     
     <!-- Email Modal (static, always available) -->
@@ -983,6 +1012,15 @@
                     console.log('✓ Got user:', data.user.username);
                     const usernameEl = document.getElementById('username');
                     if (usernameEl) usernameEl.textContent = data.user.username;
+                    
+                    // Check if user is admin or reviewer
+                    isAdminOrReviewer = data.user.role === 'admin' || data.user.role === 'reviewer';
+                    
+                    // Hide submit button and indicator for admin/reviewer
+                    if (isAdminOrReviewer) {
+                        document.getElementById('statusIndicator').style.display = 'none';
+                        document.getElementById('submitApprovalBtn').style.display = 'none';
+                    }
                 } else {
                     console.log('ℹ No session');
                     const usernameEl = document.getElementById('username');
@@ -1093,6 +1131,38 @@
                     }
                     
                     console.log('✅ Lease data populated in form');
+                    
+                    // Show status indicator and submit button if draft (only for regular users)
+                    if (!isAdminOrReviewer) {
+                        const approvalStatus = lease.approval_status || 'draft';
+                        const indicator = document.getElementById('statusIndicator');
+                        const indicatorIcon = indicator.querySelector('span');
+                        const indicatorTitle = indicator.querySelector('strong');
+                        const indicatorDesc = indicator.querySelector('div > div');
+                        
+                        if (approvalStatus === 'draft') {
+                            indicator.style.display = 'block';
+                            indicator.style.background = 'var(--color-sage-1)';
+                            indicatorIcon.textContent = '📋';
+                            indicatorTitle.textContent = 'Draft Saved';
+                            indicatorDesc.textContent = 'Ready to submit for approval';
+                            document.getElementById('submitApprovalBtn').style.display = 'inline-block';
+                        } else if (approvalStatus === 'pending') {
+                            indicator.style.display = 'block';
+                            indicator.style.background = '#fff4e6';
+                            indicatorIcon.textContent = '⏳';
+                            indicatorTitle.textContent = 'Pending Approval';
+                            indicatorDesc.textContent = 'Waiting for reviewer approval';
+                            document.getElementById('submitApprovalBtn').style.display = 'none';
+                        } else if (approvalStatus === 'approved') {
+                            indicator.style.display = 'block';
+                            indicator.style.background = '#d4f5e0';
+                            indicatorIcon.textContent = '✅';
+                            indicatorTitle.textContent = 'Approved';
+                            indicatorDesc.textContent = 'This lease is approved and active';
+                            document.getElementById('submitApprovalBtn').style.display = 'none';
+                        }
+                    }
                 } else {
                     console.error('❌ Failed to load lease:', result);
                 }
@@ -1507,17 +1577,7 @@
                 return;
             }
             
-            // Remove results display
-            const resultsDiv = document.getElementById('results');
-            if (resultsDiv) {
-                resultsDiv.innerHTML = '<div style="text-align: center; padding: 40px;"><h3>Calculating...</h3></div>';
-                resultsDiv.classList.add('show');
-            } else {
-                console.error('Results div not found');
-                alert('Error: Results container not found');
-                return;
-            }
-            
+            // Just save as draft - no calculation needed
             try {
                 // Try to call Python backend first
                 // Map form field names to backend expected names
@@ -1529,7 +1589,7 @@
                     'escalation_start_date': 'escalation_start_date',
                     'Esc_Freq_months': 'esc_freq_months',
                     'esc_freq_months': 'esc_freq_months',
-                    'Asset_Name': 'asset_class',  // If used
+                    'Asset_Name': 'lease_name',  // Asset name maps to lease_name in DB
                     'Rental_1': 'rental_1',
                     'Rental_2': 'rental_2',
                     'lease_start': 'lease_start_date',
@@ -1608,8 +1668,16 @@
                         if (result.lease_id) {
                             currentLeaseId = result.lease_id;
                         }
-                        showNotification('success', 'Lease Saved', 'Lease ID: ' + result.lease_id + '. Redirecting to dashboard...', 3000);
-                        setTimeout(() => window.location.href = 'dashboard.html', 1500);
+                        showNotification('success', 'Draft Saved', 'Lease ID: ' + result.lease_id + ' saved as draft.', 3000);
+                        
+                        // Show status indicator and submit button (only for regular users)
+                        if (!isAdminOrReviewer) {
+                            document.getElementById('statusIndicator').style.display = 'block';
+                            document.getElementById('submitApprovalBtn').style.display = 'inline-block';
+                            
+                            // Scroll to show the buttons
+                            document.getElementById('statusIndicator').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
                     } else {
                         showNotification('error', 'Save Failed', result.error || 'Failed to save lease.');
                     }
@@ -2342,6 +2410,7 @@ Check terminal or restart with: ./start_app.sh
 
         // Document Management Functions
         let currentLeaseId = null;
+        let isAdminOrReviewer = false;
 
         async function loadDocuments() {
             if (!currentLeaseId) {
@@ -2530,7 +2599,7 @@ Check terminal or restart with: ./start_app.sh
                     'escalation_start_date': 'escalation_start_date',
                     'Esc_Freq_months': 'esc_freq_months',
                     'esc_freq_months': 'esc_freq_months',
-                    'Asset_Name': 'asset_class',
+                    'Asset_Name': 'lease_name',  // Asset name maps to lease_name in DB
                     'Rental_1': 'rental_1',
                     'Rental_2': 'rental_2',
                     'lease_start': 'lease_start_date',
@@ -2674,6 +2743,81 @@ Check terminal or restart with: ./start_app.sh
         
         window.hideEmailModal = function() {
             document.getElementById('emailModal').style.display = 'none';
+        };
+        
+        // Submit Approval Modal Functions
+        window.showSubmitApprovalModal = function() {
+            // Allow opening modal even if not saved - it will auto-save on submit
+            document.getElementById('submitApprovalModal').style.display = 'block';
+        };
+        
+        window.hideSubmitApprovalModal = function() {
+            document.getElementById('submitApprovalModal').style.display = 'none';
+        };
+        
+        window.submitForApproval = async function() {
+            const requestType = document.getElementById('approvalRequestType').value;
+            const comments = document.getElementById('approvalComments').value;
+            
+            hideSubmitApprovalModal();
+            NProgress.start();
+            
+            try {
+                // If lease is not saved yet, save it first
+                if (!currentLeaseId) {
+                    const savedLeaseId = await saveLeaseSilently();
+                    if (!savedLeaseId) {
+                        NProgress.done();
+                        showNotification('error', 'Save Failed', 'Please fill in all required fields before submitting for approval');
+                        return;
+                    }
+                    currentLeaseId = savedLeaseId;
+                    
+                    // Update status indicator (only for regular users)
+                    if (!isAdminOrReviewer) {
+                        document.getElementById('statusIndicator').style.display = 'block';
+                        document.getElementById('submitApprovalBtn').style.display = 'inline-block';
+                    }
+                }
+                
+                const response = await fetch('/api/approvals/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        lease_id: currentLeaseId,
+                        request_type: requestType,
+                        comments: comments
+                    })
+                });
+                
+                const result = await response.json();
+                NProgress.done();
+                
+                if (result.success) {
+                    showNotification('success', 'Submitted for Approval', 'Lease submitted successfully. Waiting for reviewer approval.');
+                    
+                    // Update status indicator to pending (only for regular users)
+                    if (!isAdminOrReviewer) {
+                        const indicator = document.getElementById('statusIndicator');
+                        const indicatorIcon = indicator.querySelector('span');
+                        const indicatorTitle = indicator.querySelector('strong');
+                        const indicatorDesc = indicator.querySelector('div > div');
+                        
+                        indicator.style.display = 'block';
+                        indicator.style.background = '#fff4e6';
+                        indicatorIcon.textContent = '⏳';
+                        indicatorTitle.textContent = 'Pending Approval';
+                        indicatorDesc.textContent = 'Waiting for reviewer approval';
+                        document.getElementById('submitApprovalBtn').style.display = 'none';
+                    }
+                } else {
+                    showNotification('error', 'Submission Failed', result.error || 'Failed to submit for approval');
+                }
+            } catch (ex) {
+                NProgress.done();
+                showNotification('error', 'Submission Failed', ex.message || 'Could not submit for approval');
+            }
         };
         
         // Email Report handler

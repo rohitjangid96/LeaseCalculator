@@ -12,15 +12,6 @@
             padding: 20px;
         }
         
-        .admin-header {
-            background: var(--color-brand-green);
-            color: white;
-            padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            box-shadow: var(--shadow-lg);
-        }
-        
         .admin-tabs {
             display: flex;
             gap: 10px;
@@ -124,6 +115,11 @@
             color: white;
         }
         
+        .badge-reviewer {
+            background: #ffa500;
+            color: white;
+        }
+        
         .badge-active {
             background: #28a745;
             color: white;
@@ -200,24 +196,33 @@
             padding: 20px;
             color: #666;
         }
+        
+        /* Override button sizes for admin page */
+        .admin-tab-content .btn-primary {
+            padding: 12px 24px !important;
+            font-size: 1rem !important;
+            font-weight: 600 !important;
+        }
     </style>
 </head>
 <body>
-    <div class="admin-container">
-        <div class="admin-header">
-            <h1>🔐 Admin Dashboard</h1>
-            <p>Manage users, view system statistics, and configure settings</p>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button class="btn" onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
-                <button class="btn" onclick="logout()">Logout</button>
-            </div>
+    <div class="header">
+        <h1>🔐 Admin Dashboard</h1>
+        <div class="user-info">
+            <span>Welcome, <strong id="username">Admin</strong></span>
+            <button class="btn btn-primary" onclick="window.location.href='dashboard.html'">← Dashboard</button>
+            <button class="btn" onclick="logout()">Logout</button>
         </div>
+    </div>
+    
+    <div class="admin-container">
         
         <div class="admin-tabs">
             <button class="admin-tab-btn active" onclick="switchTab('overview')">📊 Overview</button>
             <button class="admin-tab-btn" onclick="switchTab('users')">👥 Users</button>
             <button class="admin-tab-btn" onclick="switchTab('leases')">🏢 All Leases</button>
             <button class="admin-tab-btn" onclick="switchTab('email')">📧 Email Settings</button>
+            <button class="admin-tab-btn" onclick="switchTab('google-ai')">🤖 Google AI Settings</button>
         </div>
         
         <!-- Overview Tab -->
@@ -252,9 +257,36 @@
                 <div class="loading">Loading email settings...</div>
             </div>
         </div>
+        
+        <!-- Google AI Settings Tab -->
+        <div id="google-aiTab" class="admin-tab-content">
+            <h2>🤖 Google AI Configuration</h2>
+            <p style="margin-bottom: 20px; color: #666;">Configure Google Gemini AI API key for PDF document extraction.</p>
+            <div id="googleAiSettingsContainer">
+                <div class="loading">Loading Google AI settings...</div>
+            </div>
+        </div>
     </div>
     
     <script>
+        let currentUserId = null;
+        
+        // Get current user info
+        async function loadCurrentUser() {
+            try {
+                const response = await fetch('/api/user', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (data.success && data.user) {
+                    currentUserId = data.user.user_id;
+                    document.getElementById('username').textContent = data.user.username;
+                }
+            } catch (error) {
+                console.error('Error loading user:', error);
+            }
+        }
+        
         // Tab switching
         function switchTab(tabName) {
             // Update buttons
@@ -274,6 +306,8 @@
                 loadAllLeases();
             } else if (tabName === 'email') {
                 loadEmailSettings();
+            } else if (tabName === 'google-ai') {
+                loadGoogleAiSettings();
             }
         }
         
@@ -359,9 +393,13 @@
                                 <td><span class="badge badge-${user.is_active ? 'active' : 'inactive'}">${user.is_active ? 'Active' : 'Inactive'}</span></td>
                                 <td>${new Date(user.created_at).toLocaleDateString()}</td>
                                 <td>
-                                    ${user.role !== 'admin' ? `
-                                        <button class="btn-small btn-primary-small" onclick="promoteUser(${user.user_id})">Make Admin</button>
-                                    ` : '<span style="color: #999;">Cannot modify</span>'}
+                                    ${user.user_id !== currentUserId ? `
+                                        <select onchange="changeUserRole(${user.user_id}, this.value)" style="padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px; margin-right: 5px;">
+                                            <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                                            <option value="reviewer" ${user.role === 'reviewer' ? 'selected' : ''}>Reviewer</option>
+                                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                        </select>
+                                    ` : '<span style="color: #999;">You</span>'}
                                     ${user.is_active ? `
                                         <button class="btn-small btn-danger-small" onclick="deactivateUser(${user.user_id})">Deactivate</button>
                                     ` : `
@@ -377,26 +415,32 @@
             document.getElementById('usersContainer').innerHTML = html;
         }
         
-        async function promoteUser(userId) {
-            if (!confirm('Are you sure you want to make this user an admin?')) return;
+        async function changeUserRole(userId, newRole) {
+            if (!confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
+                // Reload to reset dropdown
+                loadUsers();
+                return;
+            }
             
             try {
                 const response = await fetch(`/api/admin/users/${userId}`, {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
                     credentials: 'include',
-                    body: JSON.stringify({role: 'admin'})
+                    body: JSON.stringify({role: newRole})
                 });
                 
                 const data = await response.json();
                 if (data.success) {
-                    alert('✅ User promoted to admin');
+                    alert(`✅ User role changed to ${newRole}`);
                     loadUsers();
                 } else {
                     alert('❌ Failed: ' + data.error);
+                    loadUsers();
                 }
             } catch (error) {
                 alert('❌ Error: ' + error.message);
+                loadUsers();
             }
         }
         
@@ -683,6 +727,93 @@
             }
         }
         
+        // Load Google AI settings
+        async function loadGoogleAiSettings() {
+            try {
+                const response = await fetch('/api/admin/google-ai-settings', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                let settingsHtml;
+                if (data.success && data.settings) {
+                    const settings = data.settings;
+                    const maskedKey = settings.api_key ? settings.api_key.substring(0, 10) + '...' + settings.api_key.slice(-5) : '';
+                    settingsHtml = `
+                        <div class="alert alert-success">✅ Google AI API key is configured</div>
+                        <form id="googleAiSettingsForm">
+                            <div class="form-group">
+                                <label>Google AI API Key</label>
+                                <input type="text" name="api_key" placeholder="Enter your Google Gemini API key" required>
+                                <small style="color: #666; display: block; margin-top: 5px;">Current: ${maskedKey}</small>
+                            </div>
+                            <p style="color: #666; margin: 20px 0;">
+                                <strong>How to get your API key:</strong><br>
+                                1. Visit <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a><br>
+                                2. Sign in with your Google account<br>
+                                3. Click "Create API Key" to generate a new key<br>
+                                4. Copy and paste it here
+                            </p>
+                            <button type="submit" class="btn-primary">Save Google AI Settings</button>
+                        </form>
+                    `;
+                } else {
+                    settingsHtml = `
+                        <div class="alert alert-error">⚠️ Google AI API key not configured</div>
+                        <form id="googleAiSettingsForm">
+                            <div class="form-group">
+                                <label>Google AI API Key</label>
+                                <input type="text" name="api_key" placeholder="Enter your Google Gemini API key" required>
+                            </div>
+                            <p style="color: #666; margin: 20px 0;">
+                                <strong>How to get your API key:</strong><br>
+                                1. Visit <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a><br>
+                                2. Sign in with your Google account<br>
+                                3. Click "Create API Key" to generate a new key<br>
+                                4. Copy and paste it here<br>
+                                <strong>Note:</strong> Google AI Studio offers a free tier with generous limits
+                            </p>
+                            <button type="submit" class="btn-primary">Save Google AI Settings</button>
+                        </form>
+                    `;
+                }
+                document.getElementById('googleAiSettingsContainer').innerHTML = settingsHtml;
+                document.getElementById('googleAiSettingsForm').addEventListener('submit', saveGoogleAiSettings);
+            } catch (error) {
+                console.error('Error loading Google AI settings:', error);
+                document.getElementById('googleAiSettingsContainer').innerHTML = '<div class="alert alert-error">Failed to load Google AI settings</div>';
+            }
+        }
+        
+        async function saveGoogleAiSettings(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            const data = {
+                api_key: formData.get('api_key')
+            };
+            
+            try {
+                const response = await fetch('/api/admin/google-ai-settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ Google AI settings saved successfully');
+                    loadGoogleAiSettings();
+                } else {
+                    alert('❌ Failed: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+        
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
@@ -695,7 +826,9 @@
         }
         
         // Load initial data
-        loadStats();
+        loadCurrentUser().then(() => {
+            loadStats();
+        });
     </script>
 </body>
 </html>

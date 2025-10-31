@@ -13,6 +13,7 @@
         <div class="user-info">
             <span>Welcome, <strong id="username">User</strong> <span id="userRole" style="opacity: 0.8; font-size: 0.85rem;"></span></span>
             <button id="adminBtn" class="btn btn-primary" onclick="window.location.href='admin.html'" style="display: none;">🔐 Admin</button>
+            <button id="approvalsBtn" class="btn btn-primary" onclick="window.location.href='approvals.html'" style="display: none;">✅ Approvals</button>
             <button class="btn btn-primary" onclick="window.location.href='calculate.html'">Calculate</button>
             <button class="btn btn-primary" onclick="window.location.href='bulk_results.html'">Bulk Results</button>
             <button class="btn" onclick="logout()">Logout</button>
@@ -109,7 +110,7 @@
                             <th>ID</th>
                             <th>Description</th>
                             <th>Asset Class</th>
-                            <th>Status</th>
+                            <th>Approval</th>
                             <th>Start Date</th>
                             <th>End Date</th>
                             <th>Monthly Rent</th>
@@ -155,6 +156,7 @@
                     document.getElementById('username').textContent = data.user.username;
                     loadLeases();
                     checkAdminAccess(); // Check if user is admin
+                    checkReviewerAccess(); // Check if user is reviewer
                 } else {
                     // Not logged in - redirect to login
                     console.error('❌ Auth failed:', data);
@@ -207,6 +209,25 @@
                 }
             } catch (error) {
                 console.error('Failed to check admin access:', error);
+            }
+        }
+
+        async function checkReviewerAccess() {
+            try {
+                const response = await fetch('http://localhost:5001/api/user', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.success && data.user && data.user.role && 
+                    (data.user.role === 'admin' || data.user.role === 'reviewer')) {
+                    document.getElementById('approvalsBtn').style.display = 'inline-block';
+                    if (data.user.role === 'reviewer') {
+                        document.getElementById('userRole').textContent = '(Reviewer)';
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to check reviewer access:', error);
             }
         }
 
@@ -394,19 +415,6 @@
             }
 
             tableBody.innerHTML = leases.map((lease, index) => {
-                const status = getLeaseStatus(lease);
-                const statusClass = {
-                    active: 'status-text-active',
-                    expired: 'status-text-expired',
-                    expiring: 'status-text-due-soon'
-                }[status] || '';
-                
-                const statusText = {
-                    active: 'Active',
-                    expired: 'Expired',
-                    expiring: 'Due Soon'
-                }[status] || 'Unknown';
-
                 // Calculate remaining days
                 let remainingDays = '';
                 if (lease.end_date) {
@@ -416,20 +424,34 @@
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     remainingDays = diffDays > 0 ? `${diffDays} days` : 'Expired';
                 }
+                
+                // Approval status badge
+                const approvalStatus = lease.approval_status || 'draft';
+                let approvalBadge = '';
+                if (approvalStatus === 'approved') {
+                    approvalBadge = '<span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">✅ Approved</span>';
+                } else if (approvalStatus === 'pending') {
+                    approvalBadge = '<span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">⏳ Pending</span>';
+                } else if (approvalStatus === 'draft') {
+                    approvalBadge = '<span style="background: #94a3b8; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">📝 Draft</span>';
+                } else if (approvalStatus === 'rejected') {
+                    const rejectionReason = lease.rejection_reason || 'No reason provided';
+                    approvalBadge = `<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; cursor: help;" title="${escapeHtml(rejectionReason)}">❌ Rejected</span>`;
+                }
 
                 return `
                 <tr>
                     <td>${index + 1}</td>
                     <td>${escapeHtml(lease.lease_name || 'Untitled Lease')}</td>
                     <td>${escapeHtml(lease.asset_class || 'N/A')}</td>
-                    <td><span class="${statusClass}">${statusText}</span></td>
+                    <td>${approvalBadge}</td>
                     <td>${lease.lease_start_date || 'N/A'}</td>
                     <td>${lease.end_date || 'N/A'}${remainingDays ? `<br><small style="color: #64748b;">(${remainingDays})</small>` : ''}</td>
                     <td>${lease.rental_1 ? '$' + (parseFloat(lease.rental_1) || 0).toLocaleString('en-US', {minimumFractionDigits: 2}) : 'N/A'}</td>
                     <td>${escapeHtml(lease.currency || 'N/A')}</td>
                     <td style="display: flex; gap: 0.5rem;">
                         <button class="btn-table" onclick="editLease(${lease.lease_id})">Edit</button>
-                        <button class="btn-table" onclick="calculateLease(${lease.lease_id})">Calc</button>
+                        <button class="btn-table" onclick="calculateLease(${lease.lease_id})" ${approvalStatus !== 'approved' && approvalStatus !== 'draft' ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>Calc</button>
                         <button class="btn-table" onclick="deleteLease(${lease.lease_id})" style="background: #dc2626;">Del</button>
                     </td>
                 </tr>

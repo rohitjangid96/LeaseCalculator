@@ -1,137 +1,514 @@
-2025-10-30 11:35:29 - root - INFO - 🚀 Initializing Lease Management Application...
-2025-10-30 11:35:29 - root - INFO - ✅ Database initialized
-2025-10-30 11:35:29 - root - INFO - ✅ Blueprints registered
-2025-10-30 11:35:29 - root - INFO - ✅ Application created successfully
-2025-10-30 11:35:29 - root - INFO - 📂 Template folder: frontend/templates
-2025-10-30 11:35:29 - root - INFO - 📂 Static folder: /Users/rohitjangid/Downloads/Lease/lease_application/frontend/static
-2025-10-30 11:35:29 - __main__ - INFO - ══════════════════════════════════════════════════════════════
-2025-10-30 11:35:29 - __main__ - INFO -    📊 Lease Management System - Starting Server
-2025-10-30 11:35:29 - __main__ - INFO - ══════════════════════════════════════════════════════════════
-2025-10-30 11:35:29 - __main__ - INFO - 📍 API Endpoint: http://localhost:5001/api/
-2025-10-30 11:35:29 - __main__ - INFO -    - /api/register - User registration
-2025-10-30 11:35:29 - __main__ - INFO -    - /api/login - User login
-2025-10-30 11:35:29 - __main__ - INFO -    - /api/leases - Manage leases
-2025-10-30 11:35:29 - __main__ - INFO -    - /api/calculate_lease - Calculate lease
-2025-10-30 11:35:29 - __main__ - INFO - 📝 Logs: /Users/rohitjangid/Downloads/Lease/lease_application/logs/lease_app.log
-2025-10-30 11:35:29 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+/Users/rohitjangid/Library/Python/3.9/lib/python/site-packages/google/api_core/_python_version_support.py:252: FutureWarning: You are using a Python version (3.9.6) past its end of life. Google will update google.api_core with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
+  warnings.warn(message, FutureWarning)
+/Users/rohitjangid/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2025-10-31 17:16:25 - root - INFO - 🚀 Initializing Lease Management Application...
+2025-10-31 17:16:25 - root - INFO - ✅ Database initialized
+2025-10-31 17:16:25 - root - INFO - ✅ Blueprints registered
+2025-10-31 17:16:25 - root - INFO - ✅ Application created successfully
+2025-10-31 17:16:25 - root - INFO - 📂 Template folder: frontend/templates
+2025-10-31 17:16:25 - root - INFO - 📂 Static folder: /Users/rohitjangid/Downloads/Lease/lease_application/frontend/static
+2025-10-31 17:16:25 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:16:25 - __main__ - INFO -    📊 Lease Management System - Starting Server
+2025-10-31 17:16:25 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:16:25 - __main__ - INFO - 📍 API Endpoint: http://localhost:5001/api/
+2025-10-31 17:16:25 - __main__ - INFO -    - /api/register - User registration
+2025-10-31 17:16:25 - __main__ - INFO -    - /api/login - User login
+2025-10-31 17:16:25 - __main__ - INFO -    - /api/leases - Manage leases
+2025-10-31 17:16:25 - __main__ - INFO -    - /api/calculate_lease - Calculate lease
+2025-10-31 17:16:25 - __main__ - INFO - 📝 Logs: /Users/rohitjangid/Downloads/Lease/lease_application/logs/lease_app.log
+2025-10-31 17:16:25 - __main__ - INFO - ══════════════════════════════════════════════════════════════
 ✅ Database initialized
+An error occurred: module 'importlib.metadata' has no attribute 'packages_distributions'
 ✅ Database initialized
  * Serving Flask app 'app'
  * Debug mode: on
-2025-10-30 11:35:29 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+2025-10-31 17:16:25 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
  * Running on http://localhost:5001
-2025-10-30 11:35:29 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
-2025-10-30 11:35:29 - werkzeug - INFO -  * Restarting with stat
-2025-10-30 11:35:29 - root - INFO - 🚀 Initializing Lease Management Application...
-2025-10-30 11:35:29 - root - INFO - ✅ Database initialized
-2025-10-30 11:35:29 - root - INFO - ✅ Blueprints registered
-2025-10-30 11:35:29 - root - INFO - ✅ Application created successfully
-2025-10-30 11:35:29 - root - INFO - 📂 Template folder: frontend/templates
-2025-10-30 11:35:29 - root - INFO - 📂 Static folder: /Users/rohitjangid/Downloads/Lease/lease_application/frontend/static
-2025-10-30 11:35:29 - __main__ - INFO - ══════════════════════════════════════════════════════════════
-2025-10-30 11:35:29 - __main__ - INFO -    📊 Lease Management System - Starting Server
-2025-10-30 11:35:29 - __main__ - INFO - ══════════════════════════════════════════════════════════════
-2025-10-30 11:35:29 - __main__ - INFO - 📍 API Endpoint: http://localhost:5001/api/
-2025-10-30 11:35:29 - __main__ - INFO -    - /api/register - User registration
-2025-10-30 11:35:29 - __main__ - INFO -    - /api/login - User login
-2025-10-30 11:35:29 - __main__ - INFO -    - /api/leases - Manage leases
-2025-10-30 11:35:29 - __main__ - INFO -    - /api/calculate_lease - Calculate lease
-2025-10-30 11:35:29 - __main__ - INFO - 📝 Logs: /Users/rohitjangid/Downloads/Lease/lease_application/logs/lease_app.log
-2025-10-30 11:35:29 - __main__ - INFO - ══════════════════════════════════════════════════════════════
-2025-10-30 11:35:29 - werkzeug - WARNING -  * Debugger is active!
-2025-10-30 11:35:29 - werkzeug - INFO -  * Debugger PIN: 837-703-174
-2025-10-30 11:35:30 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:30] "GET /login.html HTTP/1.1" 200 -
-2025-10-30 11:35:31 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:31] "GET /login.html HTTP/1.1" 200 -
-2025-10-30 11:35:31 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:31] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
-2025-10-30 11:35:31 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:31] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
-2025-10-30 11:35:31 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:31] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
-2025-10-30 11:35:31 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:31] "[36mGET /static/js/login.js HTTP/1.1[0m" 304 -
-2025-10-30 11:35:36 - auth - INFO - 🔐 POST /api/login - Login request
-2025-10-30 11:35:36 - auth - INFO - ✅ Login successful: user_id=2, username=Rohit
-2025-10-30 11:35:36 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:36] "POST /api/login HTTP/1.1" 200 -
-2025-10-30 11:35:37 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:37] "GET /dashboard.html HTTP/1.1" 200 -
-2025-10-30 11:35:37 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:37] "GET /api/user HTTP/1.1" 200 -
-2025-10-30 11:35:37 - api - INFO - 📋 GET /api/leases - User 2 fetching leases
-2025-10-30 11:35:37 - api - INFO - Found 2 leases for user 2
-2025-10-30 11:35:37 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:37] "GET /api/leases HTTP/1.1" 200 -
-2025-10-30 11:35:41 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:41] "GET /bulk_results.html HTTP/1.1" 200 -
-2025-10-30 11:35:41 - api - INFO - 📋 GET /api/leases - User 2 fetching leases
-2025-10-30 11:35:41 - api - INFO - Found 2 leases for user 2
-2025-10-30 11:35:41 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:41] "GET /api/leases HTTP/1.1" 200 -
-2025-10-30 11:35:42 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:42] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
-2025-10-30 11:35:44 - complete_lease_backend - INFO - 📥 Received bulk calculation request from user 2
-2025-10-30 11:35:44 - complete_lease_backend - INFO -    Processing 2 leases from 2024-12-31 to 2025-12-30
-2025-10-30 11:35:44 - complete_lease_backend - INFO -    Loaded 2 leases
-2025-10-30 11:35:44 - lease_accounting.core.results_processor - INFO - 🔄 Starting bulk processing: 2 leases
-2025-10-30 11:35:44 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 3 periods for lease 17
-2025-10-30 11:35:44 - lease_accounting.core.processor - INFO -    First projection: 2026-03-31, Last: 2027-03-31
-2025-10-30 11:35:44 - lease_accounting.core.results_processor - INFO - ✅ Processed lease 17: Corporate office space lease
-2025-10-30 11:35:44 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 3 periods for lease 16
-2025-10-30 11:35:44 - lease_accounting.core.processor - INFO -    First projection: 2026-03-31, Last: 2027-03-31
-2025-10-30 11:35:44 - lease_accounting.core.results_processor - INFO - ✅ Processed lease 16: Corporate office space lease
-2025-10-30 11:35:44 - lease_accounting.core.results_processor - INFO - ✅ Bulk processing complete: 2 processed, 0 skipped
-2025-10-30 11:35:44 - complete_lease_backend - INFO - ✅ Bulk processing complete: 2 processed, 0 skipped
-2025-10-30 11:35:44 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:44] "POST /api/calculate_leases HTTP/1.1" 200 -
-2025-10-30 11:35:47 - complete_lease_backend - INFO - 📥 Received bulk calculation request from user 2
-2025-10-30 11:35:47 - complete_lease_backend - INFO -    Processing 2 leases from 2024-12-31 to 2025-12-30
-2025-10-30 11:35:47 - complete_lease_backend - INFO -    Loaded 2 leases
-2025-10-30 11:35:47 - complete_lease_backend - INFO -    Computing results for IFRS...
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - 🔄 Starting bulk processing: 2 leases
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 3 periods for lease 17
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO -    First projection: 2026-03-31, Last: 2027-03-31
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - ✅ Processed lease 17: Corporate office space lease
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 3 periods for lease 16
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO -    First projection: 2026-03-31, Last: 2027-03-31
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - ✅ Processed lease 16: Corporate office space lease
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - ✅ Bulk processing complete: 2 processed, 0 skipped
-2025-10-30 11:35:47 - complete_lease_backend - INFO -    Computing results for IndAS...
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - 🔄 Starting bulk processing: 2 leases
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 3 periods for lease 17
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO -    First projection: 2026-03-31, Last: 2027-03-31
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - ✅ Processed lease 17: Corporate office space lease
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 3 periods for lease 16
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO -    First projection: 2026-03-31, Last: 2027-03-31
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - ✅ Processed lease 16: Corporate office space lease
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - ✅ Bulk processing complete: 2 processed, 0 skipped
-2025-10-30 11:35:47 - complete_lease_backend - INFO -    Computing results for US-GAAP...
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - 🔄 Starting bulk processing: 2 leases
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 3 periods for lease 17
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO -    First projection: 2026-03-31, Last: 2027-03-31
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - ✅ Processed lease 17: Corporate office space lease
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 3 periods for lease 16
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO -    First projection: 2026-03-31, Last: 2027-03-31
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - ✅ Processed lease 16: Corporate office space lease
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - ✅ Bulk processing complete: 2 processed, 0 skipped
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - 🔄 Starting bulk processing: 2 leases
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 3 periods for lease 17
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO -    First projection: 2026-03-31, Last: 2027-03-31
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - ✅ Processed lease 17: Corporate office space lease
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 3 periods for lease 16
-2025-10-30 11:35:47 - lease_accounting.core.processor - INFO -    First projection: 2026-03-31, Last: 2027-03-31
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - ✅ Processed lease 16: Corporate office space lease
-2025-10-30 11:35:47 - lease_accounting.core.results_processor - INFO - ✅ Bulk processing complete: 2 processed, 0 skipped
-2025-10-30 11:35:47 - complete_lease_backend - INFO - ✅ Bulk processing complete: 2 processed, 0 skipped
-2025-10-30 11:35:47 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:35:47] "POST /api/calculate_leases HTTP/1.1" 200 -
-2025-10-30 11:36:15 - complete_lease_backend - INFO - 📥 Received bulk calculation request from user 2
-2025-10-30 11:36:15 - complete_lease_backend - INFO -    Processing 2 leases from 2024-12-31 to 2025-12-30
-2025-10-30 11:36:15 - complete_lease_backend - INFO -    Loaded 2 leases
-2025-10-30 11:36:15 - lease_accounting.core.results_processor - INFO - 🔄 Starting bulk processing: 2 leases
-2025-10-30 11:36:15 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 3 periods for lease 17
-2025-10-30 11:36:15 - lease_accounting.core.processor - INFO -    First projection: 2026-03-31, Last: 2027-03-31
-2025-10-30 11:36:15 - lease_accounting.core.results_processor - INFO - ✅ Processed lease 17: Corporate office space lease
-2025-10-30 11:36:15 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 3 periods for lease 16
-2025-10-30 11:36:15 - lease_accounting.core.processor - INFO -    First projection: 2026-03-31, Last: 2027-03-31
-2025-10-30 11:36:15 - lease_accounting.core.results_processor - INFO - ✅ Processed lease 16: Corporate office space lease
-2025-10-30 11:36:15 - lease_accounting.core.results_processor - INFO - ✅ Bulk processing complete: 2 processed, 0 skipped
-2025-10-30 11:36:15 - complete_lease_backend - INFO - ✅ Bulk processing complete: 2 processed, 0 skipped
-2025-10-30 11:36:15 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:36:15] "POST /api/calculate_leases HTTP/1.1" 200 -
-2025-10-30 11:36:23 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:36:23] "GET /dashboard.html HTTP/1.1" 200 -
-2025-10-30 11:36:23 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:36:23] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
-2025-10-30 11:36:23 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:36:23] "GET /api/user HTTP/1.1" 200 -
-2025-10-30 11:36:23 - api - INFO - 📋 GET /api/leases - User 2 fetching leases
-2025-10-30 11:36:23 - api - INFO - Found 2 leases for user 2
-2025-10-30 11:36:23 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:36:23] "GET /api/leases HTTP/1.1" 200 -
- "GET /api/user HTTP/1.1" 200 -
-2025-10-30 11:36:23 - api - INFO - 📋 GET /api/leases - User 2 fetching leases
-2025-10-30 11:36:23 - api - INFO - Found 2 leases for user 2
-2025-10-30 11:36:23 - werkzeug - INFO - 127.0.0.1 - - [30/Oct/2025 11:36:23] "GET /api/leases HTTP/1.1" 200 -
+2025-10-31 17:16:25 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-10-31 17:16:25 - werkzeug - INFO -  * Restarting with stat
+/Users/rohitjangid/Library/Python/3.9/lib/python/site-packages/google/api_core/_python_version_support.py:252: FutureWarning: You are using a Python version (3.9.6) past its end of life. Google will update google.api_core with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
+  warnings.warn(message, FutureWarning)
+/Users/rohitjangid/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2025-10-31 17:16:25 - root - INFO - 🚀 Initializing Lease Management Application...
+2025-10-31 17:16:25 - root - INFO - ✅ Database initialized
+2025-10-31 17:16:25 - root - INFO - ✅ Blueprints registered
+2025-10-31 17:16:25 - root - INFO - ✅ Application created successfully
+2025-10-31 17:16:25 - root - INFO - 📂 Template folder: frontend/templates
+2025-10-31 17:16:25 - root - INFO - 📂 Static folder: /Users/rohitjangid/Downloads/Lease/lease_application/frontend/static
+2025-10-31 17:16:25 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:16:25 - __main__ - INFO -    📊 Lease Management System - Starting Server
+2025-10-31 17:16:25 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:16:25 - __main__ - INFO - 📍 API Endpoint: http://localhost:5001/api/
+2025-10-31 17:16:25 - __main__ - INFO -    - /api/register - User registration
+2025-10-31 17:16:25 - __main__ - INFO -    - /api/login - User login
+2025-10-31 17:16:25 - __main__ - INFO -    - /api/leases - Manage leases
+2025-10-31 17:16:25 - __main__ - INFO -    - /api/calculate_lease - Calculate lease
+2025-10-31 17:16:25 - __main__ - INFO - 📝 Logs: /Users/rohitjangid/Downloads/Lease/lease_application/logs/lease_app.log
+2025-10-31 17:16:25 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:16:25 - werkzeug - WARNING -  * Debugger is active!
+2025-10-31 17:16:25 - werkzeug - INFO -  * Debugger PIN: 837-703-174
+2025-10-31 17:16:26 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:26] "GET /login.html HTTP/1.1" 200 -
+2025-10-31 17:16:27 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:27] "GET /login.html HTTP/1.1" 200 -
+2025-10-31 17:16:27 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:27] "[36mGET /static/js/login.js HTTP/1.1[0m" 304 -
+2025-10-31 17:16:27 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:27] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:27 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:27] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:27 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:27] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
+2025-10-31 17:16:32 - auth - INFO - 🔐 POST /api/login - Login request
+2025-10-31 17:16:33 - auth - INFO - ✅ Login successful: user_id=2, username=Rohit
+2025-10-31 17:16:33 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:33] "POST /api/login HTTP/1.1" 200 -
+2025-10-31 17:16:33 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:33] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:33 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:33] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:33 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:33] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:16:34 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:34] "GET /dashboard.html HTTP/1.1" 200 -
+2025-10-31 17:16:34 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:34] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:34 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:34] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:34 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:34] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:16:34 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:34] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:16:34 - api - INFO - 📋 GET /api/leases - User 2 (Admin) fetching leases
+2025-10-31 17:16:34 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:34] "GET /api/admin/check HTTP/1.1" 200 -
+2025-10-31 17:16:34 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:34] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:16:34 - api - INFO - Found 4 leases for user 2
+2025-10-31 17:16:34 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:34] "GET /api/leases HTTP/1.1" 200 -
+2025-10-31 17:16:36 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:36] "GET /approvals.html HTTP/1.1" 200 -
+2025-10-31 17:16:36 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:36] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:16:36 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:36] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
+2025-10-31 17:16:36 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:36] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:36 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:36] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:16:36 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:36] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:16:39 - approval_backend - INFO - ✅ Approval 2 approved by user 2
+2025-10-31 17:16:39 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:39] "POST /api/approvals/2/approve HTTP/1.1" 200 -
+2025-10-31 17:16:40 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:40] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:16:41 - auth - INFO - 🚪 POST /api/logout - User 2 logging out
+2025-10-31 17:16:41 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:41] "POST /api/logout HTTP/1.1" 200 -
+2025-10-31 17:16:41 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:41] "GET /login.html HTTP/1.1" 200 -
+2025-10-31 17:16:41 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:41] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:41 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:41] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
+2025-10-31 17:16:41 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:41] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:16:41 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:41] "[36mGET /static/js/login.js HTTP/1.1[0m" 304 -
+2025-10-31 17:16:41 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:41] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:46 - auth - INFO - 🔐 POST /api/login - Login request
+2025-10-31 17:16:46 - auth - INFO - ✅ Login successful: user_id=3, username=maker
+2025-10-31 17:16:46 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:46] "POST /api/login HTTP/1.1" 200 -
+2025-10-31 17:16:47 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:47] "GET /dashboard.html HTTP/1.1" 200 -
+2025-10-31 17:16:47 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:47] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:16:47 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:47] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:47 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:47] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:47 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:47] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:16:47 - api - INFO - 📋 GET /api/leases - User 3  fetching leases
+2025-10-31 17:16:47 - api - INFO - Found 1 leases for user 3
+2025-10-31 17:16:47 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:47] "GET /api/leases HTTP/1.1" 200 -
+2025-10-31 17:16:47 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:47] "GET /api/admin/check HTTP/1.1" 200 -
+2025-10-31 17:16:47 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:47] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:16:50 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:50] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:50 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:50] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:50 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:50] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:16:55 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:55] "GET /complete_lease_form.html?id=19 HTTP/1.1" 200 -
+2025-10-31 17:16:55 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:55] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:16:55 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:55] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:16:55 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:55] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:16:55 - api - INFO - 🔍 GET /api/leases/19 - User 3  fetching lease
+2025-10-31 17:16:55 - api - INFO - Lease 19 found
+2025-10-31 17:16:55 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:55] "GET /api/leases/19 HTTP/1.1" 200 -
+2025-10-31 17:16:55 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:55] "GET /api/documents/19 HTTP/1.1" 200 -
+2025-10-31 17:16:59 - api - INFO - ✏️ PUT /api/leases/19 - User 3  updating lease
+2025-10-31 17:16:59 - api - INFO - ✅ Lease updated: lease_id=19
+2025-10-31 17:16:59 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:16:59] "PUT /api/leases/19 HTTP/1.1" 200 -
+2025-10-31 17:17:12 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:12] "GET /login.html HTTP/1.1" 200 -
+2025-10-31 17:17:12 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:12] "GET /static/css/common.css HTTP/1.1" 200 -
+2025-10-31 17:17:12 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:12] "GET /static/css/login.css HTTP/1.1" 200 -
+2025-10-31 17:17:12 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:12] "GET /static/js/api.js HTTP/1.1" 200 -
+2025-10-31 17:17:12 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:12] "GET /static/js/login.js HTTP/1.1" 200 -
+2025-10-31 17:17:17 - auth - INFO - 🔐 POST /api/login - Login request
+2025-10-31 17:17:18 - auth - INFO - ✅ Login successful: user_id=2, username=Rohit
+2025-10-31 17:17:18 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:18] "POST /api/login HTTP/1.1" 200 -
+2025-10-31 17:17:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:19] "GET /dashboard.html HTTP/1.1" 200 -
+2025-10-31 17:17:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:19] "GET /static/css/dashboard.css HTTP/1.1" 200 -
+2025-10-31 17:17:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:19] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:17:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:19] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:17:19 - api - INFO - 📋 GET /api/leases - User 2 (Admin) fetching leases
+2025-10-31 17:17:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:19] "GET /api/admin/check HTTP/1.1" 200 -
+2025-10-31 17:17:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:19] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:17:19 - api - INFO - Found 4 leases for user 2
+2025-10-31 17:17:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:19] "GET /api/leases HTTP/1.1" 200 -
+2025-10-31 17:17:20 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:20] "GET /approvals.html HTTP/1.1" 200 -
+2025-10-31 17:17:20 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:20] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
+2025-10-31 17:17:20 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:20] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:17:20 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:20] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:17:20 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:20] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:17:28 - approval_backend - INFO - ✅ Approval 7 approved by user 2
+2025-10-31 17:17:28 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:28] "POST /api/approvals/7/approve HTTP/1.1" 200 -
+2025-10-31 17:17:30 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:30] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:17:31 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:31] "GET /dashboard.html HTTP/1.1" 200 -
+2025-10-31 17:17:31 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:31] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:17:31 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:31] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:17:31 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:31] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+2025-10-31 17:17:31 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:31] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:17:31 - api - INFO - 📋 GET /api/leases - User 3  fetching leases
+2025-10-31 17:17:31 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:31] "GET /api/admin/check HTTP/1.1" 200 -
+2025-10-31 17:17:31 - api - INFO - Found 1 leases for user 3
+2025-10-31 17:17:31 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:31] "GET /api/leases HTTP/1.1" 200 -
+2025-10-31 17:17:31 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:31] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:17:37 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:37] "GET /complete_lease_form.html HTTP/1.1" 200 -
+2025-10-31 17:17:37 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:37] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:17:37 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:37] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:17:37 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:17:37] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:17:42 - pdf_upload_backend - INFO - 📄 Extracting text from PDF: LAND LEASE AGREEMENT.pdf
+2025-10-31 17:17:42 - pdf_upload_backend - INFO - ✅ Extracted 107386 characters from PDF
+2025-10-31 17:17:42 - pdf_upload_backend - INFO - 🤖 Extracting lease information using AI...
+2025-10-31 17:18:33 - pdf_upload_backend - INFO - ✅ AI extraction successful: 30 fields extracted
+2025-10-31 17:18:33 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:18:33] "POST /api/extract_lease_pdf HTTP/1.1" 200 -
+2025-10-31 17:19:20 - api - INFO - ➕ POST /api/leases - User 3 creating lease
+2025-10-31 17:19:20 - api - INFO - Operation: CREATE
+2025-10-31 17:19:20 - api - INFO - ✅ Lease saved: lease_id=20
+2025-10-31 17:19:20 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:20] "[35m[1mPOST /api/leases HTTP/1.1[0m" 201 -
+2025-10-31 17:19:35 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:35] "GET /approvals.html HTTP/1.1" 200 -
+2025-10-31 17:19:35 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:35] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:19:35 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:35] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
+2025-10-31 17:19:35 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:35] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:19:35 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:35] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:19:36 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:36] "GET /approvals.html HTTP/1.1" 200 -
+2025-10-31 17:19:36 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:36] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:19:36 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:36] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
+2025-10-31 17:19:36 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:36] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:19:36 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:36] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:19:43 - approval_backend - INFO - ✅ Lease 20 submitted for approval by user 3
+2025-10-31 17:19:43 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:43] "POST /api/approvals/submit HTTP/1.1" 200 -
+2025-10-31 17:19:48 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:48] "GET /approvals.html HTTP/1.1" 200 -
+2025-10-31 17:19:48 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:48] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:19:48 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:48] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
+2025-10-31 17:19:48 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:48] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:19:48 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:48] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:19:59 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:59] "GET /dashboard.html HTTP/1.1" 200 -
+2025-10-31 17:19:59 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:59] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:19:59 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:59] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+2025-10-31 17:19:59 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:59] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:19:59 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:59] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:19:59 - api - INFO - 📋 GET /api/leases - User 3  fetching leases
+2025-10-31 17:19:59 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:59] "GET /api/admin/check HTTP/1.1" 200 -
+2025-10-31 17:19:59 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:59] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:19:59 - api - INFO - Found 2 leases for user 3
+2025-10-31 17:19:59 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:19:59] "GET /api/leases HTTP/1.1" 200 -
+2025-10-31 17:20:04 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:04] "GET /calculate.html HTTP/1.1" 200 -
+2025-10-31 17:20:04 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:04] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:20:04 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:04] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:20:04 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:04] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:20:04 - api - INFO - 📋 GET /api/leases - User 3  fetching leases
+2025-10-31 17:20:04 - api - INFO - Found 2 leases for user 3
+2025-10-31 17:20:04 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:04] "GET /api/leases HTTP/1.1" 200 -
+2025-10-31 17:20:08 - api - INFO - 🔍 GET /api/leases/19 - User 3  fetching lease
+2025-10-31 17:20:08 - api - INFO - Lease 19 found
+2025-10-31 17:20:08 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:08] "GET /api/leases/19 HTTP/1.1" 200 -
+2025-10-31 17:20:08 - complete_lease_backend - INFO - 📥 Received calculation request:
+2025-10-31 17:20:08 - complete_lease_backend - INFO -    rental_1: 23700
+2025-10-31 17:20:08 - complete_lease_backend - INFO -    lease_start: 2002-03-01, end: 2026-02-28
+2025-10-31 17:20:08 - complete_lease_backend - INFO -    from_date: 2002-03-01, to_date: 2026-02-28
+2025-10-31 17:20:08 - complete_lease_backend - INFO - 📅 Generating payment schedule...
+2025-10-31 17:20:08 - complete_lease_backend - INFO - ✅ Generated 577 schedule rows
+2025-10-31 17:20:08 - complete_lease_backend - INFO - 🔄 Processing lease...
+2025-10-31 17:20:08 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 1 periods for lease 19
+2025-10-31 17:20:08 - lease_accounting.core.processor - INFO -    First projection: 2026-02-28, Last: 2026-02-28
+2025-10-31 17:20:08 - complete_lease_backend - INFO - ✅ Lease processed: Opening Liability=2,891,287.36, Closing=187,714.14
+2025-10-31 17:20:08 - complete_lease_backend - INFO - 📝 Generating journal entries...
+2025-10-31 17:20:08 - complete_lease_backend - INFO - ✅ Calculation complete
+2025-10-31 17:20:08 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:08] "POST /api/calculate_lease HTTP/1.1" 200 -
+2025-10-31 17:20:13 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:13] "GET /bulk_results.html HTTP/1.1" 200 -
+2025-10-31 17:20:13 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:13] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:20:13 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:13] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:20:13 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:13] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:20:13 - api - INFO - 📋 GET /api/leases - User 3  fetching leases
+2025-10-31 17:20:13 - api - INFO - Found 2 leases for user 3
+2025-10-31 17:20:13 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:13] "GET /api/leases HTTP/1.1" 200 -
+2025-10-31 17:20:15 - complete_lease_backend - INFO - 📥 Received bulk calculation request from user 3
+2025-10-31 17:20:15 - complete_lease_backend - INFO -    Processing 1 leases from 2024-12-31 to 2025-12-30
+2025-10-31 17:20:15 - complete_lease_backend - INFO -    Loaded 1 leases
+2025-10-31 17:20:15 - lease_accounting.core.results_processor - INFO - 🔄 Starting bulk processing: 1 leases
+2025-10-31 17:20:15 - lease_accounting.core.processor - INFO - 📊 Projections calculated: 1 periods for lease 19
+2025-10-31 17:20:15 - lease_accounting.core.processor - INFO -    First projection: 2026-02-28, Last: 2026-02-28
+2025-10-31 17:20:15 - lease_accounting.core.results_processor - INFO - ✅ Processed lease 19: Warehouse and Land Lease Agreement for Truck Terminal Facility and Parking
+2025-10-31 17:20:15 - lease_accounting.core.results_processor - INFO - ✅ Bulk processing complete: 1 processed, 0 skipped
+2025-10-31 17:20:15 - complete_lease_backend - INFO - ✅ Bulk processing complete: 1 processed, 0 skipped
+2025-10-31 17:20:15 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:15] "POST /api/calculate_leases HTTP/1.1" 200 -
+2025-10-31 17:20:23 - approval_backend - INFO - ❌ Approval 8 rejected by user 2
+2025-10-31 17:20:23 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:23] "POST /api/approvals/8/reject HTTP/1.1" 200 -
+2025-10-31 17:20:25 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:25] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:20:29 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:29] "GET /dashboard.html HTTP/1.1" 200 -
+2025-10-31 17:20:29 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:29] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:20:29 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:29] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:20:29 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:29] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+2025-10-31 17:20:29 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:29] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:20:29 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:29] "GET /api/admin/check HTTP/1.1" 200 -
+2025-10-31 17:20:29 - api - INFO - 📋 GET /api/leases - User 3  fetching leases
+2025-10-31 17:20:29 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:29] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:20:29 - api - INFO - Found 1 leases for user 3
+2025-10-31 17:20:29 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:29] "GET /api/leases HTTP/1.1" 200 -
+2025-10-31 17:20:42 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:42] "GET /calculate.html HTTP/1.1" 200 -
+2025-10-31 17:20:42 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:42] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:20:42 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:42] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:20:42 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:42] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:20:42 - api - INFO - 📋 GET /api/leases - User 3  fetching leases
+2025-10-31 17:20:42 - api - INFO - Found 1 leases for user 3
+2025-10-31 17:20:42 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:42] "GET /api/leases HTTP/1.1" 200 -
+2025-10-31 17:20:44 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:44] "GET /dashboard.html HTTP/1.1" 200 -
+2025-10-31 17:20:44 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:44] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:20:44 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:44] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:20:44 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:44] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+2025-10-31 17:20:44 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:44] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:20:44 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:44] "GET /api/admin/check HTTP/1.1" 200 -
+2025-10-31 17:20:44 - api - INFO - 📋 GET /api/leases - User 3  fetching leases
+2025-10-31 17:20:44 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:44] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:20:44 - api - INFO - Found 1 leases for user 3
+2025-10-31 17:20:44 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:20:44] "GET /api/leases HTTP/1.1" 200 -
+2025-10-31 17:22:51 - werkzeug - INFO -  * Detected change in '/Users/rohitjangid/Downloads/Lease/lease_application/database.py', reloading
+✅ Database initialized
+An error occurred: module 'importlib.metadata' has no attribute 'packages_distributions'
+✅ Database initialized
+Available Gemini models:
+- models/embedding-gecko-001
+- models/gemini-2.5-pro-preview-03-25
+- models/gemini-2.5-flash-preview-05-20
+- models/gemini-2.5-flash
+- models/gemini-2.5-flash-lite-preview-06-17
+- models/gemini-2.5-pro-preview-05-06
+- models/gemini-2.5-pro-preview-06-05
+- models/gemini-2.5-pro
+- models/gemini-2.0-flash-exp
+- models/gemini-2.0-flash
+- models/gemini-2.0-flash-001
+- models/gemini-2.0-flash-exp-image-generation
+- models/gemini-2.0-flash-lite-001
+- models/gemini-2.0-flash-lite
+- models/gemini-2.0-flash-preview-image-generation
+- models/gemini-2.0-flash-lite-preview-02-05
+- models/gemini-2.0-flash-lite-preview
+- models/gemini-2.0-pro-exp
+- models/gemini-2.0-pro-exp-02-05
+- models/gemini-exp-1206
+- models/gemini-2.0-flash-thinking-exp-01-21
+- models/gemini-2.0-flash-thinking-exp
+- models/gemini-2.0-flash-thinking-exp-1219
+- models/gemini-2.5-flash-preview-tts
+- models/gemini-2.5-pro-preview-tts
+- models/learnlm-2.0-flash-experimental
+- models/gemma-3-1b-it
+- models/gemma-3-4b-it
+- models/gemma-3-12b-it
+- models/gemma-3-27b-it
+- models/gemma-3n-e4b-it
+- models/gemma-3n-e2b-it
+- models/gemini-flash-latest
+- models/gemini-flash-lite-latest
+- models/gemini-pro-latest
+- models/gemini-2.5-flash-lite
+- models/gemini-2.5-flash-image-preview
+- models/gemini-2.5-flash-image
+- models/gemini-2.5-flash-preview-09-2025
+- models/gemini-2.5-flash-lite-preview-09-2025
+- models/gemini-robotics-er-1.5-preview
+- models/gemini-2.5-computer-use-preview-10-2025
+- models/embedding-001
+- models/text-embedding-004
+- models/gemini-embedding-exp-03-07
+- models/gemini-embedding-exp
+- models/gemini-embedding-001
+- models/aqa
+- models/imagen-3.0-generate-002
+- models/imagen-4.0-generate-preview-06-06
+- models/imagen-4.0-ultra-generate-preview-06-06
+- models/imagen-4.0-generate-001
+- models/imagen-4.0-ultra-generate-001
+- models/imagen-4.0-fast-generate-001
+- models/veo-2.0-generate-001
+- models/veo-3.0-generate-preview
+- models/veo-3.0-fast-generate-preview
+- models/veo-3.0-generate-001
+- models/veo-3.0-fast-generate-001
+- models/veo-3.1-generate-preview
+- models/veo-3.1-fast-generate-preview
+- models/gemini-2.0-flash-live-001
+- models/gemini-live-2.5-flash-preview
+- models/gemini-2.5-flash-live-preview
+- models/gemini-2.5-flash-native-audio-latest
+- models/gemini-2.5-flash-native-audio-preview-09-2025
+Trying Gemini model: models/gemini-2.5-flash
+✅ Successfully using: models/gemini-2.5-flash
+2025-10-31 17:22:53 - werkzeug - INFO -  * Restarting with stat
+/Users/rohitjangid/Library/Python/3.9/lib/python/site-packages/google/api_core/_python_version_support.py:252: FutureWarning: You are using a Python version (3.9.6) past its end of life. Google will update google.api_core with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
+  warnings.warn(message, FutureWarning)
+/Users/rohitjangid/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2025-10-31 17:22:54 - root - INFO - 🚀 Initializing Lease Management Application...
+2025-10-31 17:22:54 - root - INFO - ✅ Database initialized
+2025-10-31 17:22:54 - root - INFO - ✅ Blueprints registered
+2025-10-31 17:22:54 - root - INFO - ✅ Application created successfully
+2025-10-31 17:22:54 - root - INFO - 📂 Template folder: frontend/templates
+2025-10-31 17:22:54 - root - INFO - 📂 Static folder: /Users/rohitjangid/Downloads/Lease/lease_application/frontend/static
+2025-10-31 17:22:54 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:22:54 - __main__ - INFO -    📊 Lease Management System - Starting Server
+2025-10-31 17:22:54 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:22:54 - __main__ - INFO - 📍 API Endpoint: http://localhost:5001/api/
+2025-10-31 17:22:54 - __main__ - INFO -    - /api/register - User registration
+2025-10-31 17:22:54 - __main__ - INFO -    - /api/login - User login
+2025-10-31 17:22:54 - __main__ - INFO -    - /api/leases - Manage leases
+2025-10-31 17:22:54 - __main__ - INFO -    - /api/calculate_lease - Calculate lease
+2025-10-31 17:22:54 - __main__ - INFO - 📝 Logs: /Users/rohitjangid/Downloads/Lease/lease_application/logs/lease_app.log
+2025-10-31 17:22:54 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:22:54 - werkzeug - WARNING -  * Debugger is active!
+2025-10-31 17:22:54 - werkzeug - INFO -  * Debugger PIN: 837-703-174
+2025-10-31 17:23:53 - werkzeug - INFO -  * Detected change in '/Users/rohitjangid/Downloads/Lease/lease_application/database.py', reloading
+✅ Database initialized
+An error occurred: module 'importlib.metadata' has no attribute 'packages_distributions'
+✅ Database initialized
+2025-10-31 17:23:53 - werkzeug - INFO -  * Restarting with stat
+/Users/rohitjangid/Library/Python/3.9/lib/python/site-packages/google/api_core/_python_version_support.py:252: FutureWarning: You are using a Python version (3.9.6) past its end of life. Google will update google.api_core with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
+  warnings.warn(message, FutureWarning)
+/Users/rohitjangid/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2025-10-31 17:23:53 - root - INFO - 🚀 Initializing Lease Management Application...
+2025-10-31 17:23:53 - root - INFO - ✅ Database initialized
+2025-10-31 17:23:53 - root - INFO - ✅ Blueprints registered
+2025-10-31 17:23:53 - root - INFO - ✅ Application created successfully
+2025-10-31 17:23:53 - root - INFO - 📂 Template folder: frontend/templates
+2025-10-31 17:23:53 - root - INFO - 📂 Static folder: /Users/rohitjangid/Downloads/Lease/lease_application/frontend/static
+2025-10-31 17:23:53 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:23:53 - __main__ - INFO -    📊 Lease Management System - Starting Server
+2025-10-31 17:23:53 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:23:53 - __main__ - INFO - 📍 API Endpoint: http://localhost:5001/api/
+2025-10-31 17:23:53 - __main__ - INFO -    - /api/register - User registration
+2025-10-31 17:23:53 - __main__ - INFO -    - /api/login - User login
+2025-10-31 17:23:53 - __main__ - INFO -    - /api/leases - Manage leases
+2025-10-31 17:23:53 - __main__ - INFO -    - /api/calculate_lease - Calculate lease
+2025-10-31 17:23:53 - __main__ - INFO - 📝 Logs: /Users/rohitjangid/Downloads/Lease/lease_application/logs/lease_app.log
+2025-10-31 17:23:53 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:23:53 - werkzeug - WARNING -  * Debugger is active!
+2025-10-31 17:23:53 - werkzeug - INFO -  * Debugger PIN: 837-703-174
+2025-10-31 17:24:36 - werkzeug - INFO -  * Detected change in '/Users/rohitjangid/Downloads/Lease/lease_application/database.py', reloading
+✅ Database initialized
+An error occurred: module 'importlib.metadata' has no attribute 'packages_distributions'
+✅ Database initialized
+2025-10-31 17:24:36 - werkzeug - INFO -  * Restarting with stat
+/Users/rohitjangid/Library/Python/3.9/lib/python/site-packages/google/api_core/_python_version_support.py:252: FutureWarning: You are using a Python version (3.9.6) past its end of life. Google will update google.api_core with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
+  warnings.warn(message, FutureWarning)
+/Users/rohitjangid/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2025-10-31 17:24:36 - root - INFO - 🚀 Initializing Lease Management Application...
+2025-10-31 17:24:36 - root - INFO - ✅ Database initialized
+2025-10-31 17:24:37 - root - INFO - ✅ Blueprints registered
+2025-10-31 17:24:37 - root - INFO - ✅ Application created successfully
+2025-10-31 17:24:37 - root - INFO - 📂 Template folder: frontend/templates
+2025-10-31 17:24:37 - root - INFO - 📂 Static folder: /Users/rohitjangid/Downloads/Lease/lease_application/frontend/static
+2025-10-31 17:24:37 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:24:37 - __main__ - INFO -    📊 Lease Management System - Starting Server
+2025-10-31 17:24:37 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:24:37 - __main__ - INFO - 📍 API Endpoint: http://localhost:5001/api/
+2025-10-31 17:24:37 - __main__ - INFO -    - /api/register - User registration
+2025-10-31 17:24:37 - __main__ - INFO -    - /api/login - User login
+2025-10-31 17:24:37 - __main__ - INFO -    - /api/leases - Manage leases
+2025-10-31 17:24:37 - __main__ - INFO -    - /api/calculate_lease - Calculate lease
+2025-10-31 17:24:37 - __main__ - INFO - 📝 Logs: /Users/rohitjangid/Downloads/Lease/lease_application/logs/lease_app.log
+2025-10-31 17:24:37 - __main__ - INFO - ══════════════════════════════════════════════════════════════
+2025-10-31 17:24:37 - werkzeug - WARNING -  * Debugger is active!
+2025-10-31 17:24:37 - werkzeug - INFO -  * Debugger PIN: 837-703-174
+2025-10-31 17:30:49 - auth - INFO - 🚪 POST /api/logout - User 3 logging out
+2025-10-31 17:30:49 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:30:49] "POST /api/logout HTTP/1.1" 200 -
+2025-10-31 17:30:49 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:30:49] "GET /login.html HTTP/1.1" 200 -
+2025-10-31 17:30:49 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:30:49] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:30:49 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:30:49] "[36mGET /static/js/login.js HTTP/1.1[0m" 304 -
+2025-10-31 17:30:49 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:30:49] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2025-10-31 17:30:49 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:30:49] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
+2025-10-31 17:30:49 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:30:49] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:30:53 - auth - INFO - 🚪 POST /api/logout - User 2 logging out
+2025-10-31 17:30:53 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:30:53] "POST /api/logout HTTP/1.1" 200 -
+2025-10-31 17:30:53 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:30:53] "GET /login.html HTTP/1.1" 200 -
+2025-10-31 17:30:53 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:30:53] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:30:53 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:30:53] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
+2025-10-31 17:30:53 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:30:53] "[36mGET /static/css/login.css HTTP/1.1[0m" 304 -
+2025-10-31 17:30:53 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:30:53] "[36mGET /static/js/login.js HTTP/1.1[0m" 304 -
+2025-10-31 17:31:01 - auth - INFO - 🔐 POST /api/login - Login request
+2025-10-31 17:31:02 - auth - INFO - ✅ Login successful: user_id=2, username=Rohit
+2025-10-31 17:31:02 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:02] "POST /api/login HTTP/1.1" 200 -
+2025-10-31 17:31:03 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:03] "GET /dashboard.html HTTP/1.1" 200 -
+2025-10-31 17:31:03 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:03] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:31:03 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:03] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+2025-10-31 17:31:03 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:03] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:31:03 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:03] "GET /api/admin/check HTTP/1.1" 200 -
+2025-10-31 17:31:03 - api - INFO - 📋 GET /api/leases - User 2 (Admin) fetching leases
+2025-10-31 17:31:03 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:03] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:31:03 - api - INFO - Found 5 leases for user 2
+2025-10-31 17:31:03 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:03] "GET /api/leases HTTP/1.1" 200 -
+2025-10-31 17:31:04 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:04] "GET /approvals.html HTTP/1.1" 200 -
+2025-10-31 17:31:04 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:04] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
+2025-10-31 17:31:04 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:04] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:31:04 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:04] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:31:04 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:04] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:31:18 - auth - INFO - 🔐 POST /api/login - Login request
+2025-10-31 17:31:18 - auth - INFO - ✅ Login successful: user_id=3, username=maker
+2025-10-31 17:31:18 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:18] "POST /api/login HTTP/1.1" 200 -
+2025-10-31 17:31:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:19] "GET /dashboard.html HTTP/1.1" 200 -
+2025-10-31 17:31:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:19] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:31:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:19] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+2025-10-31 17:31:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:19] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:31:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:19] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:31:19 - api - INFO - 📋 GET /api/leases - User 3  fetching leases
+2025-10-31 17:31:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:19] "GET /api/admin/check HTTP/1.1" 200 -
+2025-10-31 17:31:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:19] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:31:19 - api - INFO - Found 2 leases for user 3
+2025-10-31 17:31:19 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:19] "GET /api/leases HTTP/1.1" 200 -
+2025-10-31 17:31:26 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:26] "GET /complete_lease_form.html?id=20 HTTP/1.1" 200 -
+2025-10-31 17:31:26 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:26] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:31:26 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:26] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:31:26 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:26] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:31:26 - api - INFO - 🔍 GET /api/leases/20 - User 3  fetching lease
+2025-10-31 17:31:26 - api - INFO - Lease 20 found
+2025-10-31 17:31:26 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:26] "GET /api/leases/20 HTTP/1.1" 200 -
+2025-10-31 17:31:26 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:26] "GET /api/documents/20 HTTP/1.1" 200 -
+2025-10-31 17:31:29 - api - INFO - ✏️ PUT /api/leases/20 - User 3  updating lease
+2025-10-31 17:31:29 - api - INFO - ✅ Lease updated: lease_id=20
+2025-10-31 17:31:29 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:29] "PUT /api/leases/20 HTTP/1.1" 200 -
+2025-10-31 17:31:37 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:37] "GET /approvals.html HTTP/1.1" 200 -
+2025-10-31 17:31:37 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:37] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:31:37 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:37] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
+2025-10-31 17:31:37 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:37] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:31:37 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:37] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:31:38 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:38] "GET /approvals.html HTTP/1.1" 200 -
+2025-10-31 17:31:38 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:38] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:31:38 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:38] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
+2025-10-31 17:31:38 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:38] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:31:38 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:38] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:31:46 - approval_backend - INFO - ✅ Lease 20 submitted for approval by user 3
+2025-10-31 17:31:46 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:46] "POST /api/approvals/submit HTTP/1.1" 200 -
+2025-10-31 17:31:51 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:51] "GET /approvals.html HTTP/1.1" 200 -
+2025-10-31 17:31:51 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:51] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:31:51 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:51] "[36mGET /static/js/api.js HTTP/1.1[0m" 304 -
+2025-10-31 17:31:51 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:51] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:31:51 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:51] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:31:56 - approval_backend - INFO - ✅ Approval 9 approved by user 2
+2025-10-31 17:31:56 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:31:56] "POST /api/approvals/9/approve HTTP/1.1" 200 -
+2025-10-31 17:32:01 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:01] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "GET /dashboard.html HTTP/1.1" 200 -
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:32:05 - api - INFO - 📋 GET /api/leases - User 3  fetching leases
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "GET /api/admin/check HTTP/1.1" 200 -
+2025-10-31 17:32:05 - api - INFO - Found 2 leases for user 3
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "GET /api/leases HTTP/1.1" 200 -
+pi/approvals/9/approve HTTP/1.1" 200 -
+2025-10-31 17:32:01 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:01] "GET /api/approvals/pending HTTP/1.1" 200 -
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "GET /dashboard.html HTTP/1.1" 200 -
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "[36mGET /static/css/common.css HTTP/1.1[0m" 304 -
+2025-10-31 17:32:05 - auth - DEBUG - 👤 GET /api/user - Checking user session
+2025-10-31 17:32:05 - auth - DEBUG - User maker session valid
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:32:05 - api - INFO - 📋 GET /api/leases - User 3  fetching leases
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "GET /api/admin/check HTTP/1.1" 200 -
+2025-10-31 17:32:05 - auth - DEBUG - 👤 GET /api/user - Checking user session
+2025-10-31 17:32:05 - api - INFO - Found 2 leases for user 3
+2025-10-31 17:32:05 - auth - DEBUG - User maker session valid
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "GET /api/user HTTP/1.1" 200 -
+2025-10-31 17:32:05 - werkzeug - INFO - 127.0.0.1 - - [31/Oct/2025 17:32:05] "GET /api/leases HTTP/1.1" 200 -

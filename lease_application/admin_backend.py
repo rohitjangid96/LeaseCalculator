@@ -152,3 +152,43 @@ def create_lease_for_user():
         logger.error(f"Error creating lease for user: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
+@admin_bp.route('/google-ai-settings', methods=['GET'])
+@require_login
+@require_admin
+def get_google_ai_settings_api():
+    """Get Google AI API settings (admin only)"""
+    try:
+        settings = database.get_google_ai_settings()
+        return jsonify({'success': True, 'settings': settings})
+    except Exception as e:
+        logger.error(f"Error getting Google AI settings: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@admin_bp.route('/google-ai-settings', methods=['POST'])
+@require_login
+@require_admin
+def save_google_ai_settings_api():
+    """Save Google AI API settings (admin only)"""
+    try:
+        data = request.json
+        api_key = data.get('api_key')
+        
+        if not api_key:
+            return jsonify({'success': False, 'error': 'API key is required'}), 400
+        
+        setting_id = database.save_google_ai_settings(api_key)
+        
+        logger.info(f"✅ Google AI API settings saved by admin")
+        
+        return jsonify({
+            'success': True,
+            'setting_id': setting_id,
+            'message': 'Google AI API settings saved successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error saving Google AI settings: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+

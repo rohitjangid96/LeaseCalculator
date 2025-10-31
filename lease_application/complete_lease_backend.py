@@ -296,7 +296,9 @@ def calculate_leases():
                 all_leases = database.get_all_leases_admin()
             else:
                 all_leases = database.get_all_leases(user_id)
-            lease_ids = [lease['lease_id'] for lease in all_leases]
+            # Filter to only approved leases for calculations
+            approved_leases = [lease for lease in all_leases if lease.get('approval_status') == 'approved' or lease.get('approval_status') is None]
+            lease_ids = [lease['lease_id'] for lease in approved_leases]
         
         logger.info(f"   Processing {len(lease_ids)} leases from {from_date} to {to_date}")
         

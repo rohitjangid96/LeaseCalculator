@@ -161,9 +161,9 @@
 
         <div id="results" class="results">
             <div class="summary">
-                <h2>📈 Summary</h2>
+                <h2 class="section-header">📈 Summary</h2>
                 <div class="summary-grid" id="summaryGrid"></div>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <div id="actionButtons" style="display: none; flex-direction: row; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="exportToExcel()">📥 Export to Excel</button>
                     <button class="btn btn-primary" onclick="showEmailModal()">📧 Email Report</button>
                 </div>
@@ -197,7 +197,7 @@
                 </div>
             </div>
 
-            <h2>📝 Journal Entries</h2>
+            <h2 class="section-header">📝 Journal Entries</h2>
             <div class="scrollable">
                 <table id="journalTable">
                     <thead>
@@ -337,10 +337,15 @@
                 
                 select.innerHTML = '<option value="">Select a lease...</option>';
                 
-                if (leases.length === 0) {
-                    select.innerHTML = '<option value="">No leases found</option>';
+                // Filter to only approved leases for calculation
+                const approvedLeases = leases.filter(lease => 
+                    lease.approval_status === 'approved' || lease.approval_status === null || lease.approval_status === 'draft'
+                );
+                
+                if (approvedLeases.length === 0) {
+                    select.innerHTML = '<option value="">No approved leases found</option>';
                 } else {
-                leases.forEach(lease => {
+                approvedLeases.forEach(lease => {
                     const option = document.createElement('option');
                     option.value = lease.lease_id;
                     option.textContent = `${lease.lease_name || 'Lease_' + lease.lease_id} - ${lease.asset_id_code || 'N/A'}`;
@@ -810,6 +815,9 @@
             console.log('📊 Projections data:', result.lease_result?.projections);
 
             document.getElementById('results').style.display = 'block';
+            
+            // Show export and email buttons after successful calculation
+            document.getElementById('actionButtons').style.display = 'flex';
         }
 
         // Toggle function for projections details

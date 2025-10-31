@@ -58,13 +58,27 @@ def extract_lease_pdf():
                 'error': 'File must be a PDF'
             }), 400
         
-        # Get API key from request or environment
-        api_key = request.form.get('api_key') or os.getenv('GOOGLE_AI_API_KEY')
+        # Get API key from: request -> database -> environment
+        api_key = request.form.get('api_key')
+        
+        if not api_key:
+            # Try database settings
+            try:
+                from database import get_google_ai_settings
+                settings = get_google_ai_settings()
+                if settings:
+                    api_key = settings.get('api_key')
+            except Exception as e:
+                logger.warning(f"Could not load Google AI settings from database: {e}")
+        
+        if not api_key:
+            # Try environment variable
+            api_key = os.getenv('GOOGLE_AI_API_KEY')
         
         if not api_key and HAS_GEMINI:
             return jsonify({
                 'success': False,
-                'error': 'Google AI API key required. Set GOOGLE_AI_API_KEY environment variable or provide in request.',
+                'error': 'Google AI API key required. Configure in Admin Settings.',
                 'help': 'Get your free API key at: https://makersuite.google.com/app/apikey'
             }), 400
         
