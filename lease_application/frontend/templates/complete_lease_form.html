@@ -1103,7 +1103,12 @@
                             const element = document.getElementById(formId) || document.querySelector(`[name="${formId}"]`);
                             if (element) {
                                 if (element.type === 'checkbox') {
-                                    element.checked = value === 'Yes' || value === true || value === 1;
+                                    const isChecked = value === 'Yes' || value === true || value === 1 || value === 'on';
+                                    element.checked = isChecked;
+                                    // Trigger toggle for manual_adj checkbox
+                                    if (element.id === 'manual_adj' && isChecked) {
+                                        setTimeout(() => toggleManualAdj(), 100);
+                                    }
                                 } else {
                                     element.value = value;
                                 }
@@ -1117,6 +1122,18 @@
                                     const hiddenField = document.getElementById('esc_freq_months');
                                     if (hiddenField) hiddenField.value = value;
                                 }
+                            }
+                        }
+                    }
+                    
+                    // Handle manual_adj toggle explicitly (after form population)
+                    if (lease.manual_adj) {
+                        const manualAdjCheckbox = document.getElementById('manual_adj');
+                        if (manualAdjCheckbox) {
+                            const isManual = lease.manual_adj === 'Yes' || lease.manual_adj === 'on' || lease.manual_adj === true || lease.manual_adj === 1;
+                            manualAdjCheckbox.checked = isManual;
+                            if (isManual) {
+                                setTimeout(() => toggleManualAdj(), 100);
                             }
                         }
                     }

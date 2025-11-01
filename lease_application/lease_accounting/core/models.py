@@ -50,7 +50,7 @@ class LeaseData:
     
     # Discount & Rates
     borrowing_rate: Optional[float] = None
-    compound_months: int = 12
+    compound_months: Optional[int] = None
     fv_of_rou: Optional[float] = None
     
     # Residual & Purchase

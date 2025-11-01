@@ -487,12 +487,26 @@ def _apply_basic_calculations(lease_data: LeaseData, schedule: List[PaymentSched
     raw_secdeprate = lease_data.security_discount or 0.0
     secdeprate = raw_secdeprate / 100 if raw_secdeprate > 1 else raw_secdeprate
     
-    # icompound should be compound_months if provided, otherwise derive from frequency
+    # icompound: derive from frequency_months (compound frequency should match payment frequency)
+    # Only use compound_months if explicitly provided and valid, otherwise derive from frequency
+    freq = lease_data.frequency_months or 1
     if lease_data.compound_months and lease_data.compound_months > 0:
-        icompound = lease_data.compound_months
+        # Validate that compound_months matches frequency_months
+        # If mismatch, derive from frequency_months instead
+        if lease_data.compound_months == freq:
+            icompound = lease_data.compound_months
+        else:
+            # Mismatch: derive from frequency instead
+            if freq == 3:
+                icompound = 3  # Quarterly
+            elif freq == 6:
+                icompound = 6  # Semi-annually
+            elif freq >= 12:
+                icompound = 12  # Annually
+            else:
+                icompound = 1  # Monthly
     else:
-        # Derive from frequency: 1=monthly, 3=quarterly, 6=semi-annually, 12=annually
-        freq = lease_data.frequency_months or 1
+        # No compound_months provided, derive from frequency: 1=monthly, 3=quarterly, 6=semi-annually, 12=annually
         if freq == 3:
             icompound = 3  # Quarterly
         elif freq == 6:
@@ -672,12 +686,26 @@ def _calculate_initial_liability(lease_data: LeaseData, schedule: List[PaymentSc
         return 0.0
     
     discount_rate = (lease_data.borrowing_rate or 8) / 100
-    # icompound should be compound_months if provided, otherwise derive from frequency
+    # icompound: derive from frequency_months (compound frequency should match payment frequency)
+    # Only use compound_months if explicitly provided and valid, otherwise derive from frequency
+    freq = lease_data.frequency_months or 1
     if lease_data.compound_months and lease_data.compound_months > 0:
-        icompound = lease_data.compound_months
+        # Validate that compound_months matches frequency_months
+        # If mismatch, derive from frequency_months instead
+        if lease_data.compound_months == freq:
+            icompound = lease_data.compound_months
+        else:
+            # Mismatch: derive from frequency instead
+            if freq == 3:
+                icompound = 3  # Quarterly
+            elif freq == 6:
+                icompound = 6  # Semi-annually
+            elif freq >= 12:
+                icompound = 12  # Annually
+            else:
+                icompound = 1  # Monthly
     else:
-        # Derive from frequency: 1=monthly, 3=quarterly, 6=semi-annually, 12=annually
-        freq = lease_data.frequency_months or 1
+        # No compound_months provided, derive from frequency: 1=monthly, 3=quarterly, 6=semi-annually, 12=annually
         if freq == 3:
             icompound = 3  # Quarterly
         elif freq == 6:
@@ -944,6 +972,12 @@ def _apply_manual_rental_adjustments(lease_data: LeaseData, schedule: List[Payme
     """
     VBA addmanualadj() function (Lines 1096-1114)
     Apply manual rental adjustments (up to 20)
+    
+    VBA Logic:
+    - Loops through schedule dates (cell in C9:Cendrow)
+    - For each schedule date, checks if it matches rental_date_2[i]
+    - If match, uses rental_2[i] as rental amount
+    - i increments from 1 to 20
     """
     if lease_data.manual_adj != "Yes":
         return schedule
@@ -951,11 +985,25 @@ def _apply_manual_rental_adjustments(lease_data: LeaseData, schedule: List[Payme
     if not hasattr(lease_data, 'rental_dates') or not lease_data.rental_dates:
         return schedule
     
+    # Get rental amounts by date if stored
+    rental_amounts_by_date = getattr(lease_data, 'rental_amounts_by_date', {})
+    
     i = 1
     for row in schedule:
         if i <= len(lease_data.rental_dates) and lease_data.rental_dates[i - 1]:
             rentaldate = lease_data.rental_dates[i - 1]
-            rentalamount = lease_data.rental_2 or 0.0  # VBA uses Rental_2 for manual
+            
+            # Get rental amount for this date
+            # First try rental_amounts_by_date (if set from payload)
+            if rental_amounts_by_date and rentaldate in rental_amounts_by_date:
+                rentalamount = rental_amounts_by_date[rentaldate]
+            else:
+                # Fallback: use rental_2, rental_3, etc. based on index
+                # VBA uses rental_2 for index 1, rental_3 for index 2, etc.
+                # But VBA code shows it only uses rental_2 column, offset by (i-1)
+                # Actually, VBA uses rental_2[i-1], so all rentals use rental_2 column
+                # But that seems wrong - let's use rental_amounts_by_date if available
+                rentalamount = lease_data.rental_2 or 0.0
             
             if row.date == rentaldate:
                 row.rental_amount = rentalamount

@@ -79,6 +79,7 @@ def calculate_lease():
             
             # Payments
             auto_rentals=data.get('auto_rentals', 'Yes'),
+            manual_adj="Yes" if str(data.get('manual_adj', '')).lower() in ['yes', 'on', 'true', '1'] else "No",
             rental_1=float(data.get('rental_1', 0) or 0),
             rental_2=float(data.get('rental_2', 0) or 0),
             
@@ -91,7 +92,7 @@ def calculate_lease():
             
             # Rates
             borrowing_rate=float(data.get('borrowing_rate', 8) or 8),
-            compound_months=int(data.get('compound_months', 12) or 12),
+            compound_months=int(data.get('compound_months')) if data.get('compound_months') else None,
             fv_of_rou=float(data.get('fv_of_rou', 0) or 0),
             
             # Residual
@@ -154,6 +155,33 @@ def calculate_lease():
             short_term_lease_ifrs=data.get('short_term_ifrs', 'No'),
             short_term_lease_usgaap=data.get('finance_lease', 'No'),  # Simplified mapping
         )
+        
+        # Parse manual rental dates and amounts (rental_date_2, rental_date_3, ... rental_date_20)
+        # and corresponding rental amounts (rental_2, rental_3, ... rental_20)
+        rental_dates = []
+        rental_amounts = []
+        for i in range(2, 21):  # rental_date_2 through rental_date_20
+            rental_date_key = f'Rental_date_{i}' if i >= 2 else f'rental_date_{i}'
+            rental_amount_key = f'Rental_{i}' if i >= 2 else f'rental_{i}'
+            
+            # Try both capitalized and lowercase field names
+            rental_date = _parse_date(data.get(rental_date_key) or data.get(rental_date_key.lower()) or data.get(f'rental_date_{i}'))
+            rental_amount = float(data.get(rental_amount_key, 0) or data.get(rental_amount_key.lower(), 0) or data.get(f'rental_{i}', 0) or 0)
+            
+            if rental_date and rental_amount:
+                rental_dates.append(rental_date)
+                rental_amounts.append(rental_amount)
+        
+        # Set rental_dates and rental_amounts on lease_data
+        if rental_dates:
+            lease_data.rental_dates = rental_dates
+            # Store rental amounts in a way we can access them
+            # VBA uses rental_2, rental_3, etc. by index
+            # We'll store them as a dictionary indexed by rental date
+            if not hasattr(lease_data, 'rental_amounts_by_date'):
+                lease_data.rental_amounts_by_date = {}
+            for i, (rdate, ramount) in enumerate(zip(rental_dates, rental_amounts)):
+                lease_data.rental_amounts_by_date[rdate] = ramount
         
         # Parse date range filters
         from_date = _parse_date(data.get('from_date'))
@@ -481,7 +509,10 @@ def calculate_leases():
 
 def _dict_to_lease_data(lease_dict: dict) -> LeaseData:
     """Convert database lease dict to LeaseData object"""
-    return LeaseData(
+    manual_adj_value = lease_dict.get('manual_adj', 'No')
+    manual_adj = "Yes" if str(manual_adj_value).lower() in ['yes', 'on', 'true', '1'] else "No"
+    
+    lease_data = LeaseData(
         auto_id=lease_dict.get('lease_id', 0),
         description=lease_dict.get('description', ''),
         asset_class=lease_dict.get('asset_class', ''),
@@ -495,6 +526,7 @@ def _dict_to_lease_data(lease_dict: dict) -> LeaseData:
         frequency_months=int(lease_dict.get('frequency_months', 1) or 1),
         day_of_month=str(lease_dict.get('day_of_month', '1')),
         auto_rentals=lease_dict.get('auto_rentals', 'Yes'),
+        manual_adj=manual_adj,
         rental_1=float(lease_dict.get('rental_1', 0) or 0),
         rental_2=float(lease_dict.get('rental_2', 0) or 0),
         escalation_start=_parse_date(lease_dict.get('escalation_start_date')),
@@ -502,7 +534,7 @@ def _dict_to_lease_data(lease_dict: dict) -> LeaseData:
         esc_freq_months=int(lease_dict.get('esc_freq_months', 12) or 12),
         accrual_day=int(lease_dict.get('accrual_day', 1) or 1),
         borrowing_rate=float(lease_dict.get('borrowing_rate', 0) or 0),
-        compound_months=int(lease_dict.get('compound_months', 12) or 12),
+        compound_months=int(lease_dict.get('compound_months')) if lease_dict.get('compound_months') else None,
         currency=lease_dict.get('currency', 'USD'),
         cost_centre=lease_dict.get('cost_centre', ''),
         counterparty=lease_dict.get('counterparty', ''),
@@ -519,3 +551,10 @@ def _dict_to_lease_data(lease_dict: dict) -> LeaseData:
         short_term_lease_ifrs=lease_dict.get('shortterm_lease_ifrs_indas', 'No'),
         short_term_lease_usgaap=lease_dict.get('finance_lease_usgaap', 'No'),
     )
+    
+    # Parse manual rental dates and amounts from database if stored as JSON
+    # Note: Database doesn't store rental_dates directly, so we'll need to reconstruct
+    # from rental_date_2, rental_date_3, etc. if they're stored separately
+    # For now, rental_dates will be empty and populated from payload when calculating
+    
+    return lease_data
