@@ -1,0 +1,2192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Interface - Lease Management</title>
+    <!-- PDF.js for PDF viewing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Top Header - Minimal */
+        .top-header {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 56px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .top-header h1 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #212529;
+            margin: 0;
+        }
+        
+        .top-header-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        
+        .top-header-actions button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .top-header-actions button:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+        }
+        
+        /* Main Container - Three Panes */
+        .review-container {
+            display: flex;
+            height: calc(100vh - 56px);
+            overflow: hidden;
+        }
+        
+        /* Left Pane - Form */
+        .form-panel {
+            width: 380px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .form-panel-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+            background: #f8f9fa;
+        }
+        
+        .form-panel-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 0.75rem;
+        }
+        
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            background: #fff3cd;
+            color: #856404;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        /* Extraction Controls */
+        .extraction-controls {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+            background: white;
+        }
+        
+        .extraction-controls label {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #495057;
+            display: block;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .extraction-checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        
+        .extraction-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8125rem;
+            color: #495057;
+            cursor: pointer;
+        }
+        
+        .extraction-checkbox input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #22c55e;
+        }
+        
+        /* Form Content */
+        .form-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+        
+        .form-section {
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .form-section-header {
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .form-section-header:hover {
+            background: #e9ecef;
+        }
+        
+        .form-section-header h3 {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #212529;
+            margin: 0;
+        }
+        
+        .form-section-toggle {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        
+        .form-section-content {
+            padding: 1.25rem 1.5rem;
+            display: none;
+        }
+        
+        .form-section-content.expanded {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 1.25rem;
+            position: relative;
+        }
+        
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .form-group.ai-populated label::after {
+            content: " (AI)";
+            color: #856404;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        
+        .form-group.reviewer-modified label::after {
+            content: " (Updated)";
+            color: #0d6efd;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        
+        .form-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            flex: 1;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            color: #212529;
+            background: white;
+            transition: all 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+        }
+        
+        .field-view-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            color: #6c757d;
+            transition: color 0.2s;
+        }
+        
+        .field-view-icon:hover {
+            color: #22c55e;
+        }
+        
+        .field-view-icon svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        /* Middle Pane - PDF Viewer */
+        .pdf-panel {
+            flex: 1;
+            background: #525252;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .pdf-viewer-header {
+            background: #3a3a3a;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #4a4a4a;
+        }
+        
+        .pdf-viewer-header h3 {
+            font-size: 0.875rem;
+            color: #ffffff;
+            font-weight: 500;
+            margin: 0;
+        }
+        
+        .pdf-viewer-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .pdf-viewer-controls button {
+            padding: 0.375rem 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 4px;
+            font-size: 0.8125rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .pdf-viewer-controls button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .pdf-viewer-container {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: auto;
+            position: relative;
+            background: #525252;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        #nativeHighlightOverlay {
+            position: relative;
+            width: 100%;
+            min-height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        /* Make highlights scroll with container */
+        .pdf-viewer-container {
+            position: relative;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+        
+        /* Ensure iframe is properly positioned */
+        #pdfViewer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #pdfIframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .native-highlight {
+            position: absolute;
+            background: rgba(255, 255, 0, 0.3);
+            border: 2px solid rgba(255, 200, 0, 0.8);
+            border-radius: 2px;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+        
+        .native-highlight.type-1 {
+            background: rgba(255, 255, 0, 0.3);
+            border-color: rgba(255, 200, 0, 0.8);
+        }
+        
+        .native-highlight.type-2 {
+            background: rgba(144, 238, 144, 0.3);
+            border-color: rgba(50, 205, 50, 0.8);
+        }
+        
+        .native-highlight.type-3 {
+            background: rgba(173, 216, 230, 0.3);
+            border-color: rgba(30, 144, 255, 0.8);
+        }
+        
+        #pdfViewer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem;
+            gap: 1rem;
+            width: 100%;
+        }
+        
+        #pdfViewer iframe {
+            width: 100%;
+            height: 100%;
+            min-height: 800px;
+            border: none;
+            background: white;
+        }
+        
+        .pdf-page {
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            background: white;
+            margin: 0 auto;
+        }
+        
+        .pdf-page canvas {
+            display: block;
+        }
+        
+        /* Text layer for text selection */
+        .textLayer {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            opacity: 1;
+            line-height: 1.0;
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            z-index: 10;
+            pointer-events: auto;
+        }
+        
+        .textLayer > span {
+            color: transparent;
+            position: absolute;
+            white-space: pre;
+            cursor: text;
+            transform-origin: 0% 0%;
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            pointer-events: auto;
+            z-index: 10;
+            display: inline-block;
+        }
+        
+        .textLayer ::selection {
+            background: rgba(0, 123, 255, 0.3);
+            color: transparent;
+        }
+        
+        .textLayer ::-moz-selection {
+            background: rgba(0, 123, 255, 0.3);
+            color: transparent;
+        }
+        
+        /* Ensure text layer is above canvas but below highlights */
+        .pdf-page {
+            position: relative;
+        }
+        
+        .pdf-page canvas {
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .textLayer {
+            pointer-events: auto;
+            z-index: 10;
+        }
+        
+        /* Ensure highlights appear above text layer */
+        .highlight-overlay {
+            z-index: 20 !important;
+            pointer-events: none !important;
+        }
+        
+        /* Highlight Overlays - Different Colors */
+        .highlight-overlay {
+            position: absolute;
+            pointer-events: none;
+            z-index: 10;
+            transition: all 0.2s ease;
+            border-radius: 2px;
+        }
+        
+        .highlight-overlay.type-1 {
+            background: rgba(255, 235, 59, 0.5);
+            border: 2px solid #ffc107;
+            box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.3);
+        }
+        
+        .highlight-overlay.type-2 {
+            background: rgba(76, 175, 80, 0.5);
+            border: 2px solid #4caf50;
+            box-shadow: 0 0 0 1px rgba(76, 175, 80, 0.3);
+        }
+        
+        .highlight-overlay.type-3 {
+            background: rgba(33, 150, 243, 0.5);
+            border: 2px solid #2196f3;
+            box-shadow: 0 0 0 1px rgba(33, 150, 243, 0.3);
+        }
+        
+        .highlight-overlay.active {
+            box-shadow: 0 0 8px rgba(255, 193, 7, 0.8);
+            z-index: 11;
+            animation: highlightPulse 1.5s ease-in-out;
+        }
+        
+        @keyframes highlightPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+        
+        /* Right Pane - Feature Panel (Optional, can be hidden) */
+        .feature-panel {
+            width: 280px;
+            background: white;
+            border-left: 1px solid #e0e0e0;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: none; /* Hidden by default, can be toggled */
+        }
+        
+        .feature-panel.visible {
+            display: block;
+        }
+        
+        .feature-panel-icon {
+            width: 48px;
+            height: 48px;
+            background: #e9ecef;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-panel h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 0.75rem;
+        }
+        
+        .feature-panel p {
+            font-size: 0.875rem;
+            color: #6c757d;
+            line-height: 1.6;
+        }
+        
+        /* Summary Panel - Fixed Bottom Right */
+        .summary-panel {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            min-width: 200px;
+            display: none;
+        }
+        
+        .summary-panel.visible {
+            display: block;
+        }
+        
+        .summary-panel h4 {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .summary-panel .modified-count {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0d6efd;
+            margin-bottom: 0.25rem;
+        }
+        
+        .summary-panel .modified-label {
+            font-size: 0.8125rem;
+            color: #6c757d;
+        }
+        
+        /* Loading & Error States */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+        
+        .error-message {
+            padding: 1rem 1.5rem;
+            background: #fee;
+            color: #c33;
+            border-radius: 6px;
+            margin: 1rem 1.5rem;
+            font-size: 0.875rem;
+        }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Header -->
+    <div class="top-header">
+        <h1 id="leaseName">Lease Review</h1>
+        <div class="top-header-actions">
+            <button onclick="window.location.href='dashboard.html'">Dashboard</button>
+            <button onclick="window.location.href='approvals.html'">Approvals</button>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+    
+    <!-- Main Container -->
+    <div class="review-container">
+        <!-- Left Pane: Form -->
+        <div class="form-panel">
+            <div class="form-panel-header">
+                <h2>Extract</h2>
+                <div id="aiBadge" class="ai-badge" style="display: none;">
+                    🤖 AI-populated — please verify
+                </div>
+            </div>
+            
+            <!-- Extraction Controls -->
+            <div class="extraction-controls">
+                <label>Extract</label>
+                <div class="extraction-checkboxes">
+                    <label class="extraction-checkbox">
+                        <input type="checkbox" checked disabled>
+                        <span>Dates</span>
+                    </label>
+                    <label class="extraction-checkbox">
+                        <input type="checkbox" checked disabled>
+                        <span>Monetary</span>
+                    </label>
+                    <label class="extraction-checkbox">
+                        <input type="checkbox" checked disabled>
+                        <span>Quantities</span>
+                    </label>
+                    <label class="extraction-checkbox">
+                        <input type="checkbox" checked disabled>
+                        <span>Location</span>
+                    </label>
+                    <label class="extraction-checkbox">
+                        <input type="checkbox" checked disabled>
+                        <span>Organization</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Form Content -->
+            <div class="form-content" id="leaseForm">
+                <div class="loading">Loading lease data...</div>
+            </div>
+        </div>
+        
+        <!-- Middle Pane: PDF Viewer -->
+        <div class="pdf-panel">
+            <div class="pdf-viewer-header">
+                <h3>Document Viewer</h3>
+                <div class="pdf-viewer-controls">
+                    <button onclick="toggleHighlights()" id="toggleHighlightsBtn">Hide Highlights</button>
+                    <button onclick="highlightAllAIExtractedFields()" id="highlightAllBtn" style="background: #3b82f6; color: white;">🔍 Highlight All AI Fields</button>
+                    <button onclick="toggleNativeView()" id="toggleNativeViewBtn">Native View (Search)</button>
+                </div>
+            </div>
+            <div class="pdf-viewer-container" id="pdfViewerContainer">
+                <div id="pdfViewer" class="loading">
+                    <div>Loading PDF...</div>
+                </div>
+                <!-- Highlight overlays for native view mode -->
+                <!-- Positioned relative to container so they scroll with it -->
+                <div id="nativeHighlightOverlay" style="position: relative; width: 100%; min-height: 100%; pointer-events: none; z-index: 10; display: none;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Summary Panel -->
+    <div class="summary-panel" id="summaryPanel">
+        <h4>Reviewer Modifications</h4>
+        <div class="modified-count" id="modifiedCount">0</div>
+        <div class="modified-label">field(s) modified</div>
+    </div>
+    
+    <script src="/static/js/api.js"></script>
+    <script>
+        // Global variables
+        let currentLeaseId = null;
+        let extractionMetadata = [];
+        let pdfDoc = null;
+        let pdfScale = 1.5;
+        let currentHighlights = [];
+        let fieldMetadataMap = {};
+        let highlightColors = ['type-1', 'type-2', 'type-3']; // Yellow, Green, Blue
+        let highlightColorIndex = 0;
+        let showHighlightsEnabled = true;
+        let nativeViewMode = false;  // Use PDF.js for better highlight scrolling and accuracy
+        let currentPdfUrl = null;
+        
+        // Get lease ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        currentLeaseId = urlParams.get('lease_id') || urlParams.get('id');
+        
+        // Initialize PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        // PDF.js text layer rendering is handled inline
+        
+        // Load review data on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!currentLeaseId) {
+                showError('No lease ID provided');
+                return;
+            }
+            
+            await loadReviewData();
+        });
+        
+        async function loadReviewData() {
+            try {
+                const response = await fetch(`http://localhost:5001/api/review/${currentLeaseId}/metadata`, {
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                
+                if (!result.success) {
+                    showError(result.error || 'Failed to load review data');
+                    return;
+                }
+                
+                // Show AI badge if AI-populated
+                if (result.is_ai_populated) {
+                    document.getElementById('aiBadge').style.display = 'inline-flex';
+                }
+                
+                // Store extraction metadata
+                extractionMetadata = result.extraction_metadata || [];
+                
+                // Build field metadata map and parse bounding_boxes JSON
+                extractionMetadata.forEach(meta => {
+                    // Parse bounding_boxes if it's a string (JSON)
+                    if (meta.bounding_boxes && typeof meta.bounding_boxes === 'string') {
+                        try {
+                            meta.bounding_boxes = JSON.parse(meta.bounding_boxes);
+                        } catch (e) {
+                            console.warn('Failed to parse bounding_boxes for', meta.field_name, e);
+                            meta.bounding_boxes = null;
+                        }
+                    }
+                    fieldMetadataMap[meta.field_name] = meta;
+                });
+                
+                // Set lease name
+                if (result.lease) {
+                    document.getElementById('leaseName').textContent = result.lease.lease_name || 'Lease Review';
+                    renderForm(result.lease, extractionMetadata);
+                }
+                
+                // Debug: Log full result
+                console.log(`📋 Full API response:`, result);
+                console.log(`   - pdf_documents:`, result.pdf_documents);
+                console.log(`   - pdf_documents type:`, typeof result.pdf_documents);
+                console.log(`   - pdf_documents length:`, result.pdf_documents ? result.pdf_documents.length : 'null/undefined');
+                
+                // Load PDF if available
+                if (result.pdf_documents && Array.isArray(result.pdf_documents) && result.pdf_documents.length > 0) {
+                    console.log(`📄 PDF documents available:`, result.pdf_documents);
+                    // Prefer highlighted PDF if available (doc_id = -1)
+                    const highlightedPdf = result.pdf_documents.find(doc => doc.doc_id === -1);
+                    const pdfToLoad = highlightedPdf || result.pdf_documents[0];
+                    console.log(`📄 Loading PDF:`, {
+                        doc_id: pdfToLoad.doc_id,
+                        filename: pdfToLoad.filename,
+                        is_highlighted: pdfToLoad.doc_id === -1,
+                        file_path: pdfToLoad.file_path
+                    });
+                    
+                    // Store PDF URL for native view
+                    currentPdfUrl = `http://localhost:5001/api/review/${currentLeaseId}/pdf/${pdfToLoad.doc_id}`;
+                    console.log(`📄 PDF URL: ${currentPdfUrl}`);
+                    
+                    // Use native PDF viewer with highlights
+                    nativeViewMode = true;
+                    loadNativePDF(pdfToLoad.doc_id).catch(err => {
+                        console.error('Error loading native PDF:', err);
+                    });
+                } else {
+                    console.warn(`⚠️ No PDF documents found in response`);
+                    console.warn(`   - result.pdf_documents:`, result.pdf_documents);
+                    console.warn(`   - is array:`, Array.isArray(result.pdf_documents));
+                    document.getElementById('pdfViewer').innerHTML = `
+                        <div class="loading" style="flex-direction: column; gap: 1rem;">
+                            <div style="font-size: 1.125rem; font-weight: 500;">No PDF document available</div>
+                            <div style="font-size: 0.875rem; color: #6c757d; max-width: 400px; text-align: center;">
+                                This lease doesn't have a PDF document associated with it yet. 
+                                Upload a PDF document for this lease to enable the review interface.
+                            </div>
+                            <button onclick="window.location.href='complete_lease_form.html?id=${currentLeaseId}'" 
+                                    style="padding: 0.75rem 1.5rem; background: #22c55e; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; margin-top: 0.5rem;">
+                                Go to Lease Form
+                            </button>
+                        </div>
+                    `;
+                }
+                
+                // Update modifications summary
+                updateModificationsSummary(result.modifications_summary);
+                
+            } catch (error) {
+                console.error('Error loading review data:', error);
+                showError('Failed to load review data: ' + error.message);
+            }
+        }
+        
+        function renderForm(lease, extractionMetadata) {
+            const form = document.getElementById('leaseForm');
+            const metadataMap = {};
+            extractionMetadata.forEach(meta => {
+                metadataMap[meta.field_name] = meta;
+            });
+            
+            // Group fields by category
+            const fieldGroups = {
+                'Contract Info': [
+                    { key: 'lease_name', label: 'Lease Name', type: 'text' },
+                    { key: 'description', label: 'Description', type: 'textarea' },
+                    { key: 'counterparty', label: 'Tenant/Lessee', type: 'text' },
+                    { key: 'group_entity_name', label: 'Entity Name', type: 'text' },
+                ],
+                'Asset Details': [
+                    { key: 'asset_class', label: 'Asset Class', type: 'text' },
+                    { key: 'asset_id_code', label: 'Asset ID Code', type: 'text' },
+                ],
+                'Dates & Terms': [
+                    { key: 'lease_start_date', label: 'Lease Start Date', type: 'date' },
+                    { key: 'end_date', label: 'End Date', type: 'date' },
+                    { key: 'first_payment_date', label: 'First Payment Date', type: 'date' },
+                    { key: 'tenure', label: 'Tenure (months)', type: 'number' },
+                    { key: 'frequency_months', label: 'Frequency (months)', type: 'number' },
+                ],
+                'Financial': [
+                    { key: 'rental_1', label: 'Rental 1', type: 'number', step: '0.01' },
+                    { key: 'rental_2', label: 'Rental 2', type: 'number', step: '0.01' },
+                    { key: 'currency', label: 'Currency', type: 'text' },
+                    { key: 'borrowing_rate', label: 'Borrowing Rate (%)', type: 'number', step: '0.01' },
+                ],
+            };
+            
+            let formHTML = '';
+            
+            Object.entries(fieldGroups).forEach(([groupName, fields]) => {
+                formHTML += `
+                    <div class="form-section">
+                        <div class="form-section-header" onclick="toggleSection(this)">
+                            <h3>${groupName}</h3>
+                            <span class="form-section-toggle">▼</span>
+                        </div>
+                        <div class="form-section-content expanded">
+                            ${fields.map(field => {
+                                const value = lease[field.key] || '';
+                                const metadata = metadataMap[field.key];
+                                const isAIPopulated = metadata !== undefined;
+                                
+                                let fieldClasses = 'form-group';
+                                if (isAIPopulated) fieldClasses += ' ai-populated';
+                                
+                                const fieldId = `field_${field.key}`;
+                                let inputHTML = '';
+                                
+                                if (field.type === 'textarea') {
+                                    inputHTML = `<textarea id="${fieldId}" name="${field.key}" 
+                                        data-field-name="${field.key}"
+                                        onfocus="highlightField('${field.key}')" 
+                                        onblur="unhighlightField('${field.key}')"
+                                        onchange="handleFieldChange('${field.key}', this.value)">${escapeHtml(value)}</textarea>`;
+                                } else {
+                                    inputHTML = `<input type="${field.type}" 
+                                        id="${fieldId}" 
+                                        name="${field.key}" 
+                                        value="${escapeHtml(value)}"
+                                        ${field.step ? `step="${field.step}"` : ''}
+                                        data-field-name="${field.key}"
+                                        onfocus="highlightField('${field.key}')" 
+                                        onblur="unhighlightField('${field.key}')"
+                                        onchange="handleFieldChange('${field.key}', this.value)">`;
+                                }
+                                
+                                // Add view icon if metadata exists
+                                let viewIcon = '';
+                                if (metadata && metadata.bounding_boxes && metadata.bounding_boxes.length > 0) {
+                                    viewIcon = `
+                                        <div class="field-view-icon" onclick="event.stopPropagation(); highlightField('${field.key}')" title="View in document - click to highlight in PDF">
+                                            <svg viewBox="0 0 16 16" fill="currentColor">
+                                                <path d="M8 2.748l-.717.737L5.27 5.27l-2.53.717L2 8l.717 1.012L5.27 10.73l2.53.717L8 13.252l.717-.737 2.013-1.785 2.53-.717L14 8l-.717-1.012L10.73 5.27l-2.53-.717L8 2.748zM8 4C9.105 4 10 4.895 10 6s-.895 2-2 2-2-.895-2-2 .895-2 2-2z"/>
+                                            </svg>
+                                        </div>`;
+                                }
+                                
+                                return `
+                                    <div class="${fieldClasses}">
+                                        <label for="${fieldId}">${field.label}</label>
+                                        <div class="form-input-wrapper">
+                                            ${inputHTML}
+                                            ${viewIcon}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            form.innerHTML = formHTML;
+        }
+        
+        function toggleSection(header) {
+            const content = header.nextElementSibling;
+            const toggle = header.querySelector('.form-section-toggle');
+            const isExpanded = content.classList.contains('expanded');
+            
+            if (isExpanded) {
+                content.classList.remove('expanded');
+                toggle.textContent = '▶';
+            } else {
+                content.classList.add('expanded');
+                toggle.textContent = '▼';
+            }
+        }
+        
+        async function loadPDF(docId) {
+            try {
+                console.log(`📥 Loading PDF with doc_id: ${docId}`);
+                const url = `http://localhost:5001/api/review/${currentLeaseId}/pdf/${docId}`;
+                console.log(`   URL: ${url}`);
+                
+                const loadingTask = pdfjsLib.getDocument({
+                    url: url,
+                    httpHeaders: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    withCredentials: true
+                });
+                
+                pdfDoc = await loadingTask.promise;
+                console.log(`✅ PDF loaded successfully:`, {
+                    numPages: pdfDoc.numPages,
+                    fingerprint: pdfDoc.fingerprints?.[0]
+                });
+                
+                await renderPDF();
+                console.log(`✅ PDF rendered successfully`);
+            } catch (error) {
+                console.error('❌ Error loading PDF:', error);
+                document.getElementById('pdfViewer').innerHTML = '<div class="loading">Error loading PDF: ' + error.message + '</div>';
+            }
+        }
+        
+        async function renderPDF() {
+            console.log(`🎨 Starting PDF rendering...`);
+            const viewer = document.getElementById('pdfViewer');
+            if (!viewer) {
+                console.error(`❌ PDF viewer element not found`);
+                return;
+            }
+            
+            viewer.innerHTML = '';
+            console.log(`   Total pages: ${pdfDoc.numPages}, current scale: ${pdfScale}`);
+            
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                console.log(`   📄 Rendering page ${pageNum}/${pdfDoc.numPages}...`);
+                const page = await pdfDoc.getPage(pageNum);
+                const viewport = page.getViewport({ scale: pdfScale });
+                
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'pdf-page';
+                pageDiv.setAttribute('data-page', pageNum);
+                pageDiv.style.width = viewport.width + 'px';
+                pageDiv.style.height = viewport.height + 'px';
+                pageDiv.style.position = 'relative';
+                
+                // Create canvas for visual rendering
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                canvas.className = 'pdf-canvas';
+                
+                await page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise;
+                
+                // Create text layer container for text selection (simpler approach)
+                const textLayerDiv = document.createElement('div');
+                textLayerDiv.className = 'textLayer';
+                textLayerDiv.style.position = 'absolute';
+                textLayerDiv.style.left = '0';
+                textLayerDiv.style.top = '0';
+                textLayerDiv.style.width = viewport.width + 'px';
+                textLayerDiv.style.height = viewport.height + 'px';
+                textLayerDiv.style.overflow = 'hidden';
+                
+                // Render text layer for text selection
+                try {
+                    const textContent = await page.getTextContent();
+                    
+                    // Get page rotation and adjust viewport if needed
+                    const rotation = page.rotate;
+                    
+                    // Group text items to create selectable spans
+                    let currentSpan = null;
+                    let currentY = null;
+                    let currentFontSize = null;
+                    
+                    textContent.items.forEach((item, index) => {
+                        if (!item.str || item.str.trim() === '') return;
+                        
+                        // Get the transform matrix for this text item
+                        const transform = pdfjsLib.Util.transform(viewport.transform, item.transform);
+                        
+                        // Calculate position: transform[4] = x, transform[5] = y
+                        const x = transform[4];
+                        const y = transform[5];
+                        
+                        // Calculate font size from transform matrix
+                        const fontSize = Math.sqrt(transform[0] * transform[0] + transform[1] * transform[1]);
+                        
+                        // For Y coordinate: PDF.js transform uses bottom-left origin
+                        // Canvas uses top-left, so we need to flip Y
+                        const canvasY = viewport.height - y;
+                        
+                        // Create or reuse span for continuous text on same line
+                        const shouldStartNewSpan = !currentSpan || 
+                                                 Math.abs(canvasY - currentY) > fontSize * 0.5 || 
+                                                 Math.abs(fontSize - currentFontSize) > 0.5;
+                        
+                        if (shouldStartNewSpan) {
+                            currentSpan = document.createElement('span');
+                            currentSpan.style.position = 'absolute';
+                            currentSpan.style.left = x + 'px';
+                            currentSpan.style.top = canvasY + 'px';
+                            currentSpan.style.fontSize = fontSize + 'px';
+                            currentSpan.style.color = 'transparent';
+                            currentSpan.style.cursor = 'text';
+                            currentSpan.style.whiteSpace = 'pre';
+                            currentSpan.style.userSelect = 'text';
+                            currentSpan.style.webkitUserSelect = 'text';
+                            currentSpan.style.mozUserSelect = 'text';
+                            currentSpan.style.pointerEvents = 'auto';
+                            currentSpan.style.zIndex = '10';
+                            
+                            // Apply text transform (rotation/scale)
+                            currentSpan.style.transform = `matrix(${transform[0]}, ${transform[1]}, ${transform[2]}, ${transform[3]}, 0, 0)`;
+                            currentSpan.style.transformOrigin = '0 0';
+                            
+                            textLayerDiv.appendChild(currentSpan);
+                            currentY = canvasY;
+                            currentFontSize = fontSize;
+                        }
+                        
+                        // Add text to current span
+                        if (currentSpan) {
+                            // Add space between words if needed
+                            if (currentSpan.textContent && !currentSpan.textContent.endsWith(' ') && 
+                                x > parseFloat(currentSpan.style.left) + currentSpan.textContent.length * fontSize * 0.6) {
+                                currentSpan.textContent += ' ';
+                            }
+                            currentSpan.textContent += item.str;
+                        }
+                    });
+                } catch (error) {
+                    console.warn('Text layer rendering failed:', error);
+                }
+                
+                pageDiv.appendChild(canvas);
+                pageDiv.appendChild(textLayerDiv);
+                viewer.appendChild(pageDiv);
+                
+                console.log(`   ✅ Page ${pageNum} rendered:`, {
+                    width: pageDiv.offsetWidth,
+                    height: pageDiv.offsetHeight,
+                    canvasWidth: canvas.width,
+                    canvasHeight: canvas.height,
+                    textLayerItems: textLayerDiv.children.length
+                });
+            }
+            
+            console.log(`✅ PDF rendering complete: ${pdfDoc.numPages} pages rendered`);
+            
+            // Automatically highlight all AI-extracted fields after PDF loads
+            if (showHighlightsEnabled) {
+                if (nativeViewMode) {
+                    // Render highlights in native mode
+                    setTimeout(() => {
+                        renderNativeHighlights();
+                    }, 500);
+                } else {
+                    // Highlight in PDF.js mode
+                    setTimeout(() => {
+                        highlightAllAIExtractedFields();
+                    }, 500);
+                }
+            }
+        }
+        
+        async function highlightField(fieldName) {
+            console.log(`🔵 highlightField called for: ${fieldName}`);
+            console.log(`   - showHighlightsEnabled: ${showHighlightsEnabled}`);
+            console.log(`   - nativeViewMode: ${nativeViewMode}`);
+            
+            // In native view mode, highlight using text search in PDF
+            if (nativeViewMode) {
+                const metadata = fieldMetadataMap[fieldName];
+                if (metadata && metadata.extracted_value) {
+                    const searchText = metadata.extracted_value.toString().trim();
+                    if (searchText) {
+                        console.log(`   🔍 Searching for text in PDF: "${searchText}"`);
+                        const iframe = document.querySelector('#pdfViewer iframe');
+                        if (iframe) {
+                            try {
+                                const iframeWindow = iframe.contentWindow;
+                                if (iframeWindow && iframeWindow.find) {
+                                    iframeWindow.find(searchText);
+                                } else {
+                                    window.find(searchText);
+                                }
+                                console.log(`   ✅ Text search triggered`);
+                            } catch (e) {
+                                console.warn(`   ⚠️ Could not search in iframe: ${e}`);
+                                window.find(searchText);
+                            }
+                        } else {
+                            window.find(searchText);
+                        }
+                    }
+                } else {
+                    console.warn(`   ⚠️ No extracted value found for field: ${fieldName}`);
+                }
+                return;
+            }
+            
+            if (!showHighlightsEnabled) {
+                console.warn('   ⚠️ Highlights disabled');
+                return;
+            }
+            
+            // Check if PDF.js is loaded
+            if (!pdfDoc) {
+                console.warn('   ⚠️ PDF.js not loaded yet');
+                return;
+            }
+            
+            const metadata = fieldMetadataMap[fieldName];
+            if (!metadata) {
+                console.warn(`   ❌ No AI extraction metadata found for field: ${fieldName}`);
+                console.log(`   Available AI-extracted fields:`, Object.keys(fieldMetadataMap));
+                return;
+            }
+            
+            // Verify this is an AI-extracted field
+            if (!metadata.field_name || !metadata.page_number) {
+                console.warn(`   ⚠️ Field ${fieldName} does not have complete AI extraction metadata`);
+                return;
+            }
+            
+            console.log(`   ✅ AI extraction metadata found:`, {
+                field_name: metadata.field_name,
+                page_number: metadata.page_number,
+                has_bounding_boxes: !!metadata.bounding_boxes,
+                bounding_boxes_type: typeof metadata.bounding_boxes
+            });
+            
+            // Check if bounding_boxes exist and are valid (required for AI-extracted fields)
+            let boundingBoxes = metadata.bounding_boxes;
+            if (!boundingBoxes || (Array.isArray(boundingBoxes) && boundingBoxes.length === 0)) {
+                console.warn(`   ⚠️ No bounding boxes for AI-extracted field: ${fieldName} (field may not have been found in PDF)`);
+                console.log(`   Metadata:`, metadata);
+                return;
+            }
+            
+            // Ensure bounding_boxes is an array
+            if (!Array.isArray(boundingBoxes)) {
+                console.log(`   Converting bounding_boxes to array`);
+                boundingBoxes = [boundingBoxes];
+            }
+            
+            console.log(`   📦 Bounding boxes:`, boundingBoxes);
+            clearHighlights();
+            
+            const pageNum = metadata.page_number || 1;
+            console.log(`   📄 Looking for page ${pageNum}`);
+            const pageDiv = document.querySelector(`.pdf-page[data-page="${pageNum}"]`);
+            if (!pageDiv) {
+                console.warn(`   ❌ Page div not found for page: ${pageNum}`);
+                const allPages = document.querySelectorAll('.pdf-page');
+                console.log(`   Available pages:`, Array.from(allPages).map(p => p.getAttribute('data-page')));
+                return;
+            }
+            
+            console.log(`   ✅ Page div found`);
+            const canvas = pageDiv.querySelector('canvas');
+            if (!canvas) {
+                console.warn(`   ❌ Canvas not found for page: ${pageNum}`);
+                return;
+            }
+            
+            console.log(`   ✅ Canvas found:`, {
+                width: canvas.width,
+                height: canvas.height,
+                offsetWidth: canvas.offsetWidth,
+                offsetHeight: canvas.offsetHeight
+            });
+            
+            try {
+                console.log(`   🔄 Getting PDF page ${pageNum}...`);
+                // Get PDF page at the same scale as rendering
+                const pdfPage = await pdfDoc.getPage(pageNum);
+                const renderedViewport = pdfPage.getViewport({ scale: pdfScale });
+                const unscaledViewport = pdfPage.getViewport({ scale: 1.0 });
+                
+                console.log(`   ✅ Got PDF page:`, {
+                    pageNum,
+                    renderedViewport: {
+                        width: renderedViewport.width,
+                        height: renderedViewport.height
+                    },
+                    unscaledViewport: {
+                        width: unscaledViewport.width,
+                        height: unscaledViewport.height
+                    },
+                    pdfScale,
+                    canvas: {
+                        width: canvas.width,
+                        height: canvas.height
+                    }
+                });
+                
+                // Calculate scale factors
+                // PyMuPDF returns coordinates in PDF points (at scale 1.0)
+                // Canvas is rendered at pdfScale
+                // We need to scale from PDF points (scale 1.0) to canvas pixels (scale pdfScale)
+                const scaleFactor = pdfScale;
+                
+                // Get color for this field
+                const colorIndex = Math.abs(fieldName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % highlightColors.length;
+                const colorClass = highlightColors[colorIndex];
+                
+                console.log(`   🎨 Highlighting field ${fieldName}:`, {
+                    pageNum,
+                    boundingBoxes,
+                    pdfScale,
+                    scaleFactor,
+                    colorClass,
+                    unscaledViewportHeight: unscaledViewport.height,
+                    canvasHeight: canvas.height,
+                    renderedViewportHeight: renderedViewport.height
+                });
+                
+                // Track highlight position for scrolling
+                let firstHighlightY = null;
+                let firstHighlightPage = null;
+                
+                boundingBoxes.forEach((bbox, index) => {
+                    const overlay = document.createElement('div');
+                    overlay.className = `highlight-overlay active ${colorClass}`;
+                    overlay.style.position = 'absolute';
+                    overlay.style.pointerEvents = 'none';
+                    overlay.style.zIndex = '20';
+                    overlay.style.borderRadius = '2px';
+                    overlay.style.boxSizing = 'border-box';
+                    
+                    let x0, y0, x1, y1;
+                    
+                    if (Array.isArray(bbox)) {
+                        // Format: [x0, y0, x1, y1] from PyMuPDF (PDF points, top-left origin)
+                        x0 = bbox[0] || 0;
+                        y0 = bbox[1] || 0;
+                        x1 = bbox[2] || 0;
+                        y1 = bbox[3] || 0;
+                    } else if (bbox && typeof bbox === 'object') {
+                        // Format: {x, y, width, height}
+                        x0 = bbox.x || 0;
+                        y0 = bbox.y || 0;
+                        x1 = x0 + (bbox.width || 0);
+                        y1 = y0 + (bbox.height || 0);
+                    } else {
+                        console.warn(`   ⚠️ Invalid bbox format:`, bbox);
+                        return;
+                    }
+                    
+                    // Calculate width and height (always positive) - handle any coordinate order
+                    const width = Math.abs(x1 - x0);
+                    const height = Math.abs(y1 - y0);
+                    
+                    // Scale coordinates to canvas pixels
+                    // Use Math.min to get the top-left coordinate, ensuring correct position regardless of order
+                    // PyMuPDF uses PDF points (72 DPI), PDF.js renders at pdfScale
+                    const scaledX = Math.min(x0, x1) * scaleFactor;
+                    const scaledY = Math.min(y0, y1) * scaleFactor;
+                    const scaledWidth = width * scaleFactor;
+                    const scaledHeight = height * scaleFactor;
+                    
+                    // Track first highlight for scrolling
+                    if (index === 0) {
+                        firstHighlightY = scaledY;
+                        firstHighlightPage = pageNum;
+                    }
+                    
+                    // PyMuPDF coordinates: [x0, y0, x1, y1] in PDF points (72 DPI)
+                    // - Origin: TOP-LEFT (0,0 at top-left)
+                    // - Y increases DOWNWARD
+                    //
+                    // PDF.js canvas coordinates: pixels
+                    // - Origin: TOP-LEFT (0,0 at top-left)  
+                    // - Y increases DOWNWARD
+                    // - Rendered at pdfScale
+                    //
+                    // Since both use top-left origin, we can directly map:
+                    // - Scale PDF points to canvas pixels: multiply by pdfScale
+                    // - No Y flipping needed!
+                    
+                    // Apply to overlay
+                    overlay.style.left = scaledX + 'px';
+                    overlay.style.top = scaledY + 'px';
+                    overlay.style.width = scaledWidth + 'px';
+                    overlay.style.height = scaledHeight + 'px';
+                    
+                    console.log(`    Position: left=${scaledX}, top=${scaledY}, width=${scaledWidth}, height=${scaledHeight}`);
+                    
+                    // Ensure minimum size for visibility
+                    if (scaledWidth < 2) overlay.style.width = '2px';
+                    if (scaledHeight < 2) overlay.style.height = '2px';
+                    
+                    // Ensure overlay is visible
+                    overlay.style.display = 'block';
+                    overlay.style.visibility = 'visible';
+                    
+                    const computedStyle = window.getComputedStyle(overlay);
+                    console.log(`   📦 Box ${index}:`, {
+                        original: { x0, y0, x1, y1, width, height },
+                        scaled: { x: scaledX, y: scaledY, width: scaledWidth, height: scaledHeight },
+                        overlayStyle: {
+                            left: overlay.style.left,
+                            top: overlay.style.top,
+                            width: overlay.style.width,
+                            height: overlay.style.height,
+                            position: overlay.style.position,
+                            zIndex: overlay.style.zIndex,
+                            display: overlay.style.display,
+                            visibility: overlay.style.visibility,
+                            opacity: overlay.style.opacity
+                        },
+                        computedStyle: {
+                            left: computedStyle.left,
+                            top: computedStyle.top,
+                            width: computedStyle.width,
+                            height: computedStyle.height,
+                            display: computedStyle.display,
+                            visibility: computedStyle.visibility,
+                            opacity: computedStyle.opacity,
+                            zIndex: computedStyle.zIndex,
+                            position: computedStyle.position
+                        },
+                        canvas: { width: canvas.width, height: canvas.height },
+                        viewport: { height: renderedViewport.height },
+                        pageDiv: {
+                            width: pageDiv.offsetWidth,
+                            height: pageDiv.offsetHeight,
+                            position: window.getComputedStyle(pageDiv).position
+                        }
+                    });
+                    
+                    // Verify overlay was added
+                    const addedOverlay = pageDiv.querySelector(`.highlight-overlay.active.${colorClass}`);
+                    if (addedOverlay) {
+                        const rect = addedOverlay.getBoundingClientRect();
+                        console.log(`   ✅ Overlay ${index} added successfully:`, {
+                            visible: rect.width > 0 && rect.height > 0,
+                            boundingRect: {
+                                left: rect.left,
+                                top: rect.top,
+                                width: rect.width,
+                                height: rect.height
+                            },
+                            inViewport: rect.top >= 0 && rect.left >= 0 && rect.width > 0 && rect.height > 0
+                        });
+                    } else {
+                        console.error(`   ❌ Overlay ${index} was not added properly`);
+                    }
+                    
+                    // Ensure pageDiv has relative positioning (it should from CSS, but make sure)
+                    if (window.getComputedStyle(pageDiv).position === 'static') {
+                        pageDiv.style.position = 'relative';
+                    }
+                    
+                    pageDiv.appendChild(overlay);
+                    currentHighlights.push(overlay);
+                    
+                    console.log(`  ✅ Overlay ${index} added to page ${pageNum}`);
+                });
+                
+                // Scroll to the highlighted section in the PDF viewer
+                console.log(`   📜 Attempting to scroll to highlight...`);
+                console.log(`   First highlight position:`, {
+                    y: firstHighlightY,
+                    page: firstHighlightPage
+                });
+                
+                const pdfViewerContainer = document.querySelector('.pdf-viewer-container');
+                console.log(`   Container found:`, {
+                    found: !!pdfViewerContainer,
+                    scrollTop: pdfViewerContainer?.scrollTop,
+                    scrollHeight: pdfViewerContainer?.scrollHeight,
+                    clientHeight: pdfViewerContainer?.clientHeight,
+                    boundingRect: pdfViewerContainer ? pdfViewerContainer.getBoundingClientRect() : null
+                });
+                
+                if (pdfViewerContainer && pageDiv && firstHighlightY !== null) {
+                    // Wait a bit for DOM to settle
+                    setTimeout(() => {
+                        // Get the position of the page within the viewer
+                        const pageRect = pageDiv.getBoundingClientRect();
+                        const containerRect = pdfViewerContainer.getBoundingClientRect();
+                        
+                        console.log(`   Page rect:`, pageRect);
+                        console.log(`   Container rect:`, containerRect);
+                        
+                        // Calculate scroll position: current scroll + offset to highlight
+                        const currentScrollTop = pdfViewerContainer.scrollTop;
+                        const pageTopRelativeToContainer = pageRect.top - containerRect.top + currentScrollTop;
+                        const highlightOffset = firstHighlightY;
+                        const scrollTo = pageTopRelativeToContainer + highlightOffset - 150; // 150px offset from top
+                        
+                        console.log(`   Scrolling calculation:`, {
+                            currentScrollTop,
+                            pageTopRelativeToContainer,
+                            highlightOffset,
+                            scrollTo,
+                            finalScrollTo: Math.max(0, scrollTo)
+                        });
+                        
+                        // Smooth scroll to the highlight
+                        pdfViewerContainer.scrollTo({
+                            top: Math.max(0, scrollTo),
+                            behavior: 'smooth'
+                        });
+                        
+                        // Verify scroll happened
+                        setTimeout(() => {
+                            const newScrollTop = pdfViewerContainer.scrollTop;
+                            console.log(`   ✅ Scrolled to: ${newScrollTop} (target: ${scrollTo})`);
+                        }, 500);
+                    }, 100);
+                } else {
+                    console.warn(`   ⚠️ Cannot scroll - container or pageDiv missing:`, {
+                        hasContainer: !!pdfViewerContainer,
+                        hasPageDiv: !!pageDiv,
+                        hasHighlightY: firstHighlightY !== null
+                    });
+                    // Fallback: scroll page into view
+                    if (pageDiv) {
+                        console.log(`   Using fallback scrollIntoView`);
+                        pageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+                
+                console.log(`✅ Completed highlighting field ${fieldName} on page ${pageNum} with ${boundingBoxes.length} boxes`);
+            } catch (err) {
+                console.error('Error rendering highlights:', err);
+            }
+        }
+        
+        function unhighlightField(fieldName) {
+            setTimeout(() => {
+                if (!showHighlightsEnabled) {
+                    clearHighlights();
+                }
+            }, 2000);
+        }
+        
+        function clearHighlights() {
+            currentHighlights.forEach(overlay => overlay.remove());
+            currentHighlights = [];
+        }
+        
+        // Automatically highlight all AI-extracted fields for review
+        function highlightAllAIExtractedFields() {
+            console.log('🔵 Highlighting all AI-extracted fields for review...');
+            if (!showHighlightsEnabled || nativeViewMode) {
+                console.log('   ⚠️ Highlights disabled or native mode');
+                return;
+            }
+            
+            if (!pdfDoc) {
+                console.warn('   ⚠️ PDF not loaded yet');
+                return;
+            }
+            
+            // Clear existing highlights first
+            clearHighlights();
+            
+            // fieldMetadataMap only contains AI-extracted fields (with extraction metadata)
+            const fieldsWithMetadata = Object.keys(fieldMetadataMap);
+            console.log(`   📋 Found ${fieldsWithMetadata.length} AI-extracted fields with metadata`);
+            
+            let highlightedCount = 0;
+            
+            // Highlight each AI-extracted field that has bounding boxes
+            fieldsWithMetadata.forEach(fieldName => {
+                const metadata = fieldMetadataMap[fieldName];
+                // Skip if no metadata
+                if (!metadata) {
+                    console.log(`   ⚠️ Skipping ${fieldName} - no metadata`);
+                    return;
+                }
+                
+                // Verify it has field_name
+                if (!metadata.field_name) {
+                    console.log(`   ⚠️ Skipping ${fieldName} - missing field_name in metadata`);
+                    return;
+                }
+                
+                // Set default page_number if missing
+                if (!metadata.page_number) {
+                    metadata.page_number = 1;
+                    console.log(`   ℹ️ Using default page_number=1 for ${fieldName}`);
+                }
+                
+                // Check for bounding boxes
+                let boundingBoxes = metadata.bounding_boxes;
+                if (!boundingBoxes || (Array.isArray(boundingBoxes) && boundingBoxes.length === 0)) {
+                    // Try to parse if it's a string
+                    if (typeof boundingBoxes === 'string') {
+                        try {
+                            boundingBoxes = JSON.parse(boundingBoxes);
+                        } catch (e) {
+                            console.warn(`   ⚠️ Failed to parse bounding boxes for ${fieldName}`);
+                            boundingBoxes = null;
+                        }
+                    }
+                }
+                
+                if (!boundingBoxes || (Array.isArray(boundingBoxes) && boundingBoxes.length === 0)) {
+                    console.log(`   ⚠️ Skipping ${fieldName} - no bounding boxes found`);
+                    return;
+                }
+                
+                if (!Array.isArray(boundingBoxes)) {
+                    console.warn(`   ⚠️ Invalid bounding boxes format for ${fieldName}`);
+                    return;
+                }
+                
+                console.log(`   ✅ Highlighting AI-extracted field: ${fieldName} (${boundingBoxes.length} locations)`);
+                // Highlight without clearing (skip the clearHighlights call)
+                highlightFieldWithoutClearing(fieldName);
+                highlightedCount++;
+            });
+            
+            console.log(`✅ Completed highlighting ${highlightedCount} AI-extracted fields`);
+        }
+        
+        // Highlight a field without clearing existing highlights (for bulk highlighting)
+        async function highlightFieldWithoutClearing(fieldName) {
+            // Reuse the same logic as highlightField but skip the clearHighlights() call
+            if (!showHighlightsEnabled || nativeViewMode) {
+                return;
+            }
+            
+            if (!pdfDoc) {
+                return;
+            }
+            
+            const metadata = fieldMetadataMap[fieldName];
+            if (!metadata) {
+                return;
+            }
+            
+            let boundingBoxes = metadata.bounding_boxes;
+            if (!boundingBoxes || (Array.isArray(boundingBoxes) && boundingBoxes.length === 0)) {
+                return;
+            }
+            
+            if (!Array.isArray(boundingBoxes)) {
+                try {
+                    boundingBoxes = JSON.parse(boundingBoxes);
+                } catch (e) {
+                    return;
+                }
+            }
+            
+            const pageNum = metadata.page_number || 1;
+            const pageDiv = document.querySelector(`.pdf-page[data-page="${pageNum}"]`);
+            if (!pageDiv) {
+                return;
+            }
+            
+            const canvas = pageDiv.querySelector('canvas');
+            if (!canvas) {
+                return;
+            }
+            
+            try {
+                const pdfPage = await pdfDoc.getPage(pageNum);
+                const renderedViewport = pdfPage.getViewport({ scale: pdfScale });
+                const unscaledViewport = pdfPage.getViewport({ scale: 1.0 });
+                const scaleFactor = pdfScale;
+                
+                // Get color for this field
+                const colorIndex = Math.abs(fieldName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % highlightColors.length;
+                const colorClass = highlightColors[colorIndex];
+                
+                boundingBoxes.forEach((bbox) => {
+                    const overlay = document.createElement('div');
+                    overlay.className = `highlight-overlay active ${colorClass}`;
+                    overlay.style.position = 'absolute';
+                    overlay.style.pointerEvents = 'none';
+                    overlay.style.zIndex = '20';
+                    overlay.style.borderRadius = '2px';
+                    overlay.style.boxSizing = 'border-box';
+                    
+                    let x0, y0, x1, y1;
+                    
+                    if (Array.isArray(bbox)) {
+                        x0 = bbox[0] || 0;
+                        y0 = bbox[1] || 0;
+                        x1 = bbox[2] || 0;
+                        y1 = bbox[3] || 0;
+                    } else if (bbox && typeof bbox === 'object') {
+                        x0 = bbox.x || 0;
+                        y0 = bbox.y || 0;
+                        x1 = x0 + (bbox.width || 0);
+                        y1 = y0 + (bbox.height || 0);
+                    } else {
+                        console.warn(`   ⚠️ Invalid bbox format:`, bbox);
+                        return;
+                    }
+                    
+                    // Calculate width and height (always positive) - handle any coordinate order
+                    const width = Math.abs(x1 - x0);
+                    const height = Math.abs(y1 - y0);
+                    
+                    // Use Math.min to get the top-left coordinate, ensuring correct position regardless of order
+                    const scaledX = Math.min(x0, x1) * scaleFactor;
+                    const scaledY = Math.min(y0, y1) * scaleFactor;
+                    const scaledWidth = width * scaleFactor;
+                    const scaledHeight = height * scaleFactor;
+                    
+                    overlay.style.left = scaledX + 'px';
+                    overlay.style.top = scaledY + 'px';
+                    overlay.style.width = Math.max(5, scaledWidth) + 'px';
+                    overlay.style.height = Math.max(5, scaledHeight) + 'px';
+                    
+                    pageDiv.appendChild(overlay);
+                    currentHighlights.push(overlay);
+                });
+            } catch (err) {
+                console.error(`Error highlighting ${fieldName}:`, err);
+            }
+        }
+        
+        function toggleHighlights() {
+            showHighlightsEnabled = !showHighlightsEnabled;
+            const btn = document.getElementById('toggleHighlightsBtn');
+            btn.textContent = showHighlightsEnabled ? 'Hide Highlights' : 'Show Highlights';
+            
+            if (nativeViewMode) {
+                // In native mode, show/hide overlay
+                const overlay = document.getElementById('nativeHighlightOverlay');
+                if (overlay) {
+                    overlay.style.display = showHighlightsEnabled ? 'block' : 'none';
+                }
+            } else {
+                // In PDF.js mode, clear highlights
+                if (!showHighlightsEnabled) {
+                    clearHighlights();
+                } else {
+                    // Re-highlight if enabled
+                    highlightAllAIExtractedFields();
+                }
+            }
+        }
+        
+        function handleFieldChange(fieldName, newValue) {
+            const metadata = fieldMetadataMap[fieldName];
+            if (!metadata) return;
+            
+            const originalValue = metadata.extracted_value || '';
+            if (newValue === originalValue) return;
+            
+            saveFieldEdit(fieldName, originalValue, newValue);
+            
+            const fieldGroup = document.querySelector(`input[data-field-name="${fieldName}"], textarea[data-field-name="${fieldName}"]`)?.closest('.form-group');
+            if (fieldGroup && !fieldGroup.classList.contains('reviewer-modified')) {
+                fieldGroup.classList.add('reviewer-modified');
+            }
+            
+            updateModificationsSummary();
+        }
+        
+        async function saveFieldEdit(fieldName, originalValue, newValue) {
+            try {
+                await fetch(`http://localhost:5001/api/review/${currentLeaseId}/save-edit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        field_name: fieldName,
+                        original_ai_value: originalValue,
+                        reviewer_value: newValue
+                    })
+                });
+            } catch (error) {
+                console.error('Error saving field edit:', error);
+            }
+        }
+        
+        async function updateModificationsSummary(summary) {
+            if (!summary) {
+                try {
+                    const response = await fetch(`http://localhost:5001/api/review/${currentLeaseId}/modifications`, {
+                        credentials: 'include'
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        summary = result.summary;
+                    }
+                } catch (error) {
+                    console.error('Error loading modifications summary:', error);
+                }
+            }
+            
+            if (summary) {
+                const count = summary.modified_count || 0;
+                document.getElementById('modifiedCount').textContent = count;
+                const panel = document.getElementById('summaryPanel');
+                if (count > 0) {
+                    panel.classList.add('visible');
+                } else {
+                    panel.classList.remove('visible');
+                }
+            }
+        }
+        
+        function zoomIn() {
+            pdfScale += 0.2;
+            renderPDF();
+        }
+        
+        function zoomOut() {
+            pdfScale = Math.max(0.5, pdfScale - 0.2);
+            renderPDF();
+        }
+        
+        function resetZoom() {
+            pdfScale = 1.5;
+            if (!nativeViewMode) {
+                renderPDF();
+            }
+        }
+        
+        async function toggleNativeView() {
+            nativeViewMode = !nativeViewMode;
+            const btn = document.getElementById('toggleNativeViewBtn');
+            btn.textContent = nativeViewMode ? 'Switch to PDF.js' : 'Switch to Native View';
+            
+            const viewer = document.getElementById('pdfViewer');
+            
+            if (nativeViewMode) {
+                // Switch to native browser PDF viewer with full features and highlights
+                if (currentPdfUrl) {
+                    console.log(`🔄 Switching to native PDF viewer: ${currentPdfUrl}`);
+                    const docId = currentPdfUrl.split('/').pop();
+                    try {
+                        await loadNativePDF(docId);
+                        console.log(`✅ Native PDF viewer loaded with search & zoom features`);
+                    } catch (err) {
+                        console.error('Error loading native PDF:', err);
+                    }
+                } else {
+                    console.warn(`⚠️ No PDF URL available for native view`);
+                    nativeViewMode = true;
+                    btn.textContent = 'Switch to PDF.js';
+                }
+            } else {
+                // Switch to PDF.js viewer
+                console.log(`🔄 Switching to PDF.js viewer`);
+                // Hide native highlight overlay
+                const overlay = document.getElementById('nativeHighlightOverlay');
+                if (overlay) {
+                    overlay.style.display = 'none';
+                    overlay.innerHTML = '';
+                }
+                if (currentPdfUrl) {
+                    const docId = currentPdfUrl.split('/').pop();
+                    try {
+                        await loadPDF(docId);
+                    } catch (err) {
+                        console.error('Error loading PDF:', err);
+                    }
+                } else {
+                    console.warn(`⚠️ PDF URL not available`);
+                }
+            }
+        }
+        
+        async function loadNativePDF(docId) {
+            const viewer = document.getElementById('pdfViewer');
+            const url = `http://localhost:5001/api/review/${currentLeaseId}/pdf/${docId}`;
+            console.log(`📥 Loading native PDF view: ${url}`);
+            
+            // Use native browser PDF viewer with full features (search, find, zoom, print)
+            viewer.innerHTML = `
+                <iframe 
+                    id="pdfIframe"
+                    src="${url}#toolbar=1&navpanes=1&scrollbar=1" 
+                    style="width: 100%; height: 100%; border: none;"
+                    type="application/pdf"
+                    title="PDF Viewer"
+                ></iframe>
+            `;
+            currentPdfUrl = url;
+            console.log(`✅ Native PDF viewer loaded with full browser features`);
+            
+            // Show highlight overlay
+            const overlay = document.getElementById('nativeHighlightOverlay');
+            if (overlay) {
+                overlay.style.display = 'block';
+            }
+            
+            // After iframe loads, render highlights and set up scroll sync
+            const iframe = document.getElementById('pdfIframe');
+            if (iframe) {
+                iframe.onload = () => {
+                    console.log('📄 PDF iframe loaded, rendering highlights...');
+                    setTimeout(() => {
+                        renderNativeHighlights();
+                        // Set up scroll synchronization for multi-page PDFs
+                        setupScrollSync();
+                    }, 1000); // Give more time for PDF to fully render
+                };
+                
+                // Listen for scroll events to update highlight positions
+                // Note: Native PDF viewer scrolls inside iframe, but we can try to sync with container scroll
+                const container = document.querySelector('.pdf-viewer-container');
+                if (container) {
+                    let scrollTimeout;
+                    container.addEventListener('scroll', () => {
+                        clearTimeout(scrollTimeout);
+                        scrollTimeout = setTimeout(() => {
+                            // Re-render highlights with updated positions based on scroll
+                            updateHighlightPositionsOnScroll();
+                        }, 50);
+                    });
+                }
+                
+                // Also listen for window resize to re-calculate positions
+                window.addEventListener('resize', () => {
+                    setTimeout(() => {
+                        renderNativeHighlights();
+                    }, 300);
+                });
+            } else {
+                // Fallback: wait a bit then render
+                setTimeout(() => {
+                    renderNativeHighlights();
+                    setupScrollSync();
+                }, 2000);
+            }
+        }
+        
+        // Update highlight positions when scrolling
+        // Note: Native PDF viewer scrolls inside iframe, which we can't access
+        // This function tries to approximate scroll sync but won't be perfect
+        function updateHighlightPositionsOnScroll() {
+            // For native PDF viewer, the iframe handles scrolling internally
+            // We can't access iframe scroll position, so we re-render highlights
+            // This ensures highlights are positioned correctly after any layout changes
+            const container = document.querySelector('.pdf-viewer-container');
+            const iframe = document.getElementById('pdfIframe');
+            
+            if (!container || !iframe || !nativeViewMode) {
+                return;
+            }
+            
+            // Re-render highlights with current dimensions
+            // This is the best we can do without iframe scroll access
+            renderNativeHighlights();
+        }
+        
+        // Setup scroll synchronization
+        function setupScrollSync() {
+            // Native PDF viewer handles scrolling internally within iframe
+            // We listen to container scroll and adjust highlights accordingly
+            // For precise positioning, PDF.js viewer is recommended
+        }
+        
+        // Render highlights over native PDF viewer using bounding boxes
+        async function renderNativeHighlights() {
+            console.log('🔵 Rendering highlights in native PDF viewer...');
+            
+            if (nativeViewMode === false) {
+                // Hide overlay if not in native mode
+                const overlay = document.getElementById('nativeHighlightOverlay');
+                if (overlay) {
+                    overlay.style.display = 'none';
+                    overlay.innerHTML = '';
+                }
+                return;
+            }
+            
+            const overlay = document.getElementById('nativeHighlightOverlay');
+            if (!overlay) {
+                console.warn('⚠️ Native highlight overlay not found');
+                return;
+            }
+            
+            // Clear existing highlights
+            overlay.innerHTML = '';
+            
+            // Get iframe
+            const iframe = document.getElementById('pdfIframe');
+            if (!iframe) {
+                console.warn('⚠️ PDF iframe not found');
+                return;
+            }
+            
+            // Load PDF.js to get page dimensions (we need this for coordinate conversion)
+            if (!pdfDoc) {
+                console.log('📥 Loading PDF.js for coordinate conversion...');
+                try {
+                    const pdfUrl = `http://localhost:5001/api/review/${currentLeaseId}/pdf/${currentPdfUrl.split('/').pop()}`;
+                    const loadingTask = pdfjsLib.getDocument(pdfUrl);
+                    pdfDoc = await loadingTask.promise;
+                    console.log('✅ PDF.js loaded for coordinate conversion');
+                } catch (e) {
+                    console.error('❌ Failed to load PDF.js:', e);
+                    return;
+                }
+            }
+            
+            // Get iframe dimensions
+            const iframeRect = iframe.getBoundingClientRect();
+            const containerRect = overlay.getBoundingClientRect();
+            
+            console.log('📐 Container dimensions:', {
+                width: containerRect.width,
+                height: containerRect.height,
+                iframeWidth: iframeRect.width,
+                iframeHeight: iframeRect.height
+            });
+            
+            // Get all fields with AI extraction metadata
+            // fieldMetadataMap only contains fields that were AI-extracted (has bounding_boxes)
+            const fieldsWithMetadata = Object.keys(fieldMetadataMap);
+            let highlightCount = 0;
+            
+            console.log(`📋 Found ${fieldsWithMetadata.length} AI-extracted fields to highlight`);
+            
+            // Process each AI-extracted field
+            for (const fieldName of fieldsWithMetadata) {
+                const metadata = fieldMetadataMap[fieldName];
+                // Only highlight if field has bounding boxes from AI extraction
+                if (!metadata || !metadata.bounding_boxes) {
+                    console.log(`   ⚠️ Skipping ${fieldName} - no bounding boxes (not AI-extracted)`);
+                    continue;
+                }
+                
+                // Verify this is an AI-extracted field
+                // page_number might be optional, but bounding_boxes are required
+                if (!metadata.field_name) {
+                    console.log(`   ⚠️ Skipping ${fieldName} - no field_name in metadata`);
+                    continue;
+                }
+                
+                // Use page_number from metadata, default to 1 if not provided
+                const pageNum = metadata.page_number || 1;
+                
+                console.log(`   ✅ Highlighting AI-extracted field: ${fieldName} (page ${pageNum})`);
+                
+                let boundingBoxes = metadata.bounding_boxes;
+                if (!Array.isArray(boundingBoxes)) {
+                    try {
+                        boundingBoxes = JSON.parse(boundingBoxes);
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                if (!Array.isArray(boundingBoxes) || boundingBoxes.length === 0) {
+                    continue;
+                }
+                
+                try {
+                    // Get PDF page for dimensions
+                    const pdfPage = await pdfDoc.getPage(pageNum);
+                    const viewport = pdfPage.getViewport({ scale: 1.0 });
+                    
+                    // PDF viewport dimensions (in points at scale 1.0)
+                    const pdfWidth = viewport.width;
+                    const pdfHeight = viewport.height;
+                    
+                    // Get iframe dimensions - wait for iframe to be fully loaded
+                    let iframeWidth = iframeRect.width;
+                    let iframeHeight = iframeRect.height;
+                    
+                    // If iframe dimensions are 0, wait a bit and retry
+                    if (iframeWidth === 0 || iframeHeight === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                        const retryRect = iframe.getBoundingClientRect();
+                        iframeWidth = retryRect.width || 1032; // Fallback
+                        iframeHeight = retryRect.height || 822; // Fallback
+                    }
+                    
+                    // Calculate scale factor - PDF is scaled to fit iframe
+                    const scaleX = iframeWidth / pdfWidth;
+                    const scaleY = iframeHeight / pdfHeight;
+                    const scale = Math.min(scaleX, scaleY); // Use smaller to maintain aspect ratio
+                    
+                    console.log(`   📐 Page ${pageNum} scale calculation:`, {
+                        pdfWidth, pdfHeight,
+                        iframeWidth, iframeHeight,
+                        scaleX, scaleY,
+                        finalScale: scale,
+                        note: 'PDF scaled to fit iframe while maintaining aspect ratio'
+                    });
+                    
+                    // Get color for this field
+                    const colorIndex = Math.abs(fieldName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % highlightColors.length;
+                    const colorClass = highlightColors[colorIndex];
+                    
+                    // Create highlights for each bounding box
+                    boundingBoxes.forEach((bbox, index) => {
+                        let x0, y0, x1, y1;
+                        
+                        if (Array.isArray(bbox)) {
+                            // Format: [x0, y0, x1, y1] from PyMuPDF (PDF points)
+                            x0 = bbox[0] || 0;
+                            y0 = bbox[1] || 0;
+                            x1 = bbox[2] || 0;
+                            y1 = bbox[3] || 0;
+                        } else if (bbox && typeof bbox === 'object') {
+                            // Format: {x, y, width, height}
+                            x0 = bbox.x || 0;
+                            y0 = bbox.y || 0;
+                            x1 = x0 + (bbox.width || 0);
+                            y1 = y0 + (bbox.height || 0);
+                        } else {
+                            return;
+                        }
+                        
+                        // Calculate width and height (always positive) - handle any coordinate order
+                        const width = Math.abs(x1 - x0);
+                        const height = Math.abs(y1 - y0);
+                        
+                        // Get top-left coordinates (use Math.min to ensure correct position regardless of order)
+                        const topLeftX = Math.min(x0, x1);
+                        const topLeftY = Math.min(y0, y1);
+                        
+                        // IMPORTANT: pdfplumber uses TOP-LEFT origin with Y increasing DOWNWARD
+                        // Same as PDF.js, so no Y-flipping needed
+                        // Scale bounding box coordinates from PDF points to screen pixels
+                        const scaledX = topLeftX * scale;
+                        const scaledY = topLeftY * scale;  // Y is already top-to-bottom, no flip needed
+                        const scaledWidth = width * scale;
+                        const scaledHeight = height * scale;
+                        
+                        // Calculate the actual displayed PDF size within the iframe (after scaling)
+                        const scaledPdfWidth = pdfWidth * scale;
+                        const scaledPdfHeight = pdfHeight * scale;
+                        
+                        // Calculate offsets to center PDF in iframe (native viewer centers the PDF)
+                        const offsetX = (iframeWidth - scaledPdfWidth) / 2;
+                        const offsetY = (iframeHeight - scaledPdfHeight) / 2;
+                        
+                        // IMPORTANT: The native PDF viewer in iframe may have internal zoom/pan
+                        // We can't access iframe's internal state, so we assume:
+                        // 1. PDF is centered in iframe
+                        // 2. PDF is scaled to fit (maintaining aspect ratio)
+                        // 3. Overlay is positioned absolutely over the iframe
+                        
+                        // Final highlight position: PDF offset + scaled bbox position
+                        // Positioned relative to overlay which overlays the iframe
+                        const highlightX = offsetX + scaledX;
+                        const highlightY = offsetY + scaledY;
+                        
+                        console.log(`      📍 BBox ${index} for ${fieldName} (${metadata.extracted_value || 'N/A'}):`, {
+                            original: {x0, y0, x1, y1, width, height},
+                            scaled: {scaledX, scaledY, scaledWidth, scaledHeight},
+                            pdfSize: {scaledPdfWidth, scaledPdfHeight},
+                            iframeSize: {iframeWidth, iframeHeight},
+                            offset: {offsetX, offsetY},
+                            iframeOffset: {iframeOffsetX, iframeOffsetY},
+                            final: {highlightX, highlightY},
+                            scale: scale
+                        });
+                        
+                        // Validate highlight position (should be within reasonable bounds)
+                        if (highlightX < -1000 || highlightY < -1000 || highlightX > 2000 || highlightY > 2000) {
+                            console.warn(`      ⚠️ Skipping highlight for ${fieldName} - position out of bounds:`, {
+                                x: highlightX, y: highlightY
+                            });
+                            return; // Skip this bounding box
+                        }
+                        
+                        // Create highlight element for AI-extracted field
+                        const highlight = document.createElement('div');
+                        highlight.className = `native-highlight ${colorClass}`;
+                        highlight.style.position = 'absolute';
+                        highlight.style.left = highlightX + 'px';
+                        highlight.style.top = highlightY + 'px';
+                        highlight.style.width = Math.max(10, scaledWidth) + 'px';
+                        highlight.style.height = Math.max(10, scaledHeight) + 'px';
+                        highlight.setAttribute('data-field', fieldName);
+                        highlight.setAttribute('data-ai-extracted', 'true');
+                        highlight.setAttribute('data-page', pageNum);
+                        highlight.setAttribute('data-x0', x0);
+                        highlight.setAttribute('data-y0', y0);
+                        highlight.setAttribute('data-scale', scale);
+                        highlight.setAttribute('data-value', metadata.extracted_value || '');
+                        highlight.setAttribute('title', `AI-extracted: ${fieldName} = "${metadata.extracted_value || 'N/A'}" (page ${pageNum})`);
+                        
+                        overlay.appendChild(highlight);
+                        highlightCount++;
+                    });
+                } catch (err) {
+                    console.error(`Error rendering highlight for ${fieldName}:`, err);
+                }
+            }
+            
+            console.log(`✅ Rendered ${highlightCount} highlights in native PDF viewer`);
+        }
+        
+        function showError(message) {
+            const form = document.getElementById('leaseForm');
+            form.innerHTML = `<div class="error-message">${escapeHtml(message)}</div>`;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        async function logout() {
+            try {
+                await fetch('http://localhost:5001/api/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                window.location.href = 'login.html';
+            } catch (error) {
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>

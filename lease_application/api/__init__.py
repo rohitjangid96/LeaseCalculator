@@ -8,6 +8,7 @@ VBA Source: None (new functionality - replaces direct Flask routes)
 from flask import Blueprint, request, jsonify, session
 import logging
 import database
+from database import get_lease_documents
 
 logger = logging.getLogger(__name__)
 
@@ -116,11 +117,135 @@ def create_lease():
     
     lease_id = database.save_lease(user_id, filtered_data)
     logger.info(f"✅ Lease saved: lease_id={lease_id}")
+    
+    # Associate any pending PDFs with this newly created lease (async to speed up response)
+    # Only if this is a CREATE operation (not UPDATE) and lease doesn't already have documents
+    if not is_update:
+        # Run PDF association in background to not block the response
+        import threading
+        def associate_pdfs_async():
+            try:
+                _associate_pending_pdfs(lease_id, user_id)
+            except Exception as e:
+                logger.error(f"⚠️ Error associating pending PDFs: {e}", exc_info=True)
+        
+        thread = threading.Thread(target=associate_pdfs_async, daemon=True)
+        thread.start()
+    
     return jsonify({
         'success': True,
         'lease_id': lease_id,
         'message': 'Lease saved successfully'
     }), 201
+
+
+def _associate_pending_pdfs(lease_id: int, user_id: int):
+    """
+    Associate pending PDFs (uploaded before lease creation) with the newly created lease
+    Also saves extraction metadata if available
+    """
+    import sqlite3
+    from database import get_db_connection, save_document
+    from pdf_upload_backend import _save_extraction_metadata
+    import shutil
+    import os
+    import json
+    from pathlib import Path
+    
+    logger.info(f"🔗 Associating pending PDFs for lease_id={lease_id}, user_id={user_id}")
+    
+    # Check if lease already has documents - if so, skip association (already done)
+    existing_docs = get_lease_documents(lease_id, user_id, check_ownership=False)
+    if existing_docs:
+        logger.info(f"   - Lease {lease_id} already has {len(existing_docs)} document(s), skipping pending PDF association")
+        return
+    
+    # Get pending PDFs for this user
+    with get_db_connection() as conn:
+        rows = conn.execute("""
+            SELECT * FROM pending_pdfs 
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+        """, (user_id,)).fetchall()
+    
+    if not rows:
+        logger.info(f"   - No pending PDFs found for user_id={user_id}")
+        return
+    
+    logger.info(f"   - Found {len(rows)} pending PDF(s)")
+    
+    # Associate the first pending PDF with the lease (only one per lease)
+    for row in rows:
+        pending_pdf = dict(row)
+        try:
+            logger.info(f"   - Processing pending PDF: {pending_pdf['pending_pdf_id']}")
+            
+            # Check if pending file still exists
+            pending_path = pending_pdf['pending_path']
+            if not os.path.exists(pending_path):
+                logger.warning(f"   - ⚠️ Pending file not found: {pending_path}, skipping")
+                # Clean up database record
+                with get_db_connection() as conn:
+                    conn.execute("DELETE FROM pending_pdfs WHERE pending_pdf_id = ?", 
+                               (pending_pdf['pending_pdf_id'],))
+                continue
+            
+            # Move to permanent location
+            UPLOAD_FOLDER = 'uploaded_documents'
+            Path(UPLOAD_FOLDER).mkdir(exist_ok=True)
+            
+            # Use the pending filename as unique filename (it already has UUID)
+            unique_filename = pending_pdf['pending_filename']
+            permanent_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+            
+            logger.info(f"   - Moving file from {pending_path} to {permanent_path}...")
+            shutil.move(pending_path, permanent_path)
+            logger.info(f"   - ✅ File moved successfully")
+            
+            # Save to documents table
+            doc_id = save_document(
+                lease_id=lease_id,
+                user_id=user_id,
+                filename=unique_filename,
+                original_filename=pending_pdf['original_filename'],
+                file_path=permanent_path,
+                file_size=pending_pdf['file_size'],
+                file_type=pending_pdf['file_type'],
+                document_type='contract',
+                uploaded_by=user_id
+            )
+            
+            logger.info(f"   - ✅ Document saved with doc_id: {doc_id}")
+            
+            # Try to save extraction metadata if it exists
+            # The extraction_data is already in pending_pdf dict from the SELECT query
+            try:
+                if pending_pdf.get('extraction_data'):
+                    extraction_data = json.loads(pending_pdf['extraction_data'])
+                    logger.info(f"   - Found extraction data, saving metadata...")
+                    _save_extraction_metadata(lease_id, extraction_data, permanent_path)
+                    logger.info(f"   - ✅ Extraction metadata saved")
+                else:
+                    logger.info(f"   - No extraction data stored for this pending PDF")
+            except Exception as e:
+                logger.warning(f"   - ⚠️ Could not save extraction metadata: {e}")
+                # Not critical - continue anyway
+            
+            # Delete from pending table ONLY after successful association
+            with get_db_connection() as conn:
+                conn.execute("DELETE FROM pending_pdfs WHERE pending_pdf_id = ?", 
+                           (pending_pdf['pending_pdf_id'],))
+            
+            logger.info(f"   - ✅ Pending PDF associated successfully with lease_id={lease_id}")
+            
+            # Only associate the first pending PDF per lease
+            # If user has multiple pending PDFs, they'll be associated with subsequent leases
+            break
+            
+        except Exception as e:
+            logger.error(f"   - ❌ Error associating pending PDF {pending_pdf['pending_pdf_id']}: {e}", exc_info=True)
+            # Don't delete pending PDF on error - user can try again by saving draft again
+            # Don't break - might be able to use next pending PDF
 
 
 @api_bp.route('/leases/<int:lease_id>', methods=['PUT'])

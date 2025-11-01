@@ -248,7 +248,8 @@
                             <div class="approval-actions">
                                 <button class="btn btn-approve" onclick="approveLease(${approval.approval_id})">✅ Approve</button>
                                 <button class="btn btn-reject" onclick="rejectLease(${approval.approval_id})">❌ Reject</button>
-                                <button class="btn" onclick="viewLeaseDetails(${approval.lease_id})" style="margin-left: auto;">👁️ View Details</button>
+                                <button class="btn" onclick="viewLeaseDetails(${approval.lease_id})">👁️ View Form</button>
+                                <button class="btn" onclick="viewReviewInterface(${approval.lease_id})" style="margin-left: auto;">📋 Review Interface</button>
                             </div>
                         </div>
                     `;
@@ -324,6 +325,10 @@
         
         function viewLeaseDetails(leaseId) {
             window.open(`complete_lease_form.html?id=${leaseId}`, '_blank');
+        }
+        
+        function viewReviewInterface(leaseId) {
+            window.open(`review.html?lease_id=${leaseId}`, '_blank');
         }
         
         function escapeHtml(text) {

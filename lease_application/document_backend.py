@@ -170,7 +170,19 @@ def get_documents(lease_id):
     """
     try:
         user_id = session.get('user_id')
-        documents = get_lease_documents(lease_id, user_id)
+        
+        # For reviewers/admins, allow access to documents without ownership check
+        from database import get_user
+        user = get_user(user_id)
+        is_admin = user and user.get('role') == 'admin'
+        is_reviewer = user and user.get('role') == 'reviewer'
+        
+        if is_admin or is_reviewer:
+            # Admin/reviewer can see all documents for any lease
+            documents = get_lease_documents(lease_id, user_id, check_ownership=False)
+        else:
+            # Regular user must own the lease to see documents
+            documents = get_lease_documents(lease_id, user_id, check_ownership=True)
         
         # Format documents
         for doc in documents:
@@ -227,7 +239,23 @@ def download_document(doc_id):
     """
     try:
         user_id = session.get('user_id')
+        
+        # For reviewers/admins, allow access to documents without ownership check
+        from database import get_user, get_db_connection
+        user = get_user(user_id)
+        is_admin = user and user.get('role') == 'admin'
+        is_reviewer = user and user.get('role') == 'reviewer'
+        
         doc = get_document(doc_id, user_id)
+        
+        # If not found and user is admin/reviewer, try without user check
+        if not doc and (is_admin or is_reviewer):
+            with get_db_connection() as conn:
+                row = conn.execute("""
+                    SELECT * FROM lease_documents WHERE doc_id = ?
+                """, (doc_id,)).fetchone()
+                if row:
+                    doc = dict(row)
         
         if not doc:
             return jsonify({

@@ -273,6 +273,72 @@ def init_database():
             )
         """)
         
+        # AI extraction metadata table - stores field-level extraction info with coordinates
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS ai_extraction_metadata (
+                extraction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                lease_id INTEGER NOT NULL,
+                field_name TEXT NOT NULL,
+                extracted_value TEXT,
+                ai_confidence REAL,
+                page_number INTEGER,
+                bounding_boxes TEXT,  -- JSON array of {x, y, width, height}
+                snippet TEXT,
+                extraction_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (lease_id) REFERENCES leases(lease_id) ON DELETE CASCADE
+            )
+        """)
+        
+        # Field edit audit trail table - tracks reviewer changes
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS field_edit_audit (
+                audit_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                lease_id INTEGER NOT NULL,
+                field_name TEXT NOT NULL,
+                original_ai_value TEXT,
+                reviewer_value TEXT,
+                reviewer_user_id INTEGER NOT NULL,
+                edit_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (lease_id) REFERENCES leases(lease_id) ON DELETE CASCADE,
+                FOREIGN KEY (reviewer_user_id) REFERENCES users(user_id)
+            )
+        """)
+        
+        # Create indexes for performance
+        try:
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_extraction_lease_id ON ai_extraction_metadata(lease_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_lease_id ON field_edit_audit(lease_id)")
+        except sqlite3.OperationalError:
+            pass
+        
+        # Pending PDFs table - stores PDFs uploaded before lease creation
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS pending_pdfs (
+                pending_pdf_id TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                original_filename TEXT NOT NULL,
+                pending_filename TEXT NOT NULL,
+                pending_path TEXT NOT NULL,
+                file_size INTEGER,
+                file_type TEXT,
+                extraction_data TEXT,  -- JSON of extracted data for metadata
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(user_id)
+            )
+        """)
+        
+        # Add extraction_data column if it doesn't exist (migration)
+        try:
+            conn.execute("ALTER TABLE pending_pdfs ADD COLUMN extraction_data TEXT")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
+        # Create index for user lookup
+        try:
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_pending_pdfs_user_id ON pending_pdfs(user_id)")
+        except sqlite3.OperationalError:
+            pass
+        
         # Email notifications table
         conn.execute("""
             CREATE TABLE IF NOT EXISTS email_notifications (
@@ -704,15 +770,49 @@ def save_document(lease_id: int, user_id: int, filename: str, original_filename:
         return cursor.lastrowid
 
 
-def get_lease_documents(lease_id: int, user_id: int) -> List[Dict]:
-    """Get all documents for a lease"""
+def get_lease_documents(lease_id: int, user_id: int, check_ownership: bool = True) -> List[Dict]:
+    """
+    Get all documents for a lease
+    
+    Args:
+        lease_id: Lease ID
+        user_id: User ID (used for ownership check if check_ownership=True)
+        check_ownership: If False, skip user_id check (for admins/reviewers)
+    """
+    logger.info(f"🔍 get_lease_documents called:")
+    logger.info(f"   - lease_id: {lease_id}")
+    logger.info(f"   - user_id: {user_id}")
+    logger.info(f"   - check_ownership: {check_ownership}")
+    
     with get_db_connection() as conn:
-        rows = conn.execute("""
-            SELECT * FROM lease_documents 
-            WHERE lease_id = ? AND user_id = ?
-            ORDER BY uploaded_at DESC
-        """, (lease_id, user_id)).fetchall()
-        return [dict(row) for row in rows]
+        if check_ownership:
+            logger.info(f"   - Query: SELECT * FROM lease_documents WHERE lease_id = {lease_id} AND user_id = {user_id}")
+            cursor = conn.execute("""
+                SELECT * FROM lease_documents 
+                WHERE lease_id = ? AND user_id = ?
+                ORDER BY uploaded_at DESC
+            """, (lease_id, user_id))
+        else:
+            # Skip user_id check - useful for admins/reviewers
+            logger.info(f"   - Query: SELECT * FROM lease_documents WHERE lease_id = {lease_id} (no user check)")
+            cursor = conn.execute("""
+                SELECT * FROM lease_documents 
+                WHERE lease_id = ?
+                ORDER BY uploaded_at DESC
+            """, (lease_id,))
+        
+        rows = cursor.fetchall()
+        logger.info(f"   - Raw rows fetched: {len(rows)}")
+        logger.info(f"   - Row types: {[type(row).__name__ for row in rows[:3]]}")
+        
+        # Convert sqlite3.Row objects to dicts
+        # sqlite3.Row supports dict() conversion directly
+        result = [dict(row) for row in rows]
+        
+        logger.info(f"   - Found {len(result)} documents after conversion")
+        if result:
+            logger.info(f"   - First document: doc_id={result[0].get('doc_id')}, filename={result[0].get('filename')}, file_type={result[0].get('file_type')}")
+        return result
 
 
 def get_document(doc_id: int, user_id: int) -> Optional[Dict]:
@@ -981,6 +1081,117 @@ def get_users_by_role(role: str) -> List[Dict]:
             ORDER BY username
         """, (role,)).fetchall()
         return [dict(row) for row in rows]
+
+
+# ============ AI EXTRACTION METADATA ============
+
+def save_extraction_metadata(lease_id: int, field_name: str, extracted_value: str,
+                             ai_confidence: Optional[float] = None, page_number: Optional[int] = None,
+                             bounding_boxes: Optional[List[Dict]] = None, snippet: Optional[str] = None) -> int:
+    """Save AI extraction metadata for a field"""
+    import json
+    with get_db_connection() as conn:
+        # Convert bounding_boxes to JSON
+        bboxes_json = json.dumps(bounding_boxes) if bounding_boxes else None
+        
+        cursor = conn.execute("""
+            INSERT INTO ai_extraction_metadata 
+            (lease_id, field_name, extracted_value, ai_confidence, page_number, bounding_boxes, snippet)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (lease_id, field_name, extracted_value, ai_confidence, page_number, bboxes_json, snippet))
+        return cursor.lastrowid
+
+
+def get_extraction_metadata(lease_id: int) -> List[Dict]:
+    """Get all extraction metadata for a lease"""
+    import json
+    with get_db_connection() as conn:
+        rows = conn.execute("""
+            SELECT * FROM ai_extraction_metadata 
+            WHERE lease_id = ?
+            ORDER BY field_name
+        """, (lease_id,)).fetchall()
+        
+        result = []
+        for row in rows:
+            metadata = dict(row)
+            # Parse bounding_boxes JSON
+            if metadata.get('bounding_boxes'):
+                try:
+                    metadata['bounding_boxes'] = json.loads(metadata['bounding_boxes'])
+                except:
+                    metadata['bounding_boxes'] = []
+            else:
+                metadata['bounding_boxes'] = []
+            result.append(metadata)
+        return result
+
+
+def get_field_extraction_metadata(lease_id: int, field_name: str) -> Optional[Dict]:
+    """Get extraction metadata for a specific field"""
+    import json
+    with get_db_connection() as conn:
+        row = conn.execute("""
+            SELECT * FROM ai_extraction_metadata 
+            WHERE lease_id = ? AND field_name = ?
+            ORDER BY extraction_timestamp DESC
+            LIMIT 1
+        """, (lease_id, field_name)).fetchone()
+        
+        if row:
+            metadata = dict(row)
+            # Parse bounding_boxes JSON
+            if metadata.get('bounding_boxes'):
+                try:
+                    metadata['bounding_boxes'] = json.loads(metadata['bounding_boxes'])
+                except:
+                    metadata['bounding_boxes'] = []
+            else:
+                metadata['bounding_boxes'] = []
+            return metadata
+        return None
+
+
+# ============ FIELD EDIT AUDIT TRAIL ============
+
+def save_field_edit(lease_id: int, field_name: str, original_ai_value: str,
+                    reviewer_value: str, reviewer_user_id: int) -> int:
+    """Save a field edit made by reviewer"""
+    with get_db_connection() as conn:
+        cursor = conn.execute("""
+            INSERT INTO field_edit_audit 
+            (lease_id, field_name, original_ai_value, reviewer_value, reviewer_user_id)
+            VALUES (?, ?, ?, ?, ?)
+        """, (lease_id, field_name, original_ai_value, reviewer_value, reviewer_user_id))
+        return cursor.lastrowid
+
+
+def get_field_edit_history(lease_id: int) -> List[Dict]:
+    """Get all field edits for a lease"""
+    with get_db_connection() as conn:
+        rows = conn.execute("""
+            SELECT fa.*, u.username as reviewer_name
+            FROM field_edit_audit fa
+            LEFT JOIN users u ON fa.reviewer_user_id = u.user_id
+            WHERE fa.lease_id = ?
+            ORDER BY fa.edit_timestamp DESC
+        """, (lease_id,)).fetchall()
+        return [dict(row) for row in rows]
+
+
+def get_reviewer_modifications_summary(lease_id: int) -> Dict:
+    """Get summary of fields modified by reviewer"""
+    with get_db_connection() as conn:
+        row = conn.execute("""
+            SELECT COUNT(*) as modified_count
+            FROM field_edit_audit
+            WHERE lease_id = ?
+        """, (lease_id,)).fetchone()
+        
+        return {
+            'modified_count': row['modified_count'] if row else 0,
+            'modified_fields': get_field_edit_history(lease_id)
+        }
 
 
 # Initialize database on import

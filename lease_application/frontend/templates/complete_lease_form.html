@@ -889,7 +889,7 @@
                     </div>
                 </div>
 
-                <button type="button" class="btn-primary" onclick="saveLease()">💾 Save as Draft</button>
+                <button type="button" class="btn-primary" id="saveDraftBtn">💾 Save as Draft</button>
                 <div id="statusIndicator" style="display: none; margin-top: 15px; padding: 12px 20px; border-radius: 8px; background: var(--color-sage-1); border: 1px solid var(--color-border-sage);">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span style="font-size: 1.5rem;">📋</span>
@@ -1342,8 +1342,22 @@
             e.preventDefault();
             calculateLease();
         });
+        
+        // Setup save draft button with proper event handling
+        document.addEventListener('DOMContentLoaded', () => {
+            const saveDraftBtn = document.getElementById('saveDraftBtn');
+            if (saveDraftBtn) {
+                saveDraftBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    saveLease(e);
+                    return false;
+                }, { passive: false });
+            }
+        });
 
-        async function extractFromPdf() {
+        // Make extractFromPdf globally accessible
+        window.extractFromPdf = async function extractFromPdf() {
             const fileInput = document.getElementById('pdfFileInput');
             const statusDiv = document.getElementById('extractionStatus');
             
@@ -1367,16 +1381,68 @@
                     formData.append('api_key', apiKey);
                 }
                 
+                // Add lease_id if we're editing an existing lease OR if we have a currentLeaseId
+                const urlParams = new URLSearchParams(window.location.search);
+                let leaseId = urlParams.get('id') || urlParams.get('lease_id');
+                
+                // Also check if currentLeaseId is set (from a previous save)
+                if (!leaseId && typeof currentLeaseId !== 'undefined' && currentLeaseId) {
+                    leaseId = currentLeaseId;
+                }
+                
+                if (leaseId) {
+                    formData.append('lease_id', leaseId);
+                    console.log('📋 Adding lease_id to PDF upload:', leaseId);
+                } else {
+                    console.log('⚠️ No lease_id found - PDF will not be saved permanently');
+                    // Mark that we uploaded a PDF without lease_id (for later notification)
+                    window.recentlyUploadedPdf = true;
+                }
+                
+                console.log('📤 Starting PDF extraction request...');
+                console.log('   File:', file.name, file.size, 'bytes');
+                console.log('   API Key:', apiKey ? 'provided' : 'not provided');
+                console.log('   Lease ID:', leaseId || 'none');
+                
+                // Add timeout handling for long-running requests
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+                
                 const response = await fetch('http://localhost:5001/api/extract_lease_pdf', {
                     method: 'POST',
                     body: formData,
-                    credentials: 'include'
+                    credentials: 'include',
+                    signal: controller.signal,
+                    // Don't set Content-Type header - let browser set it for FormData
+                    // This is important for multipart/form-data uploads
                 });
+                
+                clearTimeout(timeoutId);
+                console.log('📥 Received response:', response.status, response.statusText);
+                
+                // Check if response is OK before trying to parse JSON
+                if (!response.ok) {
+                    let errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.error || errorMsg;
+                    } catch (e) {
+                        // Response might not be JSON
+                    }
+                    throw new Error(errorMsg);
+                }
                 
                 const result = await response.json();
                 
                 if (result.success) {
                     NProgress.done();
+                    
+                    // Show warning if PDF was not saved
+                    if (result.warning) {
+                        showNotification('warning', 'PDF Not Saved', result.warning, 5000);
+                    } else if (result.message) {
+                        showNotification('success', 'Success', result.message, 3000);
+                    }
                     
                     // Remove progress notification
                     if (progressNotif) {
@@ -1385,6 +1451,11 @@
                     
                     // Auto-fill form with extracted data
                     const data = result.data;
+                    
+                    // Count fields excluding _metadata
+                    const fieldKeys = Object.keys(data).filter(key => key !== '_metadata');
+                    const fieldCount = fieldKeys.length;
+                    console.log('📋 Extracted fields:', fieldKeys);
                     
                     // Map extracted fields to form fields
                     if (data.description) {
@@ -1464,13 +1535,13 @@
                         if (elem) elem.value = data.initial_direct_expenditure;
                     }
                     
-                    statusDiv.innerHTML = `<span style="color: #28a745;">✅ Successfully extracted and filled ${Object.keys(data).length} fields!</span>`;
+                    statusDiv.innerHTML = `<span style="color: #28a745;">✅ Successfully extracted and filled ${fieldCount} fields!</span>`;
                     
                     // Show success notification
-                    showNotification('success', 'AI Extraction Successful', `Extracted ${Object.keys(data).length} fields. Please review and adjust if needed.`, 8000);
+                    showNotification('success', 'AI Extraction Successful', `Extracted ${fieldCount} fields. Please review and adjust if needed.`, 8000);
                     
                     // Small success message in extraction status
-                    statusDiv.innerHTML = `<span style="color: #28a745;">✅ Extracted ${Object.keys(data).length} fields successfully!</span>`;
+                    statusDiv.innerHTML = `<span style="color: #28a745;">✅ Extracted ${fieldCount} fields successfully!</span>`;
                 } else {
                     NProgress.done();
                     
@@ -1485,6 +1556,12 @@
             } catch (error) {
                 NProgress.done();
                 console.error('Extraction error:', error);
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack,
+                    cause: error.cause
+                });
                 
                 // Remove progress notification
                 if (progressNotif) {
@@ -1492,94 +1569,118 @@
                 }
                 
                 statusDiv.innerHTML = '';
-                showNotification('error', 'Extraction Error', error.message);
+                
+                // Provide more helpful error messages
+                let errorMsg = error.message || 'Failed to extract data from PDF';
+                
+                if (error.name === 'AbortError' || error.message.includes('aborted')) {
+                    errorMsg = 'Request timeout: The extraction took too long. The PDF might be very large. Please try again or use a smaller PDF.';
+                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    errorMsg = 'Network error: Could not connect to server. Please check:\n' +
+                              '1. Server is running at http://localhost:5001\n' +
+                              '2. No firewall is blocking the connection\n' +
+                              '3. Try refreshing the page and try again';
+                } else if (error.message.includes('CORS')) {
+                    errorMsg = 'CORS error: Please check server configuration';
+                }
+                
+                showNotification('error', 'Extraction Error', errorMsg);
             }
         }
 
-        async function saveLease() {
-            const formData = new FormData(document.getElementById('leaseForm'));
-            const data = Object.fromEntries(formData);
-            
-            // Validate required fields
-            const requiredFields = {
-                'asset_name': 'Asset Name',
-                'asset_class': 'Asset Class',
-                'lease_start': 'Lease Start Date',
-                'first_payment': 'First Payment Date',
-                'end_date': 'Lease End Date',
-                'frequency': 'Rental Frequency',
-                'day_of_month': 'Day of Month',
-                'accrual_day': 'Rent Accrual Day',
-                'borrowing_rate': 'Borrowing Rate'
-            };
-            
-            const missingFields = [];
-            let firstMissingFieldId = null;
-            
-            for (const [field, label] of Object.entries(requiredFields)) {
-                const value = data[field] || document.getElementById(field)?.value;
-                if (!value || value.trim() === '' || value === 'Select...') {
-                    missingFields.push(label);
-                    if (!firstMissingFieldId) {
-                        firstMissingFieldId = field;
-                    }
-                }
+        let isSaving = false; // Prevent double-clicks
+        
+        async function saveLease(event) {
+            // Prevent form submission and event bubbling
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
             }
             
-            // Also check if rental amount is needed (when auto_rentals is enabled)
-            const autoRentals = document.getElementById('auto_rentals')?.checked;
-            if (autoRentals) {
-                const rentalAmount = data['rental_amount'] || document.getElementById('rental_amount')?.value;
-                if (!rentalAmount || rentalAmount.trim() === '') {
-                    missingFields.push('Rental Amount');
-                    if (!firstMissingFieldId) {
-                        firstMissingFieldId = 'rental_amount';
-                    }
-                }
+            // Prevent double-clicks
+            if (isSaving) {
+                console.log('⚠️ Save already in progress, ignoring duplicate click');
+                return false;
             }
             
-            if (missingFields.length > 0) {
-                showNotification('error', 'Required Fields Missing', 
-                    'Please fill in: ' + missingFields.join(', ') + '. Required fields are marked with *', 8000);
-                
-                // Scroll to first missing field
-                if (firstMissingFieldId) {
-                    const element = document.getElementById(firstMissingFieldId);
-                    if (element) {
-                        // Switch to the appropriate tab if needed
-                        if (firstMissingFieldId.includes('asset')) {
-                            showTab(0); // General tab
-                        } else if (firstMissingFieldId.includes('lease_start') || firstMissingFieldId.includes('payment') || 
-                                   firstMissingFieldId.includes('end_date') || firstMissingFieldId.includes('frequency') ||
-                                   firstMissingFieldId.includes('day') || firstMissingFieldId.includes('accrual')) {
-                            showTab(1); // Dates & Terms tab
-                        } else if (firstMissingFieldId.includes('rental') || firstMissingFieldId.includes('Escalation')) {
-                            showTab(2); // Rentals tab
-                        } else if (firstMissingFieldId.includes('borrowing') || firstMissingFieldId.includes('currency')) {
-                            showTab(3); // Financial tab
-                        }
-                        
-                        // Scroll to element
-                        setTimeout(() => {
-                            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            element.focus();
-                            
-                            // Highlight the field
-                            element.style.border = '2px solid #dc3545';
-                            element.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.25)';
-                            setTimeout(() => {
-                                element.style.border = '';
-                                element.style.boxShadow = '';
-                            }, 3000);
-                        }, 300);
-                    }
-                }
-                return;
-            }
+            isSaving = true;
+            const saveButton = document.getElementById('saveDraftBtn') || 
+                             document.querySelector('button.btn-primary');
+            const originalButtonText = saveButton ? saveButton.textContent : '💾 Save as Draft';
             
-            // Just save as draft - no calculation needed
             try {
-                // Try to call Python backend first
+                // Disable button and show saving state
+                if (saveButton) {
+                    saveButton.disabled = true;
+                    saveButton.textContent = '💾 Saving...';
+                    saveButton.style.opacity = '0.6';
+                    saveButton.style.cursor = 'not-allowed';
+                }
+                
+                console.log('💾 Starting save draft process...');
+                
+                const formData = new FormData(document.getElementById('leaseForm'));
+                const data = Object.fromEntries(formData);
+                
+                // Validate required fields (for warning only, don't block draft saves)
+                const requiredFields = {
+                    'asset_name': 'Asset Name',
+                    'asset_class': 'Asset Class',
+                    'lease_start': 'Lease Start Date',
+                    'first_payment': 'First Payment Date',
+                    'end_date': 'Lease End Date',
+                    'frequency': 'Rental Frequency',
+                    'day_of_month': 'Day of Month',
+                    'accrual_day': 'Rent Accrual Day',
+                    'borrowing_rate': 'Borrowing Rate'
+                };
+                
+                const missingFields = [];
+                let firstMissingFieldId = null;
+                
+                for (const [field, label] of Object.entries(requiredFields)) {
+                    const value = data[field] || document.getElementById(field)?.value;
+                    if (!value || value.trim() === '' || value === 'Select...') {
+                        missingFields.push(label);
+                        if (!firstMissingFieldId) {
+                            firstMissingFieldId = field;
+                        }
+                    }
+                }
+                
+                // Also check if rental amount is needed (when auto_rentals is enabled)
+                const autoRentals = document.getElementById('auto_rentals')?.checked;
+                if (autoRentals) {
+                    const rentalAmount = data['rental_amount'] || document.getElementById('rental_amount')?.value;
+                    if (!rentalAmount || rentalAmount.trim() === '') {
+                        missingFields.push('Rental Amount');
+                        if (!firstMissingFieldId) {
+                            firstMissingFieldId = 'rental_amount';
+                        }
+                    }
+                }
+                
+                // For draft saves, skip strict validation - allow saving incomplete data
+                // Show a warning if critical fields are missing, but don't block the save
+                if (missingFields.length > 0) {
+                    const criticalFields = ['asset_name', 'lease_start', 'end_date'];
+                    const criticalMissing = [];
+                    for (const [field, label] of Object.entries(requiredFields)) {
+                        if (criticalFields.includes(field) && missingFields.includes(label)) {
+                            criticalMissing.push(label);
+                        }
+                    }
+                    
+                    if (criticalMissing.length > 0) {
+                        console.warn('⚠️ Missing critical fields:', criticalMissing);
+                        // Don't block - just warn user
+                        showNotification('warning', 'Some Critical Fields Missing', 
+                            'Some important fields are missing (' + criticalMissing.join(', ') + 
+                            '). You can save as draft, but please complete them before submitting for approval.', 5000);
+                    }
+                }
+                
+                // Just save as draft - no calculation needed
                 // Map form field names to backend expected names
                 const mappedData = {};
                 
@@ -1667,6 +1768,31 @@
                         // Set currentLeaseId before redirecting (for document tracking)
                         if (result.lease_id) {
                             currentLeaseId = result.lease_id;
+                            
+                            // Check if PDF was automatically associated (no need to re-upload)
+                            // Give backend a moment to associate pending PDFs
+                            setTimeout(async () => {
+                                try {
+                                    const docCheck = await fetch(`http://localhost:5001/api/leases/${result.lease_id}/documents`, {
+                                        credentials: 'include'
+                                    });
+                                    if (docCheck.ok) {
+                                        const docs = await docCheck.json();
+                                        if (docs.success && docs.documents && docs.documents.length > 0) {
+                                            // PDF was automatically associated - no need to re-upload
+                                            showNotification('success', 'PDF Saved', 
+                                                'Your PDF was automatically saved with the lease.', 3000);
+                                        } else if (window.recentlyUploadedPdf) {
+                                            // PDF not yet associated - it will be soon
+                                            showNotification('info', 'PDF Processing', 
+                                                'Your PDF is being processed and will be saved automatically.', 3000);
+                                        }
+                                    }
+                                } catch (e) {
+                                    // Silent fail - don't show error
+                                }
+                                window.recentlyUploadedPdf = false;
+                            }, 1000);
                         }
                         showNotification('success', 'Draft Saved', 'Lease ID: ' + result.lease_id + ' saved as draft.', 3000);
                         
@@ -1693,25 +1819,34 @@
                 if (!resultsDiv) {
                     console.error('Results div not found!');
                     alert('Error: Results div not found in HTML');
-                    return;
-                }
-                resultsDiv.innerHTML = `
-                    <div style="text-align: center; padding: 40px;">
-                        <h3 style="color: #dc3545;">❌ Backend Error</h3>
-                        <p>Error: ${error.message}</p>
-                        <p>Please check browser console (F12) for details</p>
-                        <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div style="text-align: center; padding: 40px;">
+                            <h3 style="color: #dc3545;">❌ Backend Error</h3>
+                            <p>Error: ${error.message}</p>
+                            <p>Please check browser console (F12) for details</p>
+                            <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
 Backend should be running at: http://localhost:5001
 Check terminal or restart with: ./start_app.sh
-                        </pre>
-                    </div>
-                `;
-            document.getElementById('results').classList.add('show');
-                return;
+                            </pre>
+                        </div>
+                    `;
+                    document.getElementById('results').classList.add('show');
+                }
+            } finally {
+                // Re-enable button after a short delay to prevent rapid clicking
+                setTimeout(() => {
+                    isSaving = false;
+                    if (saveButton) {
+                        saveButton.disabled = false;
+                        saveButton.textContent = originalButtonText;
+                        saveButton.style.opacity = '1';
+                        saveButton.style.cursor = 'pointer';
+                    }
+                }, 500);
             }
             
-            // This should never execute - Python backend must be running
-            console.error('Python backend failed but no error thrown');
+            return false; // Prevent any form submission
         }
         
         // Kept for reference but not called anymore

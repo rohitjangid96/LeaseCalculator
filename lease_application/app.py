@@ -24,6 +24,7 @@ from document_backend import doc_bp
 from email_backend import email_bp
 from admin_backend import admin_bp
 from approval_backend import approval_bp
+from review_backend import review_bp
 
 # Import database
 import database
@@ -59,6 +60,19 @@ def setup_logging(log_dir: Path):
     root_logger.addHandler(file_handler)
     root_logger.addHandler(console_handler)
     
+    # Suppress verbose logs from third-party libraries
+    # pdfminer/pdfplumber debug logs
+    logging.getLogger('pdfminer').setLevel(logging.WARNING)
+    logging.getLogger('pdfminer.pdfdocument').setLevel(logging.WARNING)
+    logging.getLogger('pdfminer.pdfpage').setLevel(logging.WARNING)
+    logging.getLogger('pdfminer.cmapdb').setLevel(logging.WARNING)
+    logging.getLogger('pdfminer.cmap').setLevel(logging.WARNING)
+    logging.getLogger('pdfplumber').setLevel(logging.WARNING)
+    
+    # Other verbose libraries
+    logging.getLogger('PIL').setLevel(logging.WARNING)
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
+    
     return root_logger
 
 
@@ -76,10 +90,15 @@ def create_app(config_name=None):
     logger = setup_logging(Path(app.config['LOG_DIR']))
     logger.info("🚀 Initializing Lease Management Application...")
     
-    # Initialize CORS
+    # Initialize CORS - allow all origins for development, more restrictive in production
+    cors_origins = app.config.get('CORS_ORIGINS', ['*'])
+    if isinstance(cors_origins, str):
+        cors_origins = cors_origins.split(',')
+    
     CORS(app, 
-         resources={r"/api/*": {"origins": app.config['CORS_ORIGINS']}}, 
-         supports_credentials=True)
+         resources={r"/api/*": {"origins": cors_origins, "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}}, 
+         supports_credentials=True,
+         expose_headers=["Content-Type", "Content-Length"])
     
     # Initialize database
     database.init_database()
@@ -94,6 +113,7 @@ def create_app(config_name=None):
     app.register_blueprint(email_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(approval_bp)
+    app.register_blueprint(review_bp)
     logger.info("✅ Blueprints registered")
     
     # Session configuration
@@ -193,6 +213,25 @@ def create_app(config_name=None):
         except Exception as e:
             logger.error(f"Error rendering complete_lease_form.html: {e}")
             return f"Error loading lease form: {e}", 500
+    
+    @app.route('/review')
+    @app.route('/review.html')
+    def review_page():
+        from flask import render_template
+        try:
+            # Check if user is admin or reviewer
+            from database import get_user
+            user_id = session.get('user_id')
+            if user_id:
+                user = get_user(user_id)
+                if user and user.get('role') in ['admin', 'reviewer']:
+                    return render_template('review.html')
+            # Redirect non-reviewer users
+            from flask import redirect
+            return redirect('/dashboard.html')
+        except Exception as e:
+            logger.error(f"Error rendering review.html: {e}")
+            return f"Error loading review page: {e}", 500
     
     logger.info("✅ Application created successfully")
     logger.info(f"📂 Template folder: {app.template_folder}")
